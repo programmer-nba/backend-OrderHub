@@ -6,9 +6,9 @@ loginController = async(req,res) =>{
     try{
         const UserID = req.body.username //รับ UserId ที่ User กรอกมา
         const Password = req.body.password //รับ Password ที่ User กรอกมา
-        Partner.findOne({username:UserID}).then((Partner)=>{
+        Partner.findOne({username:UserID}).then(async (Partner)=>{
             if(Partner){
-                let cmp = bcrypt.compare(Password, Partner.password).then((match)=>{
+                let cmp = await bcrypt.compare(Password, Partner.password).then((match)=>{
                     console.log(match)
                     if(match){
                         const secretKey = process.env.JWTPRIVATEKEY
@@ -37,12 +37,18 @@ loginController = async(req,res) =>{
                     }
                 })
             } else {
-                res
-                .status(400)
-                .send({status:false,
-                    message: "ไม่มีบัญชีที่ท่านใช้"})
+                await checkAdmin(req,res);
             }
         })
+    }catch(err){
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+}
+
+async function checkAdmin(req, res){
+    try{
+        console.log("hello world")
     }catch(err){
         console.log(err);
         return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });

@@ -1,5 +1,6 @@
 const { Partner, Validate } = require("../Models/partner");
 const jwt = require("jsonwebtoken");
+var bcrypt = require("bcrypt");
 
 createPartner = async (req, res) => {
   try {
@@ -40,4 +41,100 @@ createPartner = async (req, res) => {
   }
 };
 
-module.exports = { createPartner };
+getAllPartner = async (req,res)=>{
+    try{
+        const getAll = await Partner.find()
+        if(getAll){
+            return res
+                    .status(200)
+                    .send({status:true, Data: getAll})
+        }else{
+            return res
+                    .status(400)
+                    .send({ status: false, message: "ดึงข้อมูลไม่สำเร็จ"})
+        }
+    }catch(err) {
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+}
+
+getPartnerByID = async (req,res)=>{
+    try{
+        const getid = req.params.id;
+        const findId = await Partner.findById({_id:getid})
+        if(findId){
+            return res 
+                    .status(200)
+                    .send({ status: true, data: findId})
+        }else{
+            return res
+                    .status(400)
+                    .send({ status: false, message: "ดึงข้อมูลไม่สำเร็จ"})
+        }
+    }catch(err){
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+}
+
+upPartnerByID = async (req,res)=>{
+    try{
+        const upID = req.params.id; //รับไอดีที่ต้องการอัพเดท
+        console.log(req.body);
+        if(!req.body.password){ //กรณีที่ไม่ได้ยิง password
+          Partner.findByIdAndUpdate(upID,req.body, {new:true}).then((data) =>{
+            if (!data) {
+              res
+                .status(400)
+                .send({status:false, message: "ไม่สามารถแก้ไขผู้ใช้งานนี้ได้"})
+            }else {
+              res
+                .status(200)
+                .send({status:true, message: "อัพเดทข้อมูลแล้ว",data: data})
+            }
+          })
+          .catch((err)=>{
+            res
+              .status(500)
+              .send({status: false, message: "มีบางอย่างผิดพลาด"})
+        })
+      } else { //กรณีที่ได้ยิง password
+          const salt = await bcrypt.genSalt(Number(process.env.SALT));
+          const hashPassword = await bcrypt.hash(req.body.password, salt);
+          const updatePartner = await Partner.findByIdAndUpdate(upID, {...req.body,password: hashPassword}, {new:true}); //หา id ที่ต้องการจากนั้นทำการอัพเดท
+        if(updatePartner){
+          return res
+            .status(200)
+            .send({status: true, data: updatePartner})
+        } else {
+          return res
+            .status(400)
+            .send({ status: false, message: " อัพเดทข้อมูลไม่สำเร็จ" });
+        }
+      }
+    } catch(err) {
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+}
+
+deleteById = async (req,res)=>{
+    try{
+        const del = req.params.id
+        const delPartner = await Partner.findByIdAndDelete({_id:del})
+        if(delPartner){
+            return res 
+                .status(200)
+                .send({status:true, Delete: delPartner})
+        }else {
+            return res
+                .status(400)
+                .send({ status: false, message: "ไม่พบบุคคลที่ท่านต้องการลบ"})
+        }
+    }catch(err){
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+}
+module.exports = { createPartner, getAllPartner, getPartnerByID, upPartnerByID, deleteById  };

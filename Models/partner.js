@@ -4,6 +4,7 @@ const Joi = require("joi");
 var bcrypt = require("bcrypt");
 
 const partnerSchema = new Schema({
+    antecedent: {type:String, required: true},
     firstname: {type:String, required: true},
     lastname:{type:String, require: true},
     username: {type:String, require: true},
@@ -16,6 +17,7 @@ const partnerSchema = new Schema({
     sub_district: {type:String, require: true},
     district: {type:String, require: true},
     province: {type:String, require: true},
+    postcode: {type:Number, require: true},
     picture_iden: {type:String, require: true},
     picture_two: {type:String, require: true},
     role: {type:String, default: "partner", require: true},
@@ -35,6 +37,7 @@ const Partner = mongoose.model("partner", partnerSchema);
 
  const Validate = (data)=>{
    const schema = Joi.object({
+        antecedent: Joi.string().required().label('กรุณาใส่คำนำหน้าชื่อ'),
         firstname: Joi.string().required().label('กรุณากรอกชื่อจริง'),
         lastname: Joi.string().required().label('กรุณากรอกนามสกุล'),
         username: Joi.string().required().label('กรุณากรอกยูสเซอร์ไอดี'),
@@ -47,6 +50,7 @@ const Partner = mongoose.model("partner", partnerSchema);
         sub_district: Joi.string().required().label('กรุณากรอกตำบล'),
         district: Joi.string().required().label('กรุณากรอกอำเภอ'),
         province: Joi.string().required().label('กรุณากรอกจังหวัด'),
+        postcode: Joi.number().required().label('กรุณากรอกรหัสไปรษณีย์'),
         picture_iden: Joi.string().required().label('รูปภาพบัตรประชาชน'),
         picture_two: Joi.string().label('รูปถ่ายคู่'),
         role: Joi.string(),
