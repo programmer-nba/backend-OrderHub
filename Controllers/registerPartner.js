@@ -19,7 +19,7 @@ createPartner = async (req, res) => {
           message: "มีเลขบัตรประชาชนนี้แล้ว" });
 
     const duplicateID = await Partner.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
-      userid: req.body.username
+      username: req.body.username
     })
     if(duplicateID){
       return res
