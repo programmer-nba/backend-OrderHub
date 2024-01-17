@@ -8,7 +8,8 @@ const contractSchema = new Schema({
     contractOne: {type:Number, default: 1, require: true},
     statusOne: {type:String, default: "false", require: true},
     contractTwo: {type:Number, default: 2, require: true},
-    statusTwo: {type:String, default: "false", require: true}
+    statusTwo: {type:String, default: "false", require: true},
+    statusAdmin: {type:Array, require: false}
 },{timestamps: true});
 
 const statusContract = mongoose.model("contract", contractSchema);
@@ -19,7 +20,7 @@ const Validate = (data)=>{
         contractOne: Joi.string(),
         statusOne: Joi.string(),
         contractTwo: Joi.string(),
-        statusTwo: Joi.string()
+        statusTwo: Joi.string(),
    });
    return schema.validate(data);
  };

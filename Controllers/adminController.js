@@ -1,4 +1,5 @@
 const { Admin, Validate } = require("../Models/admin");
+const  { statusContract } = require("../Models/contractPopup")
 const jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
 
@@ -32,5 +33,13 @@ createAdmin = async (req, res) => {
   }
 };
 
+/*confirmContract = async (req,res)=>{
+  try{
+    const updateStatus = await PreOrderProducts.findOne({_id: id});
+    console.log(updateStatus);
+  }catch(err){
+
+  }
+}*/
 
 module.exports = { createAdmin };
