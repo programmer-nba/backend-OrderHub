@@ -96,4 +96,6 @@ async function checkAdmin(req, res){
         return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
     }
 }
+
+
 module.exports = { loginController };
