@@ -4,7 +4,6 @@ const Joi = require("joi");
 var bcrypt = require("bcrypt");
 
 const contractSchema = new Schema({
-    partnerIden: {type: String, required: true},
     contract: {type:String, require: true},
     status: {type:String, require: true}
 },{timestamps: true});
@@ -13,7 +12,6 @@ const statusContract = mongoose.model("contract", contractSchema);
 
 const Validate = (data)=>{
     const schema = Joi.object({
-        partnerIden: Joi.string(),
         contract: Joi.string().required().label('กรุณาระบุสัญญา'),
         status: Joi.string(),
    });

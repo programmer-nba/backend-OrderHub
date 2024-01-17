@@ -61,8 +61,9 @@ getAllPartner = async (req,res)=>{
 
 getPartnerByID = async (req,res)=>{
     try{
-        const getid = req.params.id;
-        const findId = await Partner.findById({_id:getid})
+        const getid = req.decoded.userid
+        console.log(getid)
+        const findId = await Partner.findById(getid)
         if(findId){
             return res 
                     .status(200)

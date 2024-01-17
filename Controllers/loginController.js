@@ -25,7 +25,7 @@ loginController = async(req,res) =>{
                                 .send({status:true,
                                     message:"เข้าสู่ระบบสำเร็จ",
                                     token: token,
-                                    employee_id: Partner._id,
+                                    partners_id: Partner._id,
                                     iden_number: Partner.iden_number,
                                     firstname: Partner.firstname,
                                     lastname: Partner.lastname,

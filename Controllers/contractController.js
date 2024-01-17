@@ -4,19 +4,13 @@ const { Partner } = require("../Models/partner");
 
 twoContract = async (req, res)=>{
     try{
-        const iden = req.body.partnerIden;
         const {error} = Validate(req.body); //ตรวจสอบความถูกต้องของข้อมูลที่เข้ามา
         if (error){
             return res
                     .status(403)
                     .send({ status: false, message: error.details[0].message });
         }
-        const foundPartner = await Partner.findOne({ iden_number: iden})
-        if(!foundPartner){
-            return res  
-                    .status(400)
-                    .send({status:false, message: "กรุณาระบุตัวตนให้ถูกต้อง"})
-        }
+        
         if (req.body.contract == 1){
             if(req.body.status == "false"){
                 const oneFalse = await statusContract.create(req.body);

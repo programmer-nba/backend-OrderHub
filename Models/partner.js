@@ -21,12 +21,13 @@ const partnerSchema = new Schema({
     picture_iden: {type:String, require: true},
     picture_two: {type:String, require: true},
     role: {type:String, default: "partner", require: true},
+    status_partner: {type:String, default: "newpartner", require: true},
     deli_address:{type:String, require: true},
     deli_street:{type:String, require: true},
     deli_sub:{type:String, require: true},
     deli_district:{type:String, require: true},
     deli_province:{type:String, require: true},
-    deli_postcode:{type:Number, require: true}
+    deli_postcode:{type:String, require: true}
 },{timestamps: true});
 
 partnerSchema.pre('save',function(next){   //ทำ Middleware การ Hash ก่อน EmployeeScheme ที่ User กรอกมาจะ save
@@ -60,12 +61,13 @@ const Partner = mongoose.model("partner", partnerSchema);
         picture_iden: Joi.string(),
         picture_two: Joi.string(),
         role: Joi.string(),
+        status_partner: Joi.string(),
         deli_address:Joi.string(),
         deli_street:Joi.string(),
         deli_sub:Joi.string(),
         deli_district:Joi.string(),
         deli_province:Joi.string(),
-        deli_postcode:Joi.number()
+        deli_postcode:Joi.string()
    });
    return schema.validate(data);
  };
