@@ -1,5 +1,6 @@
 const { Admin, Validate } = require("../Models/admin");
 const  { statusContract } = require("../Models/contractPopup")
+const  { Partner } = require("../Models/partner")
 const jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
 
@@ -33,13 +34,37 @@ createAdmin = async (req, res) => {
   }
 };
 
-/*confirmContract = async (req,res)=>{
+confirmContract = async (req,res)=>{
   try{
-    const updateStatus = await PreOrderProducts.findOne({_id: id});
-    console.log(updateStatus);
+    const id = req.body.partnerID
+    const status = req.body.statusAdmin;
+
+    const findId = await statusContract.findOne({partnerID:id})
+    if(findId){
+      if(findId.statusOne == "true" && findId.statusTwo == "true"){
+        const fixStatus = await statusContract.findOneAndUpdate({partnerID:id},{statusAdmin:status},{new:true})
+        console.log(fixStatus)
+        if(fixStatus){
+          const fixStatusPartner = await Partner.findOneAndUpdate({_id:id},{status_partner:"ได้รับการอนุมัติแล้ว"},{new:true})
+          return res  
+                  .status(200)
+                  .send({status: true, message: "แอดมินได้ทำการยืนยันแล้ว",fixStatus, fixStatusPartner})
+        }else{
+          return res  
+                  .status(400)
+                  .send({status: false, message: "ไม่สามารถยืนยันได้"})
+        }
+      }else {
+        return res
+                .status(400)
+                .send({status: false, message: "กรุณายอมรับทั้ง 2 สัญญาด้วย"})
+      }
+    }
+    
   }catch(err){
-
+    console.log(err);
+    return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
   }
-}*/
+}
 
-module.exports = { createAdmin };
+module.exports = { createAdmin, confirmContract };

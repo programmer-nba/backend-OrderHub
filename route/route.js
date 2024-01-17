@@ -3,7 +3,6 @@ const main = require('../Controllers/registerPartner');
 const login = require('../Controllers/loginController');
 const con = require('../Controllers/contractController');
 const admin = require('../Controllers/adminController')
-
 const auth = require("../lib/auth");
 //const authAdmin = require("../lib/authAdmin");
 
@@ -29,6 +28,10 @@ router.route('/orderhub/me').get( auth.checkToken, main.getPartnerByID )
 
 //Contract
 router.route('/orderhub/contract').post( auth.checkToken, con.twoContract )
+router.route('/orderhub/getcontract/:id').get( con.getContractByID )
+
+//Admin Confirm
+router.route('/orderhub/confirm').put( admin.confirmContract )
 
 
 module.exports = router;

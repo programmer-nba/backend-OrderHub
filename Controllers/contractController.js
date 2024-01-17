@@ -31,4 +31,24 @@ twoContract = async (req, res)=>{
         return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
     }
 }
-module.exports = { twoContract };
+
+getContractByID = async (req,res)=>{
+    try{
+        const partnerId = req.params.id
+        const find = await statusContract.findOne({partnerID:partnerId})
+        if (find){
+            return res
+                    .status(200)
+                    .send({status:true, data:find})
+        }else{
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มี Partner ID นี้"})
+        }
+    }catch(err){
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+    
+}
+module.exports = { twoContract, getContractByID };
