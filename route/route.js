@@ -28,7 +28,7 @@ router.route('/orderhub/login').post( login.loginController )
 router.route('/orderhub/me').get( auth.checkToken, main.getPartnerByID )
 
 //Contract
-router.route('/orderhub/contract').post( con.twoContract )
+router.route('/orderhub/contract').post( auth.checkToken, con.twoContract )
 
 
 module.exports = router;
