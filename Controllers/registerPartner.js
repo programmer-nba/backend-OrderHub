@@ -33,7 +33,7 @@ createPartner = async (req, res) => {
     if (employee) {
       return res
         .status(201)
-        .send({ status: true, message: "เพิ่มรายชื่อพนักงานเสร็จสิ้น" });
+        .send({ status: true, message: "เพิ่มรายชื่อพนักงานเสร็จสิ้น",data: employee });
     }
   } catch (err) {
       console.log(err);
