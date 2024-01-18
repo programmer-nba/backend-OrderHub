@@ -59,7 +59,7 @@ getAllPartner = async (req,res)=>{
     }
 }
 
-getPartnerByID = async (req,res)=>{
+getPartnerByID = async (req,res)=>{//การทำ GET ME โดยใช้การ decoded จาก token
     try{
         const getid = req.decoded.userid
         console.log(getid)

@@ -15,9 +15,9 @@ loginController = async(req,res) =>{
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
                             userid: Partner._id,
-                            employee_number: Partner.employee_number,
                             email: Partner.email,
-                            role: Partner.role
+                            role: Partner.role,
+                            status: Partner.status_partner
                         }
                         const token = jwt.sign(payload, secretKey, { expiresIn: '90 years'})
                         return res
@@ -26,10 +26,10 @@ loginController = async(req,res) =>{
                                     message:"เข้าสู่ระบบสำเร็จ",
                                     token: token,
                                     partners_id: Partner._id,
-                                    iden_number: Partner.iden_number,
                                     firstname: Partner.firstname,
                                     lastname: Partner.lastname,
                                     role: Partner.role,
+                                    status: Partner.status_partner
                                 })
                     }else{
                         return res
