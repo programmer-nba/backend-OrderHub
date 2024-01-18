@@ -38,11 +38,9 @@ confirmContract = async (req,res)=>{
   try{
     const partnerId = req.params.id //รับ id มาจาก params
 
-    const findId = await statusContract.findOne({partnerID:partnerId}) //หาว่ามี partnerId ที่รับมาจาก params ตรงกับ field partnerID ของ schemaContract ไหม
-    if(findId){ //กรณีตรง
-      if(findId.statusOne == "true" && findId.statusTwo == "true"){
+    const findId = await Partner.findOne({_id:partnerId}) //หาว่ามี partnerId ที่รับมาจาก params ตรงกับ field _id ของ partnerSchema ไหม
+    if(findId){ //กรณีตรง    
         const fixStatus = await statusContract.findOneAndUpdate({partnerID:partnerId},{statusAdmin:"confirm"},{new:true})
-        console.log(fixStatus)
         if(fixStatus){
           const fixStatusPartner = await Partner.findOneAndUpdate({_id:partnerId},{status_partner:"ได้รับการอนุมัติแล้ว"},{new:true})
           return res
@@ -53,11 +51,6 @@ confirmContract = async (req,res)=>{
                   .status(400)
                   .send({status: false, message: "ไม่สามารถยืนยันได้"})
         }
-      }else {
-        return res
-                .status(400)
-                .send({status: false, message: "กรุณายอมรับทั้ง 2 สัญญาด้วย"})
-      }
     }else{ //กรณีไม่ตรง
         return res
                 .status(400)
