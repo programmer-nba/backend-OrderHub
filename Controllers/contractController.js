@@ -33,7 +33,7 @@ twoContract = async (req, res)=>{
                         .send({status:true, message:"สร้างสถานะไม่สำเร็จ"})
                 } 
             }else if (findID){
-            const updateContract = await statusContract.findOneAndUpdate({partnerID:id},{statusOne:upStatusOne, statusTwo:upStatusTwo})
+            const updateContract = await statusContract.findOneAndUpdate({partnerID:id},{statusOne:upStatusOne, statusTwo:upStatusTwo},{new:true})
             if(updateContract){
                 return res
                         .status(200)
