@@ -36,20 +36,20 @@ createAdmin = async (req, res) => {
 
 confirmContract = async (req,res)=>{
   try{
-    const partnerId = req.params.id
+    const partnerId = req.params.id //รับ id มาจาก params
 
-    const findId = await statusContract.findOne({partnerID:partnerId})
-    if(findId){
+    const findId = await statusContract.findOne({partnerID:partnerId}) //หาว่ามี partnerId ที่รับมาจาก params ตรงกับ field partnerID ของ schemaContract ไหม
+    if(findId){ //กรณีตรง
       if(findId.statusOne == "true" && findId.statusTwo == "true"){
         const fixStatus = await statusContract.findOneAndUpdate({partnerID:partnerId},{statusAdmin:"confirm"},{new:true})
         console.log(fixStatus)
         if(fixStatus){
           const fixStatusPartner = await Partner.findOneAndUpdate({_id:partnerId},{status_partner:"ได้รับการอนุมัติแล้ว"},{new:true})
-          return res  
+          return res
                   .status(200)
                   .send({status: true, message: "แอดมินได้ทำการยืนยันแล้ว",fixStatus, fixStatusPartner})
         }else{
-          return res  
+          return res
                   .status(400)
                   .send({status: false, message: "ไม่สามารถยืนยันได้"})
         }
@@ -58,7 +58,7 @@ confirmContract = async (req,res)=>{
                 .status(400)
                 .send({status: false, message: "กรุณายอมรับทั้ง 2 สัญญาด้วย"})
       }
-    }else{
+    }else{ //กรณีไม่ตรง
         return res
                 .status(400)
                 .send({status: false, message: "ไม่มี Partner ID ที่ท่านเรียก"})

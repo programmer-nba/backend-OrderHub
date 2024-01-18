@@ -79,6 +79,24 @@ getPartnerByID = async (req,res)=>{//การทำ GET ME โดยใช้�
     }
 }
 
+getPartnerByStatus = async (req,res)=>{
+  try{
+    const status = await Partner.find({contractOne:"true",contractTwo:"true"})
+    if(status){
+      return res
+              .status(200)
+              .send({status:true, data: status})
+    }else{
+      return res
+              .status(400)
+              .send({status:false, message:"ดึงข้อมูลไม่สำเร็จ"})
+    }
+  }catch(err){
+    console.log(err);
+    return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+  }
+}
+
 upPartnerByID = async (req,res)=>{
     try{
         const upID = req.params.id; //รับไอดีที่ต้องการอัพเดท
