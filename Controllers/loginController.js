@@ -9,6 +9,11 @@ loginController = async(req,res) =>{
         const Password = req.body.password //รับ Password ที่ User กรอกมา
         Partner.findOne({username:UserID}).then(async (Partner)=>{
             if(Partner){
+                if(Partner.status_partner == "blacklist"){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"Partner blacklist!"})
+                }
                 let cmp = await bcrypt.compare(Password, Partner.password).then((match)=>{
                     console.log(match)
                     if(match){

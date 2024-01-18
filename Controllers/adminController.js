@@ -63,4 +63,26 @@ confirmContract = async (req,res)=>{
   }
 }
 
-module.exports = { createAdmin, confirmContract };
+cancelContract = async (req, res)=>{
+  try{
+    id = req.params.id
+    const cancel = await Partner.findOneAndUpdate(
+      {_id:id},
+      {status_partner:"blacklist"},
+      {new:true})
+    if(cancel){
+      return res
+              .status(200)
+              .send({status:false, message:"Partner ติด Blacklist แล้ว",data: cancel})
+    }else{
+      return res
+              .status(400)
+              .send({status:false, message:"ไม่สามารถยกเลิกได้"})
+    }
+  }catch(err){
+    console.log(err);
+    return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+  }
+}
+
+module.exports = { createAdmin, confirmContract, cancelContract };

@@ -33,5 +33,8 @@ router.route('/orderhub/getcontract/:id').get( con.getContractByID )
 //Admin Confirm
 router.route('/orderhub/confirm/:id').put( admin.confirmContract )
 
+//Admin Cancel(blacklist)
+router.route('/orderhub/cancel/:id').put( admin.cancelContract )
+
 
 module.exports = router;

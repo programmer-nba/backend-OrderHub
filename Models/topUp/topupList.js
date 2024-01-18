@@ -3,17 +3,23 @@ const Schema = mongoose.Schema
 const Joi = require("joi");
 var bcrypt = require("bcrypt");
 
-const dropoffSchema = new Schema({
+const partnerSchema = new Schema({
     partnerID:{type:String, require: true},
-    deli_address:{type:String, require: true},
-    deli_street:{type:String, require: true,},
-    deli_sub:{type:String, require: true},
-    deli_district:{type:String, require: true},
-    deli_province:{type:String, require: true},
-    deli_postcode:{type:String, require: true}
+    shop_id:{type:String, require: true},
+    invoice:{type:String, require: true},
+    amount:{type:String, require: true,},
+    charge:{type:String, require: true},
+    payment_type:{type:String, require: true},
+    referenceNo:{type:String, require: true},
+    detail:{type:Array, require: true},
+    company:{type:String, require: true},
+    partner:{type:Array, require: true},
+    referenceNo:{type:String, require: true},
+    detail:{type:Array, require: true},
+    referenceNo:{type:String, require: true},
 },{timestamps: true});
 
-const dropOffs = mongoose.model("dropoffs", dropoffSchema);
+const Partner = mongoose.model("partner", partnerSchema);
 
  const Validate = (data)=>{
    const schema = Joi.object({
@@ -28,4 +34,4 @@ const dropOffs = mongoose.model("dropoffs", dropoffSchema);
    return schema.validate(data);
  };
 
-module.exports = { dropOffs, Validate };
+module.exports = {Partner, Validate};
