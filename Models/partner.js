@@ -25,7 +25,7 @@ const partnerSchema = new Schema({
     contractOne: {type:String, default: "false", require: true}, // สถานะสัญญาที่ 1
     contractTwo: {type:String, default: "false", require: true}, //สถานะสัญญาที่ 2 
     deli_address:{type:String, require: true},
-    deli_street:{type:String, require: true},
+    deli_street:{type:String},
     deli_sub:{type:String, require: true},
     deli_district:{type:String, require: true},
     deli_province:{type:String, require: true},
