@@ -26,76 +26,70 @@ const storage = multer.diskStorage({
     },
 });
 
-create = async (req, res)=>{
-  
-    try{
-        let upload = multer({storage:storage}).single("slip_img");
-        upload(req, res, async function(err){
-            if(!req.file){
-                const { error } = Validate_topup_wallet(req.body);
-                if(error){
-                    return res
-                            .status(400)
-                            .send({ message: error.details[0].message})
-                }else if (err instanceof multer.MulterError){
-                    return res
-                            .send(err)
-                }else if (err){
-                    return res
-                            .send(err)
-                }else {
-                    uploadFileCreate(req,res)
+create = async (req,res)=>{
+    try {
+        let upload = multer({ storage: storage }).single("slip_img");
+        
+        upload(req, res, async function (err) {
+          if (!req.file) {
+            const { error } = Validate_topup_wallet(req.body);
+            if (error)
+              return res.status(400).send({ message: error.details[0].message });
+          } else if (err instanceof multer.MulterError) {
+            return res.send(err);
+          } else if (err) {
+            return res.send(err);
+          } else {
+            uploadFileCreate(req, res);
+          }
+        });
+    
+        async function uploadFileCreate(req, res) {
+          const filePath = req.file.path;
+    
+          let fileMetaData = {
+            name: req.file.originalname,
+            parents: [process.env.GOOGLE_DRIVE_WALLET_TOPUP],
+          };
+          let media = {
+            body: fs.createReadStream(filePath),
+          };
+          try {
+            const response = await drive.files.create({
+              resource: fileMetaData,
+              media: media,
+            });
+            generatePublicUrl(response.data.id);
+            console.log(req.body);
+            const { error } = Validate_topup_wallet(req.body);
+            const invoice = await invoiceNumber(req.body.timestamp);
+            console.log('invoice : '+invoice);
+            if (error)
+              return res.status(400).send({ message: error.details[0].message });
+    
+            const data = {
+                ...req.body,
+                company : "Order Hub",
+                payment_type : "slip",
+                invoice : invoice,
+                detail : {
+                    slip_img : response.data.id,
                 }
             }
-        })
-        const uploadFileCreate = async(req, res)=>{
-            const filePath = req.file.path;
-            let fileMeteData = {
-                name: req.file.originalname,
-                parent:[process.env.GOOGLE_DRIVE_IMAGE_PRODUCT]
-            }
-            let media = {
-                body: fs.createReadStream(filePath)
-            }
-            try {
-                const response = await drive.files.create({
-                    resource: fileMeteData,
-                    media: media,
-                });
-                generatePublicUrl(response.data.id);
-                console.log(req.body)
-                const {error} = Validate_topup_wallet(req.body);
-                const invoice = await invoiceNumber(req.body.timestamp)
-                console.log('Invoice:'+invoice);
-                if(error){
-                    return res
-                            .status(400)
-                            .send({ message: error.details[0].message });
-                }
-                const data = {
-                    ...req.body,
-                    company : "OrderHub",
-                    payment_type : "slip",
-                    invoice : invoice,
-                    detail : {
-                        slip_img : response.data.id,
-                    }
-                }
-                const topup = await TopupWallet.create(data);
+            const topup = await TopupWallet.create(data);
+            
+            res.status(201).send({ message: "สร้างรายงานใหม่เเล้ว", status: true, data: topup});
 
-                    res.status(201).send({ message: "สร้างรายงานใหม่เเล้ว", status: true, data: topup});
-
-            }catch(err){
-                return res
-                        .status(500)
-                        .send({ message: "Internal Server Error", status: false });
-            }
+          } catch (error) {
+            console.log(error);
+            res
+              .status(500)
+              .send({ message: "Internal Server Error", status: false });
+          }
         }
-    }catch(err){
-        return res
-                .status(500)
-                .send({ message: "มีบางอย่างผิดพลาด", status: false });
-    }
+      } catch (error) {
+        res.status(500).send({ message: "มีบางอย่างผิดพลาด", status: false });
+      } 
 }
 
 async function generatePublicUrl(res) {

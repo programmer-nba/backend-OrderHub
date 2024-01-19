@@ -16,7 +16,7 @@ const topupSchema = new Schema({
     employee:{type:Array, require: false, default:'ไม่มี'}, //ชื่อเจ้าหน้าที่ ทำรายการยืนยัน กรณีเป็นการเติมเงินแบบแนบสลิป
     status:{type:String, require: false, default:'รอตรวจสอบ'}, //WAIT > SUCCESS > FAIL
     remark:{type:Array, require: false, default:''},
-    timestamp:{type:Date, require: true}, //วันทำรายการ
+    timestamp:{type:Date,default:Date.now, require: false}, //วันทำรายการ
 });
 
 const TopupWallet = mongoose.model("topup", topupSchema);
@@ -34,8 +34,8 @@ const TopupWallet = mongoose.model("topup", topupSchema);
         company:Joi.string(),
         partner:Joi.string().default('ไม่มี'),
         status:Joi.string().label('รอตรวจสอบ'),
-        remark:Joi.string().defaulti(''),
-        timestamp:Joi.string().required().label('ไม่มีวันทำรายการ')
+        remark:Joi.string().default(''),
+        timestamp:Joi.string()
    });
    return schema.validate(data);
  };
