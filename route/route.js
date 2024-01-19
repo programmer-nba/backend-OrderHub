@@ -32,7 +32,7 @@ router.route('/orderhub/contract').post( auth.checkToken, con.twoContract )
 router.route('/orderhub/getcontract/:id').get( con.getContractByID )
 
 //Admin Confirm
-router.route('/orderhub/confirm/:id').put( admin.confirmContract )
+router.route('/orderhub/confirm/:id').put( authAdmin.checkToken, admin.confirmContract )
 
 //Admin Cancel(blacklist)
 router.route('/orderhub/cancel/:id').put( admin.cancelContract )
