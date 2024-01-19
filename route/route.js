@@ -4,7 +4,8 @@ const login = require('../Controllers/loginController');
 const con = require('../Controllers/contractController');
 const admin = require('../Controllers/adminController')
 const auth = require("../lib/auth");
-const authAdmin = require('../lib/authAdmin')
+const slip = require("../Controllers/Top-up/slip.controller");
+const authAdmin = require('../lib/authAdmin');
 
 
 //CRUD employees table(Admin Only)
@@ -35,7 +36,10 @@ router.route('/orderhub/getcontract/:id').get( con.getContractByID )
 router.route('/orderhub/confirm/:id').put( authAdmin.checkToken, admin.confirmContract )
 
 //Admin Cancel(blacklist)
-router.route('/orderhub/cancel/:id').put( admin.cancelContract )
+router.route('/orderhub/cancel/:id').put( authAdmin.checkToken, admin.cancelContract )
+
+//slip
+router.route('/orderhub/topup').post( slip.create )
 
 
 module.exports = router;

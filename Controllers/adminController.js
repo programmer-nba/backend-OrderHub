@@ -37,7 +37,6 @@ createAdmin = async (req, res) => {
 confirmContract = async (req,res)=>{
   try{
     const partnerId = req.params.id //รับ id มาจาก params
-
     const findId = await Partner.findOne({_id:partnerId}) //หาว่ามี partnerId ที่รับมาจาก params ตรงกับ field _id ของ partnerSchema ไหม
     if(findId){ //กรณีตรง    
         const fixStatus = await statusContract.findOneAndUpdate({partnerID:partnerId},{statusAdmin:"confirm"},{new:true})

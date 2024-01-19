@@ -26,7 +26,7 @@ const TopupWallet = mongoose.model("topup", topupSchema);
         partnerID:Joi.string().required().label('กรุณาใส่หมายเลข ID พาร์ทเนอร์'),
         shop_id:Joi.string(),
         invoice:Joi.string(),
-        amount:Joi.string().required().label('กรุณาใส่ตำบล'),
+        amount:Joi.string().required().label('กรุณาจำนวนเงิน'),
         charge:Joi.string().default(0),
         payment_type:Joi.string(),
         referenceNo:Joi.string().default(''),

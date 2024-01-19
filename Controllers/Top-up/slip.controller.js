@@ -52,19 +52,19 @@ create = async (req, res)=>{
             const filePath = req.file.path;
             let fileMeteData = {
                 name: req.file.originalname,
-                parent:[process.env.GOOGLE_DRIVE_WALLET_TOPUP]
+                parent:[process.env.GOOGLE_DRIVE_IMAGE_PRODUCT]
             }
             let media = {
                 body: fs.createReadStream(filePath)
             }
             try {
                 const response = await drive.files.create({
-                  resource: fileMeteData,
-                  media: media,
+                    resource: fileMeteData,
+                    media: media,
                 });
                 generatePublicUrl(response.data.id);
                 console.log(req.body)
-                const {error} = validate_topup_wallet(req.body);
+                const {error} = Validate_topup_wallet(req.body);
                 const invoice = await invoiceNumber(req.body.timestamp)
                 console.log('Invoice:'+invoice);
                 if(error){
@@ -72,10 +72,9 @@ create = async (req, res)=>{
                             .status(400)
                             .send({ message: error.details[0].message });
                 }
-                const partner = await Partners.findById(req.body.partnerID);
                 const data = {
                     ...req.body,
-                    company : "NBA",
+                    company : "OrderHub",
                     payment_type : "slip",
                     invoice : invoice,
                     detail : {
@@ -83,13 +82,9 @@ create = async (req, res)=>{
                     }
                 }
                 const topup = await TopupWallet.create(data);
-                const message = `
-แจ้งเติมเงินเข้าระบบ : 
-เลขที่ทำรายการ : ${invoice}
-ชื่อ : ${partner.partner_name}
-จำนวน : ${req.body.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}  บาท
-            `
-                res.status(201).send({ message: "สร้างรายงานใหม่เเล้ว", status: true, data: topup});
+
+                    res.status(201).send({ message: "สร้างรายงานใหม่เเล้ว", status: true, data: topup});
+
             }catch(err){
                 return res
                         .status(500)
@@ -147,3 +142,4 @@ async function invoiceNumber(date) {
     console.log(invoice_number);
     return invoice_number;
 }
+module.exports = { create }
