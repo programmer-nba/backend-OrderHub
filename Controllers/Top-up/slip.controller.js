@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 create = async (req,res)=>{
     try {
         let upload = multer({ storage: storage }).single("slip_img");
-        
+
         upload(req, res, async function (err) {
           if (!req.file) {
             const { error } = Validate_topup_wallet(req.body);
@@ -43,10 +43,10 @@ create = async (req,res)=>{
             uploadFileCreate(req, res);
           }
         });
-    
+        
         async function uploadFileCreate(req, res) {
           const filePath = req.file.path;
-    
+          const getid = req.decoded.userid
           let fileMetaData = {
             name: req.file.originalname,
             parents: [process.env.GOOGLE_DRIVE_WALLET_TOPUP],
@@ -59,16 +59,20 @@ create = async (req,res)=>{
               resource: fileMetaData,
               media: media,
             });
+
             generatePublicUrl(response.data.id);
             console.log(req.body);
             const { error } = Validate_topup_wallet(req.body);
             const invoice = await invoiceNumber(req.body.timestamp);
             console.log('invoice : '+invoice);
             if (error)
-              return res.status(400).send({ message: error.details[0].message });
-    
+              return res
+                        .status(400)
+                        .send({ message: error.details[0].message });
+            
             const data = {
                 ...req.body,
+                partnerID : getid,
                 company : "Order Hub",
                 payment_type : "slip",
                 invoice : invoice,
@@ -124,7 +128,7 @@ async function invoiceNumber(date) {
         num = num + 1;
         data = `${dayjs(date).format("YYYYMM")}`.padEnd(13, "0") + num;
         check = await TopupWallet.find({invoice: data});
-        console.log(check);
+        //console.log(check);
         if (check.length === 0) {
           invoice_number =
             `${dayjs(date).format("YYYYMM")}`.padEnd(13, "0") + num;

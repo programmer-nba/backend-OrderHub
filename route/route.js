@@ -39,7 +39,7 @@ router.route('/orderhub/confirm/:id').put( authAdmin.checkToken, admin.confirmCo
 router.route('/orderhub/cancel/:id').put( authAdmin.checkToken, admin.cancelContract )
 
 //slip
-router.route('/orderhub/topup').post( slip.create )
+router.route('/orderhub/topup').post( auth.checkToken, slip.create )
 
 
 module.exports = router;

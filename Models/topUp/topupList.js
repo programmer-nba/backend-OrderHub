@@ -4,7 +4,7 @@ const Joi = require("joi");
 var bcrypt = require("bcrypt");
 
 const topupSchema = new Schema({
-    partnerID:{type:String, require: true},
+    partnerID:{type:String, require: false},
     shop_id:{type:String, require: false},
     invoice:{type:String, require: false},//เลขที่ทำรายการ
     amount:{type:String, require: true,},
@@ -23,7 +23,7 @@ const TopupWallet = mongoose.model("topup", topupSchema);
 
  const Validate_topup_wallet = (data)=>{
    const schema = Joi.object({
-        partnerID:Joi.string().required().label('กรุณาใส่หมายเลข ID พาร์ทเนอร์'),
+        partnerID:Joi.string(),
         shop_id:Joi.string(),
         invoice:Joi.string(),
         amount:Joi.string().required().label('กรุณาจำนวนเงิน'),
