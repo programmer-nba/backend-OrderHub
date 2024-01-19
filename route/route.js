@@ -4,7 +4,8 @@ const login = require('../Controllers/loginController');
 const con = require('../Controllers/contractController');
 const admin = require('../Controllers/adminController')
 const auth = require("../lib/auth");
-//const authAdmin = require("../lib/authAdmin");
+const authAdmin = require('../lib/authAdmin')
+
 
 //CRUD employees table(Admin Only)
 //router.route('/orderhub/post').post(main.Post) //ใช้กำหนด path ที่ต้องการทำให้ไม่ต้องไปประกาศใน File Server แล้ว

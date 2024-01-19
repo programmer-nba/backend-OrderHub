@@ -3,35 +3,41 @@ const Schema = mongoose.Schema
 const Joi = require("joi");
 var bcrypt = require("bcrypt");
 
-const partnerSchema = new Schema({
+const topupSchema = new Schema({
     partnerID:{type:String, require: true},
-    shop_id:{type:String, require: true},
-    invoice:{type:String, require: true},
+    shop_id:{type:String, require: false},
+    invoice:{type:String, require: false},//เลขที่ทำรายการ
     amount:{type:String, require: true,},
-    charge:{type:String, require: true},
-    payment_type:{type:String, require: true},
-    referenceNo:{type:String, require: true},
-    detail:{type:Array, require: true},
-    company:{type:String, require: true},
-    partner:{type:Array, require: true},
-    referenceNo:{type:String, require: true},
-    detail:{type:Array, require: true},
-    referenceNo:{type:String, require: true},
-},{timestamps: true});
+    charge:{type:String, require: false, default: 0},
+    payment_type:{type:String, require: false},
+    referenceNo:{type:String, require: false, default:''},
+    detail:{type:Object, require: false, default:null},
+    company:{type:String, require: false},
+    employee:{type:Array, require: false, default:'ไม่มี'}, //ชื่อเจ้าหน้าที่ ทำรายการยืนยัน กรณีเป็นการเติมเงินแบบแนบสลิป
+    status:{type:String, require: false, default:'รอตรวจสอบ'}, //WAIT > SUCCESS > FAIL
+    remark:{type:Array, require: false, default:''},
+    timestamp:{type:Date, require: true}, //วันทำรายการ
+});
 
-const Partner = mongoose.model("partner", partnerSchema);
+const TopupWallet = mongoose.model("topup", topupSchema);
 
- const Validate = (data)=>{
+ const Validate_topup_wallet = (data)=>{
    const schema = Joi.object({
         partnerID:Joi.string().required().label('กรุณาใส่หมายเลข ID พาร์ทเนอร์'),
-        deli_address:Joi.string().label('กรุณาใส่บ้านเลขที่/หมู่บ้าน'),
-        deli_street:Joi.string(),
-        deli_sub:Joi.string().label('กรุณาใส่ตำบล'),
-        deli_district:Joi.string().label('กรุณาใส่อำเภอ'),
-        deli_province:Joi.string().label('กรุณาใส่จังหวัด'),
-        deli_postcode:Joi.string().label('กรุณาใส่ไปรษณีย์')
+        shop_id:Joi.string(),
+        invoice:Joi.string(),
+        amount:Joi.string().required().label('กรุณาใส่ตำบล'),
+        charge:Joi.string().default(0),
+        payment_type:Joi.string(),
+        referenceNo:Joi.string().default(''),
+        detail:Joi.string().default(null),
+        company:Joi.string(),
+        partner:Joi.string().default('ไม่มี'),
+        status:Joi.string().label('รอตรวจสอบ'),
+        remark:Joi.string().defaulti(''),
+        timestamp:Joi.string().required().label('ไม่มีวันทำรายการ')
    });
    return schema.validate(data);
  };
 
-module.exports = {Partner, Validate};
+module.exports = {TopupWallet, Validate_topup_wallet};

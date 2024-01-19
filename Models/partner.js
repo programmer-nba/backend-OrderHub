@@ -22,7 +22,7 @@ const partnerSchema = new Schema({
     picture_two: {type:String, require: true},
     credit:{type:Number, require: true},
     role: {type:String, default: "partner", require: true},
-    status_partner: {type:String, default: "New partner", require: true},
+    status_partner: {type:String, default: "newpartner", require: true},
     contractOne: {type:String, default: "false", require: true}, // สถานะสัญญาที่ 1
     contractTwo: {type:String, default: "false", require: true}, //สถานะสัญญาที่ 2 
 },{timestamps: true});
