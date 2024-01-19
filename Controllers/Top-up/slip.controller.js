@@ -27,9 +27,9 @@ const storage = multer.diskStorage({
 });
 
 create = async (req, res)=>{
+  
     try{
         let upload = multer({storage:storage}).single("slip_img");
-
         upload(req, res, async function(err){
             if(!req.file){
                 const { error } = Validate_topup_wallet(req.body);
