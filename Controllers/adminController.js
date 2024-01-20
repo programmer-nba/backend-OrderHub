@@ -3,6 +3,8 @@ const  { statusContract } = require("../Models/contractPopup")
 const  { Partner } = require("../Models/partner")
 const jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
+const { TopupWallet } = require("../Models/topUp/topupList");
+const { historyWallet } = require("../Models/topUp/history_topup");
 
 createAdmin = async (req, res) => {
   try {
@@ -87,15 +89,60 @@ cancelContract = async (req, res)=>{
 confirmTopup = async (req, res)=>{
   try{
     const nameAdmin = req.decoded.username
-    const walletCredit = await Partner.findOne({_id:getid})
-    if(walletCredit){
+    const invoiceSlip = req.params.id
+
+    const findSlip = await TopupWallet.findOne({invoice:invoiceSlip})
+    if(findSlip){
+      const walletCredit = await Partner.findOne({_id:findSlip.partnerID}) 
       console.log(walletCredit.credit) //เช็คดู credit Wallet ของ partner คนนั้นว่าเหลือเท่าไหร่
-      let result = await credit(topup.amount,walletCredit.credit) //นำคำตอบที่ได้จาก fucntion มาเก็บไว้ใน result แต่มันส่งมาเป็น type string 
+      let result = await credit(findSlip.amount,walletCredit.credit) //นำคำตอบที่ได้จาก fucntion มาเก็บไว้ใน result แต่มันส่งมาเป็น type string 
       console.log(result)
-      const replaceCredit = await Partner.findOneAndUpdate(
-        {_id:getid},
-        {credit:result},
-        {new:true})
+      
+      //อัพเดทส่วน admin และ status ใน Schema (topupList) เพื่อแสดงว่าแอดมินยืนยันแล้วและแอดมินคนไหนยืนยัน
+      const replaceAdmin = await TopupWallet.findOneAndUpdate(
+        {invoice:invoiceSlip},
+        {
+          $push: {
+            "0": nameAdmin,
+          },
+          status: "ยืนยันแล้ว"
+        },
+        { new: true })
+
+          if(replaceAdmin){
+            //อัพเดท ประวัติเติมเงิน schema (history_topup) ในส่วน after เพื่อแสดงผลลัพธ์หลังแอดมินยืนยัน
+            const replaceHistory = await historyWallet.findOneAndUpdate(
+            {orderid:invoiceSlip},
+            {after:result},
+            {new:true}
+            )
+              //อัพเดทส่วน Credits ใน Schema (partner) เพื่อเอาไปแสดง
+              if(replaceHistory){
+              const replaceCredit = await Partner.findOneAndUpdate(
+              {_id:findSlip.partnerID},
+              {credit:result},
+              {new:true})
+              return res 
+                .status(200)
+                .send({status:true, 
+                  partner: replaceCredit,
+                  topup: replaceAdmin,
+                  historyTopup: replaceHistory
+                  })
+              }else{
+                return res
+                      .status(400)
+                      .send({status:false,message:"ไม่สามารถแก้ไขประวัติเติมเงินได้"})
+              }
+          }else{
+              return res
+                .status(400)
+                .send({status:false, message:"ไม่สามารถแก้ไขส่วน Top-uplist ได้"})
+          }
+      }else{
+        return res
+                .status(400)
+                .send({status:false, message:"ค้นหา partner ไม่เจอ"})
       }
   
   }catch(err){
