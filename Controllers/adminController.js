@@ -97,7 +97,7 @@ confirmTopup = async (req, res)=>{
       console.log(walletCredit.credit) //เช็คดู credit Wallet ของ partner คนนั้นว่าเหลือเท่าไหร่
       let result = await credit(findSlip.amount,walletCredit.credit) //นำคำตอบที่ได้จาก fucntion มาเก็บไว้ใน result แต่มันส่งมาเป็น type string 
       console.log(result)
-      
+      console.log(nameAdmin)
       //อัพเดทส่วน admin และ status ใน Schema (topupList) เพื่อแสดงว่าแอดมินยืนยันแล้วและแอดมินคนไหนยืนยัน
       const replaceAdmin = await TopupWallet.findOneAndUpdate(
         {invoice:invoiceSlip},
