@@ -20,7 +20,7 @@ const partnerSchema = new Schema({
     postcode: {type:String, require: true},
     picture_iden: {type:String, require: true},
     picture_two: {type:String, require: true},
-    credit:{type:Number, require: true},
+    credit:{type:Number,default: 0, require: true},
     role: {type:String, default: "partner", require: true},
     status_partner: {type:String, default: "newpartner", require: true},
     contractOne: {type:String, default: "false", require: true}, // สถานะสัญญาที่ 1

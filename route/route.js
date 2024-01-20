@@ -6,7 +6,7 @@ const admin = require('../Controllers/adminController')
 const auth = require("../lib/auth");
 const slip = require("../Controllers/Top-up/slip.controller");
 const authAdmin = require('../lib/authAdmin');
-
+const test = require('../Controllers/Top-up/history_wallet')
 
 //CRUD employees table(Admin Only)
 //router.route('/orderhub/post').post(main.Post) //ใช้กำหนด path ที่ต้องการทำให้ไม่ต้องไปประกาศใน File Server แล้ว
@@ -40,6 +40,7 @@ router.route('/orderhub/cancel/:id').put( authAdmin.checkToken, admin.cancelCont
 
 //slip
 router.route('/orderhub/topup').post( auth.checkToken, slip.create )
-
+//testCal
+router.route('/orderhub/test').post( auth.checkToken, test.testCal )
 
 module.exports = router;

@@ -84,4 +84,28 @@ cancelContract = async (req, res)=>{
   }
 }
 
-module.exports = { createAdmin, confirmContract, cancelContract };
+confirmTopup = async (req, res)=>{
+  try{
+    const nameAdmin = req.decoded.username
+    const walletCredit = await Partner.findOne({_id:getid})
+    if(walletCredit){
+      console.log(walletCredit.credit) //เช็คดู credit Wallet ของ partner คนนั้นว่าเหลือเท่าไหร่
+      let result = await credit(topup.amount,walletCredit.credit) //นำคำตอบที่ได้จาก fucntion มาเก็บไว้ใน result แต่มันส่งมาเป็น type string 
+      console.log(result)
+      const replaceCredit = await Partner.findOneAndUpdate(
+        {_id:getid},
+        {credit:result},
+        {new:true})
+      }
+  
+  }catch(err){
+    console.log(err);
+    return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+  }
+}
+
+async function credit(data, creditPartner){
+  let Number = data + creditPartner;
+  return Number
+}
+module.exports = { createAdmin, confirmContract, cancelContract, confirmTopup };

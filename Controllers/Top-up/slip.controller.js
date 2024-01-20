@@ -4,6 +4,8 @@ const dayjs = require('dayjs')
 const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
+const { historyWallet } = require('../../Models/topUp/history_topup');
+
 const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
 const REDIRECT_URI = process.env.GOOGLE_DRIVE_REDIRECT_URI;
@@ -29,7 +31,7 @@ const storage = multer.diskStorage({
 create = async (req,res)=>{
     try {
         let upload = multer({ storage: storage }).single("slip_img");
-
+        
         upload(req, res, async function (err) {
           if (!req.file) {
             const { error } = Validate_topup_wallet(req.body);
@@ -44,9 +46,11 @@ create = async (req,res)=>{
           }
         });
         
+
         async function uploadFileCreate(req, res) {
           const filePath = req.file.path;
-          const getid = req.decoded.userid
+          const getid = req.decoded.userid    
+          
           let fileMetaData = {
             name: req.file.originalname,
             parents: [process.env.GOOGLE_DRIVE_WALLET_TOPUP],
@@ -67,8 +71,8 @@ create = async (req,res)=>{
             console.log('invoice : '+invoice);
             if (error)
               return res
-                        .status(400)
-                        .send({ message: error.details[0].message });
+                      .status(400)
+                      .send({ message: error.details[0].message });
             
             const data = {
                 ...req.body,
@@ -81,8 +85,28 @@ create = async (req,res)=>{
                 }
             }
             const topup = await TopupWallet.create(data);
-            
-            res.status(201).send({ message: "สร้างรายงานใหม่เเล้ว", status: true, data: topup});
+
+            const walletCredit = await Partner.findOne({_id:getid})
+            console.log(topup.amount)
+
+            const dataHistory = {...req.body,
+              partnerID:topup.partnerID,
+              orderid: topup.invoice,
+              firstname: walletCredit.firstname,
+              lastname: walletCredit.lastname,
+              amount: topup.amount,
+              before: walletCredit.credit,
+              type: "slip"
+            }
+            const history = await historyWallet.create(dataHistory)
+
+            return res
+                    .status(201)
+                    .send({ message: "สร้างรายงานใหม่เเล้ว", 
+                    status: true, 
+                    data: topup,
+                    history: history
+                    });
 
           } catch (error) {
             console.log(error);
@@ -110,7 +134,7 @@ async function generatePublicUrl(res) {
         fileId: fileId,
         fields: "webViewLink, webContentLink",
       });
-      // console.log(result.data);
+      //console.log(result.data);
     } catch (error) {
       console.log(error.message);
     }
@@ -140,4 +164,6 @@ async function invoiceNumber(date) {
     console.log(invoice_number);
     return invoice_number;
 }
+
+
 module.exports = { create }
