@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
 const { TopupWallet } = require("../Models/topUp/topupList");
 const { historyWallet } = require("../Models/topUp/history_topup");
+const { Blacklist } = require("../Models/blacklist");
 
 createAdmin = async (req, res) => {
   try {
@@ -71,10 +72,20 @@ cancelContract = async (req, res)=>{
       {_id:id},
       {status_partner:"blacklist"},
       {new:true})
+    const black = await Blacklist.create({
+      ...req.body,
+      firstname: cancel.firstname,
+      lastname: cancel.lastname,
+      iden_number: cancel.iden_number,
+      role: cancel.role
+    })
     if(cancel){
       return res
               .status(200)
-              .send({status:false, message:"Partner ติด Blacklist แล้ว",data: cancel})
+              .send({status:false, 
+                message:"Partner ติด Blacklist แล้ว",
+                data: cancel,
+                blacklist: black})
     }else{
       return res
               .status(400)
@@ -102,9 +113,7 @@ confirmTopup = async (req, res)=>{
       const replaceAdmin = await TopupWallet.findOneAndUpdate(
         {invoice:invoiceSlip},
         {
-          $push: {
-            "0": nameAdmin,
-          },
+          "admin.name_admin": nameAdmin,
           status: "ยืนยันแล้ว"
         },
         { new: true })

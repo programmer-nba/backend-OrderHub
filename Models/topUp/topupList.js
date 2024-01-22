@@ -12,7 +12,9 @@ const topupSchema = new Schema({
     referenceNo:{type:String, require: false, default:''},
     detail:{type:Object, require: false, default:null},
     company:{type:String, require: false},
-    admin:{type:Array, require: false, default:'ไม่มี'}, //ชื่อเจ้าหน้าที่ ทำรายการยืนยัน กรณีเป็นการเติมเงินแบบแนบสลิป
+    admin:{ //ชื่อเจ้าหน้าที่ ทำรายการยืนยัน กรณีเป็นการเติมเงินแบบแนบสลิป
+      name_admin: {type:String, default:'none', require: false}
+    }, 
     status:{type:String, require: false, default:'รอตรวจสอบ'}, //WAIT > SUCCESS > FAIL
     remark:{type:Array, require: false, default:''},
     timestamp:{type:Date,default:Date.now, require: false}, //วันทำรายการ

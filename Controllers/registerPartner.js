@@ -4,7 +4,8 @@ var bcrypt = require("bcrypt");
 const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
-const { uploadFileCreate, deleteFile } = require("../functions/uploadfilecreate")
+const { uploadFileCreate, deleteFile } = require("../functions/uploadfilecreate");
+const { Blacklist } = require("../Models/blacklist");
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-");
@@ -19,11 +20,17 @@ createPartner = async (req, res) => {
       return res
         .status(403)
         .send({ status: false, message: error.details[0].message });
-    
+    const blacklist = await Blacklist.findOne({
+      iden_number: req.body.iden_number
+    })
+    if (blacklist){
+      return res
+              .status(401)
+              .send({status: false, message:"หมายเลขบัตรประชาชนนี้ติด Blacklist"})
+    }
     const duplicate = await Partner.findOne({ //ตรวจสอบบัตรประชาชนพนักงานว่ามีซ้ำกันหรือไม่
       iden_number: req.body.iden_number
     });
-
     if (duplicate){
       return res
         .status(401)
