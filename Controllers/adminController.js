@@ -110,25 +110,27 @@ confirmTopup = async (req, res)=>{
         { new: true })
 
           if(replaceAdmin){
-            //อัพเดท ประวัติเติมเงิน schema (history_topup) ในส่วน after เพื่อแสดงผลลัพธ์หลังแอดมินยืนยัน
-            const replaceHistory = await historyWallet.findOneAndUpdate(
-            {orderid:invoiceSlip},
-            {after:result},
-            {new:true}
-            )
-              //อัพเดทส่วน Credits ใน Schema (partner) เพื่อเอาไปแสดง
-              if(replaceHistory){
-              const replaceCredit = await Partner.findOneAndUpdate(
+            //อัพเดทส่วน Credits ใน Schema (partner) เพื่อเอาไปแสดง
+            const replaceCredit = await Partner.findOneAndUpdate(
               {_id:findSlip.partnerID},
               {credit:result},
               {new:true})
-              return res 
-                .status(200)
-                .send({status:true, 
-                  partner: replaceCredit,
-                  topup: replaceAdmin,
-                  historyTopup: replaceHistory
-                  })
+              
+              //อัพเดท ประวัติเติมเงิน schema (history_topup) ในส่วน after เพื่อแสดงผลลัพธ์หลังแอดมินยืนยัน
+              if(replaceCredit){
+              const replaceHistory = await historyWallet.findOneAndUpdate(
+                {orderid:invoiceSlip},
+                { before:walletCredit.credit,
+                  after:result},
+                {new:true})
+
+                return res 
+                        .status(200)
+                        .send({status:true, 
+                        partner: replaceCredit,
+                        topup: replaceAdmin,
+                        historyTopup: replaceHistory
+                        })
               }else{
                 return res
                       .status(400)
@@ -137,7 +139,7 @@ confirmTopup = async (req, res)=>{
           }else{
               return res
                 .status(400)
-                .send({status:false, message:"ไม่สามารถแก้ไขส่วน Top-uplist ได้"})
+                .send({status:false, message:"ไม่สามารถแก้ไขส่วน Partner Credit ได้"})
           }
       }else{
         return res
