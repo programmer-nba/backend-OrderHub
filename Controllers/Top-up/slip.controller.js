@@ -102,8 +102,8 @@ create = async (req,res)=>{
 
             return res
                     .status(201)
-                    .send({ message: "สร้างรายงานใหม่เเล้ว", 
-                    status: true, 
+                    .send({ message: "สร้างรายงานใหม่เเล้ว",
+                    status: true,
                     data: topup,
                     history: history
                     });
@@ -117,7 +117,7 @@ create = async (req,res)=>{
         }
       } catch (error) {
         res.status(500).send({ message: "มีบางอย่างผิดพลาด", status: false });
-      } 
+      }
 }
 
 async function generatePublicUrl(res) {
@@ -138,7 +138,7 @@ async function generatePublicUrl(res) {
     } catch (error) {
       console.log(error.message);
     }
-  }
+}
 
 //ค้นหาและสร้างเลข invoice
 async function invoiceNumber(date) {

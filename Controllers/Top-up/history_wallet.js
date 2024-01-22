@@ -1,9 +1,11 @@
 const { Partner } = require('../../Models/partner')
 const { historyWallet } = require('../../Models/topUp/history_topup')
+const { getContractByID } = require('../contractController')
+const { getById } = require('./topupController')
 
 getAll = async (req, res)=>{
     try{
-        const get = historyWallet.find()
+        const get = await historyWallet.find()
         if(get){
             return res  
                     .status(200)
@@ -21,22 +23,19 @@ getAll = async (req, res)=>{
     }
 }
 
-testCal = async (req,res)=>{
+findId = async (req, res)=>{
     try{
-        console.log(req.body.amount)
-        const getid = req.decoded.userid
-        console.log(getid)
-          const walletCredit = await Partner.findOne({_id:getid})
-            if(walletCredit){
-              console.log(walletCredit.credit) //เช็คดู credit Wallet ของ partner คนนั้นว่าเหลือเท่าไหร่
-              let result = await credit(req.body.amount,walletCredit.credit)
-              console.log(result)
-            }else{
-              res 
-                .status(400)
-                .send({status:false, message:"ค้นหา ID ไม่พบ"})
-            }
-
+        const getid = req.params.id
+        const getbyid = await historyWallet.find({partnerID:getid})
+        if(getbyid){
+            return res  
+                    .status(200)
+                    .send({status:true,data: getbyid})
+        }else{
+            return res  
+                    .status(400)
+                    .send({status:false,message:"ไม่สามารถค้นหาได้"})
+        }
     }catch(err){
         console.error(err);
         return res
@@ -45,10 +44,25 @@ testCal = async (req,res)=>{
     }
 }
 
-async function credit(data, creditPartner){
-    let inputNumber = data + creditPartner;
-    let formattedNumber = inputNumber.toLocaleString('th-TH')
-    return formattedNumber
+findIdForUser = async (req, res)=>{
+    try{
+        const getid = req.decoded.userid
+        const getbyid = await historyWallet.find({partnerID:getid})
+        if(getbyid){
+            return res  
+                    .status(200)
+                    .send({status:true,data: getbyid})
+        }else{
+            return res  
+                    .status(400)
+                    .send({status:false,message:"ไม่สามารถค้นหาได้"})
+        }
+    }catch(err){
+        console.error(err);
+        return res
+                .status(500)
+                .send({ message: "มีบางอย่างผิดพลาด" })
+    }
 }
 
-module.exports = {testCal}
+module.exports = {getAll, findId, findIdForUser}
