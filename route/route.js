@@ -7,8 +7,7 @@ const auth = require("../lib/auth");
 const slip = require("../Controllers/Top-up/slip.controller");
 const authAdmin = require('../lib/authAdmin');
 const his = require('../Controllers/Top-up/history_wallet')
-
-
+const topup = require('../Controllers/Top-up/topupController')
 
 //CRUD employees table(Admin Only)
 //router.route('/orderhub/post').post(main.Post) //ใช้กำหนด path ที่ต้องการทำให้ไม่ต้องไปประกาศใน File Server แล้ว
@@ -50,5 +49,8 @@ router.route('/orderhub/history/:id').get( authAdmin.checkToken ,his.findId )
 
 //history topup แสดงประวัติการเติมเงินของตัวเอง(partner)
 router.route('/orderhub/his/partner').get( auth.checkToken, his.findIdForUser )
+
+//topup แสดงรายการเติมเงินที่แอดมินต้องยืนยัน
+router.route('/orderhub/topup/getall').get( authAdmin.checkToken, topup.getAll )
 
 module.exports = router;

@@ -1,6 +1,16 @@
 const { Partner, Validate } = require("../Models/partner");
 const jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
+const multer = require("multer");
+const fs = require("fs");
+const { google } = require("googleapis");
+const { uploadFileCreate, deleteFile } = require("../functions/uploadfilecreate")
+const storage = multer.diskStorage({
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-");
+  },
+});
+
 
 createPartner = async (req, res) => {
   try {
@@ -9,16 +19,21 @@ createPartner = async (req, res) => {
       return res
         .status(403)
         .send({ status: false, message: error.details[0].message });
-
+    
     const duplicate = await Partner.findOne({ //ตรวจสอบบัตรประชาชนพนักงานว่ามีซ้ำกันหรือไม่
       iden_number: req.body.iden_number
     });
-    if (duplicate)
+    if(duplicate.status_partner === "blacklist"){
+      return res
+        .status(401)
+        .send({ status: false,
+          message: "หมายเลขบัตรประชาชนนี้ติด BLACKLIST" });
+    }else if (duplicate){
       return res
         .status(401)
         .send({ status: false,
           message: "มีเลขบัตรประชาชนนี้แล้ว" });
-
+    }
     const duplicateID = await Partner.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
@@ -155,5 +170,47 @@ deleteById = async (req,res)=>{
         console.log(err);
         return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
     }
+}
+
+uploadPicture = async (req,res)=>{
+  try {
+    let upload = multer({ storage: storage }).array("imgCollection", 20);
+    upload(req, res, async function (err) {
+      const reqFiles = [];
+      const result = [];
+      if (err) {
+        return res.status(500).send(err);
+      }
+      if (req.files) {
+        const url = req.protocol + "://" + req.get("host");
+        for (var i = 0; i < req.files.length; i++) {
+          const src = await uploadFileCreate(req.files, res, { i, reqFiles });
+          result.push(src);
+        }
+      }
+      const id = req.params.id;
+      if (id && !req.body.password) {
+        const member = await Partner.findByIdAndUpdate(id, {
+          ...req.body,
+          "bank.name": req.body.name,
+          "bank.number": req.body.number,
+          "bank.image": reqFiles[0],
+        });
+        if (member) {
+          return res.status(200).send({
+            message: "เพิ่มรูปภาพสำเร็จ",
+            status: true,
+          });
+        } else {
+          return res.status(500).send({
+            message: "ไม่สามารถเพิ่มรูปภาพได้",
+            status: false,
+          });
+        }
+      }
+    });
+  } catch (error) {
+    return res.status(500).send({ status: false, error: error.message });
+  }
 }
 module.exports = { createPartner, getAllPartner, getPartnerByID, upPartnerByID, deleteById  };
