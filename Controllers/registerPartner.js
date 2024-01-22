@@ -23,12 +23,8 @@ createPartner = async (req, res) => {
     const duplicate = await Partner.findOne({ //ตรวจสอบบัตรประชาชนพนักงานว่ามีซ้ำกันหรือไม่
       iden_number: req.body.iden_number
     });
-    if(duplicate.status_partner === "blacklist"){
-      return res
-        .status(401)
-        .send({ status: false,
-          message: "หมายเลขบัตรประชาชนนี้ติด BLACKLIST" });
-    }else if (duplicate){
+
+    if (duplicate){
       return res
         .status(401)
         .send({ status: false,
