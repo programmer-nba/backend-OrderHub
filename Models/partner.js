@@ -19,8 +19,8 @@ const partnerSchema = new Schema({
     province: {type:String, require: true},
     postcode: {type:String, require: true},
     picture: {
-      picture_iden: {type:String, default: "-", require: false},
-      picture_two: {type:String, default: "-", require: false},
+      picture_iden: {type:String, default: "none", require: false},
+      picture_two: {type:String, default: "none", require: false},
     },
     credit:{type:Number,default: 0, require: true},
     role: {type:String, default: "partner", require: true},

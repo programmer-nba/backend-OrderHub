@@ -174,7 +174,7 @@ deleteById = async (req,res)=>{
 
 uploadPicture = async (req,res)=>{
   try {
-    let upload = multer({ storage: storage }).array("imgCollection", 20);
+    let upload = multer({ storage: storage }).array("pictureIden", 20);
     upload(req, res, async function (err) {
       const reqFiles = [];
       const result = [];
@@ -188,29 +188,28 @@ uploadPicture = async (req,res)=>{
           result.push(src);
         }
       }
-      const id = req.params.id;
-      if (id && !req.body.password) {
-        const member = await Partner.findByIdAndUpdate(id, {
-          ...req.body,
-          "bank.name": req.body.name,
-          "bank.number": req.body.number,
-          "bank.image": reqFiles[0],
+      const id = req.decoded.userid;
+      const member = await Partner.findByIdAndUpdate(id, {
+          "picture.picture_iden": reqFiles[0]
         });
-        if (member) {
-          return res.status(200).send({
-            message: "เพิ่มรูปภาพสำเร็จ",
-            status: true,
-          });
-        } else {
-          return res.status(500).send({
+        if (!member) {
+            return res.status(500).send({
             message: "ไม่สามารถเพิ่มรูปภาพได้",
             status: false,
           });
+        }else{
+            return res.status(200).send({
+            message: "เพิ่มรูปภาพสำเร็จ",
+            status: true,
+          });
         }
-      }
     });
+    
   } catch (error) {
     return res.status(500).send({ status: false, error: error.message });
   }
 }
-module.exports = { createPartner, getAllPartner, getPartnerByID, upPartnerByID, deleteById  };
+module.exports = { createPartner, 
+getAllPartner, getPartnerByID, 
+upPartnerByID, deleteById,
+uploadPicture };

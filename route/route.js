@@ -53,4 +53,7 @@ router.route('/orderhub/his/partner').get( auth.checkToken, his.findIdForUser )
 //topup แสดงรายการเติมเงินที่แอดมินต้องยืนยัน
 router.route('/orderhub/topup/getall').get( authAdmin.checkToken, topup.getAll )
 
+//อัพโหลดรูปภาพยืนยันตัวตน
+router.route('/orderhub/picture').put( auth.checkToken, main.uploadPicture )
+
 module.exports = router;
