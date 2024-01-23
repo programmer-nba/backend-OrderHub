@@ -59,7 +59,15 @@ getAll = async (req, res)=>{
 update = async (req, res)=>{
     try{
         const id = req.params.id
-        const updateDrop = await dropOffs.findByIdAndUpdate(id, req.body, {new:true})
+        const updateDrop = await dropOffs.findByIdAndUpdate(id, {...req.body,
+            $set: {
+                "drop_off.address": req.body.address,
+                "drop_off.street": req.body.street,
+                "drop_off.sub_district": req.body.sub_district,
+                "drop_off.district": req.body.district,
+                "drop_off.province": req.body.province,
+                "drop_off.postcode": req.body.postcode,
+            }}, {new:true})
         if(updateDrop){
             return res
                     .status(200)
@@ -82,7 +90,7 @@ delend = async (req, res)=>{
         if(deleteDrop){
             return res
                     .status(200)
-                    .send({status:true, data:deleteDrop})
+                    .send({status:true, delete: deleteDrop})
         }else{
             return res
                     .status(400)
@@ -94,4 +102,4 @@ delend = async (req, res)=>{
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
     }
 }
-module.exports = { getAll, create }
+module.exports = { getAll, create, update, delend}

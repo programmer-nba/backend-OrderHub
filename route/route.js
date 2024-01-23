@@ -60,5 +60,7 @@ router.route('/orderhub/picture/:id').put( main.uploadPicture )
 //จุดรับส่งสินค้า
 router.route('/orderhub/dropAll').get( drop.getAll )
 router.route('/orderhub/dropCreate').post( auth.checkToken, drop.create )
+router.route('/orderhub/dropUpdate/:id').put( drop.update )
+router.route('/orderhub/dropDelete/:id').delete( drop.delend )
 
 module.exports = router;
