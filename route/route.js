@@ -8,6 +8,7 @@ const slip = require("../Controllers/Top-up/slip.controller");
 const authAdmin = require('../lib/authAdmin');
 const his = require('../Controllers/Top-up/history_wallet')
 const topup = require('../Controllers/Top-up/topupController')
+const drop = require('../Controllers/deliveryController/dropoff_point')
 
 //CRUD employees table(Admin Only)
 //router.route('/orderhub/post').post(main.Post) //ใช้กำหนด path ที่ต้องการทำให้ไม่ต้องไปประกาศใน File Server แล้ว
@@ -54,6 +55,10 @@ router.route('/orderhub/his/partner').get( auth.checkToken, his.findIdForUser )
 router.route('/orderhub/topup/getall').get( authAdmin.checkToken, topup.getAll )
 
 //อัพโหลดรูปภาพยืนยันตัวตน
-router.route('/orderhub/picture').put( auth.checkToken, main.uploadPicture )
+router.route('/orderhub/picture/:id').put( main.uploadPicture )
+
+//จุดรับส่งสินค้า
+router.route('/orderhub/dropAll').get( drop.getAll )
+router.route('/orderhub/dropCreate').post( auth.checkToken, drop.create )
 
 module.exports = router;

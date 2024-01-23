@@ -198,7 +198,7 @@ uploadPicture = async (req,res)=>{
         }
       }
       console.log(result[0])
-      const id = req.decoded.userid;
+      const id = req.params.id;
       const member = await Partner.findByIdAndUpdate(id, {
           "picture.picture_iden": result[0],
           "picture.picture_two": result[1]
