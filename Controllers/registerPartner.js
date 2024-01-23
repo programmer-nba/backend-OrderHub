@@ -12,7 +12,6 @@ const storage = multer.diskStorage({
   },
 });
 
-
 createPartner = async (req, res) => {
   try {
     const {error} = Validate(req.body); //ตรวจสอบความถูกต้องของข้อมูลที่เข้ามา
@@ -221,6 +220,7 @@ uploadPicture = async (req,res)=>{
     return res.status(500).send({ status: false, error: error.message });
   }
 }
+
 module.exports = { createPartner, 
 getAllPartner, getPartnerByID, 
 upPartnerByID, deleteById,
