@@ -212,6 +212,7 @@ uploadPicture = async (req,res)=>{
             return res.status(200).send({
             message: "เพิ่มรูปภาพสำเร็จ",
             status: true,
+            data: member
           });
         }
     });
