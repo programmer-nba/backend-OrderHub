@@ -202,7 +202,7 @@ uploadPicture = async (req,res)=>{
       const member = await Partner.findByIdAndUpdate(id, {
           "picture.picture_iden": result[0],
           "picture.picture_two": result[1]
-        });
+        },{new:true});
         if (!member) {
             return res.status(500).send({
             message: "ไม่สามารถเพิ่มรูปภาพได้",
