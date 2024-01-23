@@ -17,11 +17,11 @@ const drive = google.drive({
   auth: oauth2Client,
 });
 
-async function uploadFileCreate(req, res, { i, reqFiles }) {
-  const filePath = req[i].path;
+async function uploadFileCreate(file, res, { i, reqFiles }) {
+  const filePath = file.path;
 
   let fileMetaData = {
-    name: req.originalname,
+    name: file.originalname,
     parents: [process.env.GOOGLE_DRIVE_WALLET_TOPUP],
   };
   let media = {

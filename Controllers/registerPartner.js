@@ -177,23 +177,31 @@ deleteById = async (req,res)=>{
 
 uploadPicture = async (req,res)=>{
   try {
-    let upload = multer({ storage: storage }).array("pictureIden", 20);
-    upload(req, res, async function (err) {
+    let upload = multer({ storage: storage })
+    const fields = [
+      {name: 'pictureIden', maxCount: 1},
+      {name: 'pictureTwo', maxCount: 1}
+    ]
+    const uploadMiddleware = upload.fields(fields);
+    uploadMiddleware(req, res, async function (err) {
       const reqFiles = [];
       const result = [];
-      if (err) {
-        return res.status(500).send(err);
+      if (!req.files) {
+        return res.status(400).send({ message: 'No files were uploaded.' });
       }
-      if (req.files) {
-        const url = req.protocol + "://" + req.get("host");
-        for (var i = 0; i < req.files.length; i++) {
-          const src = await uploadFileCreate(req.files, res, { i, reqFiles });
+      const url = req.protocol + "://" + req.get("host");
+      for (const fieldName in req.files) {
+        const files = req.files[fieldName];
+        for (var i = 0; i < files.length; i++) {
+          const src = await uploadFileCreate(files[i], res, { i, reqFiles });
           result.push(src);
         }
       }
+      console.log(result[0])
       const id = req.decoded.userid;
       const member = await Partner.findByIdAndUpdate(id, {
-          "picture.picture_iden": reqFiles[0]
+          "picture.picture_iden": result[0],
+          "picture.picture_two": result[1]
         });
         if (!member) {
             return res.status(500).send({
