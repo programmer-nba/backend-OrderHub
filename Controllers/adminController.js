@@ -143,7 +143,7 @@ confirmTopup = async (req, res)=>{
               }else{
                 return res
                       .status(400)
-                      .send({status:false,message:"ไม่สามารถแก้ไขประวัติเติมเงินได้"})
+                      .send({status:false,message:"ไม่สามารถแก้ไขประวัติการเติมเงินได้"})
               }
           }else{
               return res
@@ -153,7 +153,7 @@ confirmTopup = async (req, res)=>{
       }else{
         return res
                 .status(400)
-                .send({status:false, message:"ค้นหา partner ไม่เจอ"})
+                .send({status:false, message:"ค้นหาหมายเลขธุรกรรมไม่เจอ"})
       }
   
   }catch(err){

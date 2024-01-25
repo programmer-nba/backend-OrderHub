@@ -41,6 +41,8 @@ create = async (req, res)=>{
 getAll = async (req, res)=>{
     try{
         const get = await dropOffs.find()
+        const tra = process.env.TRAINING_URL
+        console.log(tra)
         if(get){
             return res
                     .status(200)
