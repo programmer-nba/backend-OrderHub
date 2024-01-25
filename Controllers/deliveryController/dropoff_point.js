@@ -1,5 +1,6 @@
 const { dropOffs, validate} = require("../../Models/Delivery/dropOff");
 const { Partner } = require("../../Models/partner");
+const axios = require('axios')
 
 create = async (req, res)=>{
     try{
@@ -41,8 +42,17 @@ create = async (req, res)=>{
 getAll = async (req, res)=>{
     try{
         const get = await dropOffs.find()
-        const tra = process.env.TRAINING_URL
-        console.log(tra)
+        async function getData() {
+            try{
+                const apiUrl = process.env.TRAINING_URL
+                console.log(apiUrl)
+                const response = await axios.post(`${apiUrl}/open/v1/warehouses`)
+                console.log(response)
+            }catch(error){
+                console.error(error)
+            }
+        }
+        getData();
         if(get){
             return res
                     .status(200)

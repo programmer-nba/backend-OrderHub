@@ -20,6 +20,7 @@ loginController = async(req,res) =>{
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
                             userid: Partner._id,
+                            firstname: Partner.firstname,
                             email: Partner.email,
                             role: Partner.role,
                             status: Partner.status_partner

@@ -9,6 +9,7 @@ const authAdmin = require('../lib/authAdmin');
 const his = require('../Controllers/Top-up/history_wallet')
 const topup = require('../Controllers/Top-up/topupController')
 const drop = require('../Controllers/deliveryController/dropoff_point')
+const flash = require('../Controllers/deliveryController/flashExpress')
 
 //CRUD employees table(Admin Only)
 //router.route('/orderhub/post').post(main.Post) //ใช้กำหนด path ที่ต้องการทำให้ไม่ต้องไปประกาศใน File Server แล้ว
@@ -62,5 +63,7 @@ router.route('/orderhub/dropAll').get( drop.getAll )
 router.route('/orderhub/dropCreate').post( auth.checkToken, drop.create )
 router.route('/orderhub/dropUpdate/:id').put( drop.update )
 router.route('/orderhub/dropDelete/:id').delete( drop.delend )
+
+//router.route('/orderhub/flash').post( flash.getData )
 
 module.exports = router;
