@@ -22,6 +22,8 @@ const partnerSchema = new Schema({
       picture_iden: {type:String, default: "none", require: false},
       picture_two: {type:String, default: "none", require: false},
     },
+    shop_id:[
+      {type:Array, require: false}],
     credit:{type:Number,default: 0, require: true},
     role: {type:String, default: "partner", require: true},
     status_partner: {type:String, default: "newpartner", require: true},
@@ -61,6 +63,7 @@ const Partner = mongoose.model("partner", partnerSchema);
           picture_iden: Joi.string(),
           picture_two: Joi.string(),
         },
+        shop_id: Joi.array(),
         role: Joi.string(),
         credit: Joi.number(),
         status_partner: Joi.string(),
