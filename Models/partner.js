@@ -22,8 +22,17 @@ const partnerSchema = new Schema({
       picture_iden: {type:String, default: "none", require: false},
       picture_two: {type:String, default: "none", require: false},
     },
-    shop_id:[
-      {type:Array, require: false}],
+    shop_partner:[
+      {
+        shop_name: {type:String, require: false},
+        address:  {type:String, require: false},
+        street_address: {type:String, require: false},
+        sub_district:  {type:String, require: false},
+        district:  {type:String, require: false},
+        province:  {type:String, require: false},
+        postcode:  {type:String, require: false}
+      }
+    ],
     credit:{type:Number,default: 0, require: true},
     role: {type:String, default: "partner", require: true},
     status_partner: {type:String, default: "newpartner", require: true},
@@ -63,7 +72,15 @@ const Partner = mongoose.model("partner", partnerSchema);
           picture_iden: Joi.string(),
           picture_two: Joi.string(),
         },
-        shop_id: Joi.array(),
+        shop_partner: Joi.array().items(Joi.object({
+          shop_name: Joi.string().optional(),
+          address: Joi.string().optional(),
+          street_address: Joi.string().optional(),
+          sub_district: Joi.string().optional(),
+          district: Joi.string().optional(),
+          province: Joi.string().optional(),
+          postcode: Joi.string().optional(),
+        })).optional(),
         role: Joi.string(),
         credit: Joi.number(),
         status_partner: Joi.string(),
