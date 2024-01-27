@@ -87,7 +87,7 @@ createOrder = async(req, res)=>{
             subParcelQuantity: 2,
             // เพิ่ม key-value pairs ตามต้องการ
           };
-        const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formData),{
+        const response = await axios.post(`${apiUrl}/open/v3/orders`,formData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
