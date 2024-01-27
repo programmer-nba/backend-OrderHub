@@ -15,11 +15,14 @@ create = async (req, res)=>{
         if(findId){
             const createShop = await shopPartner.create(
                 {...req.body,
+                "tax.name_regis":req.body.name_regis,
+                "tax.number_regis":req.body.number_regis,
                 partnerID:id,
                 firstname:findId.firstname,
                 lastname:findId.lastname})
             if(createShop){
                     const newData = {
+                        _id: createShop._id,
                         shop_name: createShop.shop_name,
                         address: createShop.address,
                         street_address: createShop.street_address,

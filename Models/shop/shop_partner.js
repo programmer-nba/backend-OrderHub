@@ -27,10 +27,8 @@ const validate = (data)=>{
         shop_name:Joi.string(),
         firstname:Joi.string(),
         lastname:Joi.string(),
-        tax:{
-            name_regis:Joi.string(),
-            number_regis:Joi.string(),
-        },
+        name_regis:Joi.string(),
+        number_regis:Joi.string(),
         address:Joi.string().required().label('กรุณาที่อยู่เลขที่'),
         street_address:Joi.string(),
         sub_district:Joi.string().required().label('กรุณากรอกตำบล'),
