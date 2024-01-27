@@ -19,25 +19,24 @@ create = async (req, res)=>{
                 firstname:findId.firstname,
                 lastname:findId.lastname})
             if(createShop){
-                try{
-                    findId.shop_partner.push(
-                        {_id:createShop._id,
-                        shop_name:createShop.shop_name,
+                    const newData = {
+                        shop_name: createShop.shop_name,
                         address: createShop.address,
                         street_address: createShop.street_address,
                         sub_district: createShop.sub_district,
                         district: createShop.district,
                         province: createShop.province,
                         postcode: createShop.postcode 
-                        })
-                    await findId.save();
-                    console.log('Data added and saved successfully.');
-                }catch(error){
-                    console.error('Error adding and saving data:', error.message)
-                }
+                    }
+                    const updatedPartner = await Partner.findByIdAndUpdate(
+                        findId._id,
+                        { $push: { shop_partner: newData } },
+                        { new: true }
+                      );
+                    
                 return res
                         .status(200)
-                        .send({status:true, data:createShop, person:findId})
+                        .send({status:true, data:createShop, person:updatedPartner})
             }else{
                 return res
                         .status(400)
@@ -49,6 +48,7 @@ create = async (req, res)=>{
                     .send({status:false, message:"ไม่มี partner ID ของท่านในระบบ"})
         }
     }catch(err){
+        console.log(err)
         return res
                 .status(500)
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
