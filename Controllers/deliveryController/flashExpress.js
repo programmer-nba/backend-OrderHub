@@ -10,7 +10,7 @@ const dayTime = dayjsTimestamp.format('YYYY/MM/DD HH:mm:ss')
 const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
 const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
 //ใช้ method valueOf ของ dayjs ใช้เพื่อดึงค่า timestamp ของวัตถุนั้นในรูปของจำนวนเต็ม (milliseconds) ที่แสดงถึงเวลาของวัตถุนั้นๆ ตั้งแต่ Epoch (January 1, 1970, 00:00:00 UTC) ไปจนถึงวันที่และเวลาปัจจุบัน.
-console.log(milliseconds)
+//console.log(milliseconds)
 const apiUrl = process.env.TRAINING_URL
 const mchId = process.env.MCH_ID
 const key = process.env.SECRET_KEY
@@ -24,7 +24,7 @@ const hash = crypto.createHash('sha256'); //ใช้สร้างอ็อบ
 hash.update(stringSignTemp);//ใช้เพิ่มข้อมูลที่ต้องการแฮช.
 
 const sign = hash.digest('hex').toUpperCase();//ให้ค่าแฮชเป็น string ในรูปแบบ hex (16 ฐาน)และเป็นตัวพิมพ์ใหญ่ทั้งหมด.
-console.log(sign);
+//console.log(sign);
 
 getData = async(req, res)=> { //เรียกดูคลังสินค้า
     try{
@@ -567,7 +567,7 @@ webhook_status = async(req, res)=>{ //ตรวจสอบข้อมูล We
 //ใช้ไม่ได้
 //createOrder(); //ใช้ไม่ได้ code 1002
 //newSub(); //ใช้ไม่ได้ code 1002
-statusOrderPack(); //ใช้ไม่ได้ code 1002
+//statusOrderPack(); //ใช้ไม่ได้ code 1002
 //merchant_tracking(); //ใช้ไม่ได้ code 1002
 //estimate_rate(); //ใช้ไม่ได้ code 1002
 //nontifications(); //ใช้ไม่ได้ code 1002

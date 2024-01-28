@@ -162,6 +162,26 @@ confirmTopup = async (req, res)=>{
   }
 }
 
+cancelBlacklist = async (req, res)=>{
+  try{
+    const id = req.params.id
+    const delBl = await Blacklist.findOne({iden_number:id})
+    if(delBl){
+      return res
+              .status(200)
+              .send({status:false, data: delBl})
+    }else{
+      return res
+              .status(400)
+              .send({status:false, message:"ค้นหาบัตรประชาชน Blacklist ไม่เจอ"})
+    }
+  }catch(err){
+    console.log(err)
+    return res
+            .status(500)
+            .send({status:false, })
+  }
+}
 async function credit(data, creditPartner){
   let Number = data + creditPartner;
   return Number
