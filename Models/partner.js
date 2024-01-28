@@ -23,7 +23,8 @@ const partnerSchema = new Schema({
       picture_two: {type:String, default: "none", require: false},
     },
     shop_partner:[
-      {
+      { 
+        shop_number: {type:Number, require: false},
         shop_name: {type:String, require: false},
         address:  {type:String, require: false},
         street_address: {type:String, require: false},
@@ -73,6 +74,7 @@ const Partner = mongoose.model("partner", partnerSchema);
           picture_two: Joi.string(),
         },
         shop_partner: Joi.array().items(Joi.object({
+          shop_number: Joi.number().optional(),
           shop_name: Joi.string().optional(),
           address: Joi.string().optional(),
           street_address: Joi.string().optional(),

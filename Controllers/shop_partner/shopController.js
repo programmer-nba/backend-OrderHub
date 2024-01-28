@@ -23,6 +23,7 @@ create = async (req, res)=>{
             if(createShop){
                     const newData = {
                         _id: createShop._id,
+                        shop_number: createShop.shop_number,
                         shop_name: createShop.shop_name,
                         address: createShop.address,
                         street_address: createShop.street_address,
@@ -76,6 +77,7 @@ updateShop = async (req, res)=>{
                 },
                 {
                     $set:{
+                        "shop_partner.$.shop_number":req.body.shop_number,
                         "shop_partner.$.shop_name":req.body.shop_name,
                         "shop_partner.$.address": req.body.address,
                         "shop_partner.$.street_address": req.body.street_address,
@@ -177,4 +179,46 @@ getShopPartner = async (req, res)=>{
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
     }
 }
-module.exports = {create, updateShop, delend, getAll, getShopPartner}
+
+getShopOne = async (req, res)=>{
+    try{
+        const shopNumber = req.params.id
+        const findShop = await shopPartner.findOne({shop_number:shopNumber})
+        if(findShop){
+            return res
+                    .status(200)
+                    .send({status:true, data:findShop})
+        }else{
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีรหัสร้านค้านี้"})
+        }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
+
+getShopPartnerByAdmin = async (req, res) =>{
+    try{
+        const id = req.params.id
+        const getShop = await shopPartner.find({partnerID:id})
+        if(getShop){
+            return res
+                    .status(200)
+                    .send({status:true, data: getShop})       
+         }else{
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถดึงข้อมูลด้วย"})
+         }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
+module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, getShopPartnerByAdmin}

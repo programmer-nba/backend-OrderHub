@@ -4,6 +4,7 @@ const Joi = require("joi");
 
 const shopSchema = new Schema({
     partnerID:{type:String, require: false},
+    shop_number: {type:Number, require: false},
     shop_name:{type:String, require: true},
     firstname:{type:String, require: false},
     lastname:{type:String, require: false},
@@ -19,11 +20,28 @@ const shopSchema = new Schema({
     postcode: {type:String, require: true},
 },{timestamps:true});
 
+shopSchema.pre('save', async function (next) {
+    // สุ่มหมายเลขในช่วง 50000-59999
+    const randomShopNumber = Math.floor(Math.random() * (599999 - 500000 + 1)) + 500000;
+  
+    // ตรวจสอบว่าหมายเลขนี้ไม่ซ้ำกับหมายเลขอื่น ๆ ในฐานข้อมูล
+    const existingShop = await this.constructor.findOne({ shop_number: randomShopNumber });
+  
+    if (existingShop) {
+      // ถ้าซ้ำให้สุ่มใหม่
+      return this.pre('save', next);
+    }
+    // กำหนดหมายเลขให้กับ shop_number
+    this.shop_number = randomShopNumber;
+    next();
+  });
+
 const shopPartner = mongoose.model("shop_partner", shopSchema);
 
 const validate = (data)=>{
     const schema = Joi.object({
         partnerID:Joi.string(),
+        shop_number:Joi.number(),
         shop_name:Joi.string(),
         firstname:Joi.string(),
         lastname:Joi.string(),
