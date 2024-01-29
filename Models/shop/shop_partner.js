@@ -4,7 +4,7 @@ const Joi = require("joi");
 
 const shopSchema = new Schema({
     partnerID:{type:String, require: false},
-    shop_number: {type:Number, require: false},
+    shop_number: {type:String, require: false},
     shop_name:{type:String, require: true},
     firstname:{type:String, require: false},
     lastname:{type:String, require: false},
@@ -12,6 +12,7 @@ const shopSchema = new Schema({
         name_regis:{type:String, default:'none', require: false},
         number_regis:{type:String, default:'none', require: false},
     },
+    status: {type:String, default:'รอแอดมินอนุมัติ', require:false},
     address: {type:String, default:'none', require: true},
     street_address: {type:String, default:'none', require: false},
     sub_district: {type:String, require: true},
@@ -41,12 +42,13 @@ const shopPartner = mongoose.model("shop_partner", shopSchema);
 const validate = (data)=>{
     const schema = Joi.object({
         partnerID:Joi.string(),
-        shop_number:Joi.number(),
+        shop_number:Joi.string(),
         shop_name:Joi.string(),
         firstname:Joi.string(),
         lastname:Joi.string(),
         name_regis:Joi.string(),
         number_regis:Joi.string(),
+        status:Joi.string(),
         address:Joi.string().required().label('กรุณาที่อยู่เลขที่'),
         street_address:Joi.string(),
         sub_district:Joi.string().required().label('กรุณากรอกตำบล'),

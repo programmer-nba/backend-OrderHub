@@ -31,7 +31,8 @@ const partnerSchema = new Schema({
         sub_district:  {type:String, require: false},
         district:  {type:String, require: false},
         province:  {type:String, require: false},
-        postcode:  {type:String, require: false}
+        postcode:  {type:String, require: false},
+        status: {type:String, require: false}
       }
     ],
     credit:{type:Number,default: 0, require: true},

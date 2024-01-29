@@ -20,32 +20,9 @@ create = async (req, res)=>{
                 partnerID:id,
                 firstname:findId.firstname,
                 lastname:findId.lastname})
-            if(createShop){
-                    const newData = {
-                        _id: createShop._id,
-                        shop_number: createShop.shop_number,
-                        shop_name: createShop.shop_name,
-                        address: createShop.address,
-                        street_address: createShop.street_address,
-                        sub_district: createShop.sub_district,
-                        district: createShop.district,
-                        province: createShop.province,
-                        postcode: createShop.postcode 
-                    }
-                    const updatedPartner = await Partner.findByIdAndUpdate(
-                        findId._id,
-                        { $push: { shop_partner: newData } },
-                        { new: true }
-                      );
-                    
-                return res
-                        .status(200)
-                        .send({status:true, data:createShop, person:updatedPartner})
-            }else{
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่สามารถสร้าง shop ได้"})
-            }
+            return res
+                    .status(200)
+                    .send({status:false, data:createShop})
         }else{
             return res
                     .status(400)

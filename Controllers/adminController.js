@@ -6,6 +6,7 @@ var bcrypt = require("bcrypt");
 const { TopupWallet } = require("../Models/topUp/topupList");
 const { historyWallet } = require("../Models/topUp/history_topup");
 const { Blacklist } = require("../Models/blacklist");
+const { shopPartner } = require("../Models/shop/shop_partner");
 
 createAdmin = async (req, res) => {
   try {
@@ -182,8 +183,48 @@ cancelBlacklist = async (req, res)=>{
             .send({status:false, })
   }
 }
+
+confirmShop = async (req, res)=>{
+    try{
+        const shopId = req.params.id
+        const findShop = await shopPartner.findOneAndUpdate(
+          {shop_number:shopId},
+          {status:"อนุมัติแล้ว"},
+          {new:true})
+        if(findShop){
+          const newData = {
+              _id: findShop._id,
+              shop_number: findShop.shop_number,
+              shop_name: findShop.shop_name,
+              address: findShop.address,
+              street_address: findShop.street_address,
+              sub_district: findShop.sub_district,
+              district: findShop.district,
+              province: findShop.province,
+              postcode: findShop.postcode,
+              status: findShop.status
+          }
+          const updatedPartner = await Partner.findByIdAndUpdate(
+              findShop.partnerID,
+              { $push: { shop_partner: newData } },
+              { new: true }
+          );      
+          return res
+                  .status(200)
+                  .send({status:true, status:findShop, data:updatedPartner})
+      }else{
+          return res
+                  .status(400)
+                  .send({status:false, message:"ไม่สามารถหา shop ได้"})
+      }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
 async function credit(data, creditPartner){
   let Number = data + creditPartner;
   return Number
 }
-module.exports = { createAdmin, confirmContract, cancelContract, confirmTopup };
+module.exports = { createAdmin, confirmContract, cancelContract, confirmTopup, confirmShop };
