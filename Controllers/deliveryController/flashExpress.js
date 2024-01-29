@@ -16,9 +16,19 @@ const mchId = process.env.MCH_ID
 const key = process.env.SECRET_KEY
 const body = 'ORDER_HUB'
 const nonceStr = milliseconds
-//const stringA = `body=${body}&mchId=${mchId}&nonceStr=${nonceStr}`
-const stringA = `mchId=${mchId}&nonceStr=${nonceStr}`
-const stringSignTemp = stringA+`&key=${key}`
+const stringA = `body=${body}&mchId=${mchId}&nonceStr=${nonceStr}`
+//const stringA = `mchId=${mchId}&nonceStr=${nonceStr}`
+//const stringSignTemp = stringA+`&key=${key}`
+
+const asciiSortedSignature = [
+    //`body=${body}`,
+    `mchId=${mchId}`,
+    `nonceStr=${nonceStr}`,
+  ].sort().join('&');
+
+const stringSignTemp = asciiSortedSignature +`&key=${key}`
+
+//console.log('ASCII Sorted Signature:', stringSignTemp);
 
 const hash = crypto.createHash('sha256'); //ใช้สร้างอ็อบเจ็กต์ Hash สำหรับการใช้ SHA-256.
 hash.update(stringSignTemp);//ใช้เพิ่มข้อมูลที่ต้องการแฮช.
@@ -56,11 +66,10 @@ createOrder = async(req, res)=>{ //สร้างออเดอร์(ใช�
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
-            body: body,
+            //body: body,
             sign: sign,
             outTradeNo: `#${nonceStr}#`,
-            expressCategory: 1,
-            srcName: 'หอมรวม',//src ชื่อผู้ส่ง
+            srcName: 'หรรมรวม',//src ชื่อผู้ส่ง
             srcPhone: '0630101454', //เบอร์ผู้ส่ง
             srcProvinceName: 'อุบลราชธานี',
             srcCityName: 'เมืองอุบลราชธานี',
@@ -76,6 +85,7 @@ createOrder = async(req, res)=>{ //สร้างออเดอร์(ใช�
             dstPostalCode: '50210',
             dstDetailAddress: '127 หมู่ 3 ต.หนองแหย่ง อ.สันทราย จ.เชียงใหม่ create order test address',
             articleCategory: 1,
+            expressCategory: 1,
             weight: 1000,
             insured: 1,
             insureDeclareValue: 10000,
@@ -83,12 +93,30 @@ createOrder = async(req, res)=>{ //สร้างออเดอร์(ใช�
             codEnabled: 1,
             codAmount: 10000,
             subParcelQuantity: 2,
+            subParcel:[
+                {
+                    "outTradeNo": "021903210794089",
+                    "weight": 21,
+                    "width": 21,
+                    "length": 21,
+                    "height": 12,
+                    "remark": "remark1"
+                },{
+                    "outTradeNo": "02190321047438",
+                    "weight": 21,
+                    "width": 21,
+                    "length": 21,
+                    "height": 21,
+                    "remark": "remark2"
+                  }
+            ],
+            remark: 'ขึ้นบันได'
             // เพิ่ม key-value pairs ตามต้องการ
           };
         const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formData),{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
             },
         })
         if(response.status === 200){
@@ -223,7 +251,6 @@ statusOrder = async(req, res)=>{ //ตรวจสอบสถานะพัส
             },
         })
         const item = response.data.data
-        console.log(item)
         if(response.status === 200){
             return console.log("status_order",response.data)
         }else{
@@ -264,7 +291,7 @@ checkPOD = async(req, res)=>{ //ตรวจสอบข้อมูล POD
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
-            body: body,
+            //body: body,
             sign: sign,
             // เพิ่ม key-value pairs ตามต้องการ
           };
@@ -565,7 +592,7 @@ webhook_status = async(req, res)=>{ //ตรวจสอบข้อมูล We
 }
 
 //ใช้ไม่ได้
-//createOrder(); //ใช้ไม่ได้ code 1002
+createOrder(); //ใช้ไม่ได้ code 1002
 //newSub(); //ใช้ไม่ได้ code 1002
 //statusOrderPack(); //ใช้ไม่ได้ code 1002
 //merchant_tracking(); //ใช้ไม่ได้ code 1002

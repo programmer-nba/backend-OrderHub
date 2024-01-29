@@ -23,7 +23,7 @@ create = async (req, res)=>{
                 lastname:findId.lastname})
             return res
                     .status(200)
-                    .send({status:false, data:createShop})
+                    .send({status:true, data:createShop})
         }else{
             return res
                     .status(400)
