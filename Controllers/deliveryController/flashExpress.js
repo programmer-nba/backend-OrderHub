@@ -14,8 +14,8 @@ const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น 
 const apiUrl = process.env.TRAINING_URL
 const mchId = process.env.MCH_ID
 const key = process.env.SECRET_KEY
-const body = 'test'
-const nonceStr = '1604475266469'
+const body = 'ORDER_HUB'
+const nonceStr = milliseconds
 //const stringA = `body=${body}&mchId=${mchId}&nonceStr=${nonceStr}`
 const stringA = `mchId=${mchId}&nonceStr=${nonceStr}`
 const stringSignTemp = stringA+`&key=${key}`
@@ -53,7 +53,6 @@ getData = async(req, res)=> { //เรียกดูคลังสินค้
 
 createOrder = async(req, res)=>{ //สร้างออเดอร์(ใช้ไม่ได้)
     try{
-        console.log(mchId, nonceStr, sign)
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
@@ -223,6 +222,8 @@ statusOrder = async(req, res)=>{ //ตรวจสอบสถานะพัส
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
         })
+        const item = response.data.data
+        console.log(item)
         if(response.status === 200){
             return console.log("status_order",response.data)
         }else{
@@ -267,7 +268,7 @@ checkPOD = async(req, res)=>{ //ตรวจสอบข้อมูล POD
             sign: sign,
             // เพิ่ม key-value pairs ตามต้องการ
           };
-        const pno = 'TH01011C27'
+        const pno = 'TH0112BX4K4A'
         const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/deliveredInfo`,formData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -548,7 +549,6 @@ webhook_status = async(req, res)=>{ //ตรวจสอบข้อมูล We
             sign: sign,
             //เพิ่ม key-value pairs ตามต้องการ
           };
-        const id = '27776'
         const response = await axios.post(`${apiUrl}/gw/fda/open/standard/webhook/setting/infos`,formData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -579,7 +579,7 @@ webhook_status = async(req, res)=>{ //ตรวจสอบข้อมูล We
 //ใช้ได้
 // getData()
 // flashMaster();
-//statusOrder();
+// statusOrder();
 // checkPOD();
 // print100x180();
 // print100x75();

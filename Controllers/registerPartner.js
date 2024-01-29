@@ -6,6 +6,8 @@ const fs = require("fs");
 const { google } = require("googleapis");
 const { uploadFileCreate, deleteFile } = require("../functions/uploadfilecreate");
 const { Blacklist } = require("../Models/blacklist");
+const { Admin } = require("../Models/admin");
+const { memberShop } = require("../Models/shop/member_shop");
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-");
@@ -45,7 +47,24 @@ createPartner = async (req, res) => {
         .send({ status: false,
           message: "มีผู้ใช้ User ID นี้แล้ว" });
     }
-
+    const findAdmin = await Admin.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
+      username: req.body.username
+    })
+    if(findAdmin){
+      return res
+        .status(401)
+        .send({ status: false,
+          message: "มีผู้ใช้ User ID นี้แล้ว" });
+    }
+    const findMemberShop = await memberShop.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
+      username: req.body.username
+    })
+    if(findMemberShop){
+      return res
+        .status(401)
+        .send({ status: false,
+          message: "มีผู้ใช้ User ID นี้แล้ว" });
+    }
     const employee = await Partner.create(req.body); //เพิ่มพนักงานเข้าระบบ
     if (employee) {
       return res

@@ -221,4 +221,5 @@ getShopPartnerByAdmin = async (req, res) =>{
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
     }
 }
+
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, getShopPartnerByAdmin}
