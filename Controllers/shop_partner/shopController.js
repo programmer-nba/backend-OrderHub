@@ -1,4 +1,5 @@
 const { Partner } = require("../../Models/partner");
+const { memberShop } = require("../../Models/shop/member_shop");
 const { shopPartner, validate } = require("../../Models/shop/shop_partner");
 
 create = async (req, res)=>{
@@ -199,4 +200,25 @@ getShopPartnerByAdmin = async (req, res) =>{
     }
 }
 
-module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, getShopPartnerByAdmin}
+findShopMember = async (req, res)=>{
+    try{
+        const idShop = req.params.id
+        const findMember = await memberShop.find({shop_number:idShop})
+        if(findMember){
+            return res
+                    .status(200)
+                    .send({status:true, data: findMember})
+        }else{
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่เจอรหัสร้านค้าที่ท่านต้องการดู"})
+        }
+    }catch(err){
+        console.log(err)
+        return res 
+                .status(500)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
+
+module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, getShopPartnerByAdmin, findShopMember}
