@@ -218,6 +218,7 @@ confirmShop = async (req, res)=>{
                   .send({status:false, message:"ไม่สามารถหา shop ได้"})
       }
     }catch(err){
+        console.log(err)
         return res
                 .status(500)
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})

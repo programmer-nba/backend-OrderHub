@@ -1,117 +1,76 @@
-const { dropOffs, validate} = require("../../Models/Delivery/dropOff");
-const { Partner } = require("../../Models/partner");
 const axios = require('axios')
+const { generateSign } = require('./generate.sign')
+const querystring = require('querystring');
 
-create = async (req, res)=>{
+createOrder = async (req, res)=>{
     try{
-        const idPartner = req.decoded.userid
-        
-        console.log(idPartner)
-        const findPartner = await Partner.findOne({_id:idPartner})
-        console.log(findPartner)
-        if(findPartner){
-            console.log(req.body)
-            const data = {...req.body,
-            partnerID:idPartner,
-            drop_off: {
-                address: req.body.address,
-                street: req.body.street,
-                sub_district: req.body.sub_district,
-                district: req.body.district,
-                province: req.body.province,
-                postcode: req.body.postcode
-                }
-            }
-            const dropCreate = await dropOffs.create(data)
-            return res
-                    .status(200)
-                    .send({status:true, 
-                        message:"เพิ่มจุดรับส่งสำเร็จ",
-                        data: dropCreate})
-        }else{
+        const apiUrl = process.env.TRAINING_URL
+        const mchId = req.body.mchId
+        const {sign, nonceStr} = await generateSign(mchId)
+        const formData = {
+            sign: sign,
+            mchId: mchId,
+            nonceStr: nonceStr,
+            //body: body,
+            outTradeNo: `#${nonceStr}#`,
+            ...req.body
+            // เพิ่ม key-value pairs ตามต้องการ
+          };
+        const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formData),{
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+            },
+        })
+        if(response.data.code !== 1){
             return res
                     .status(400)
-                    .send({status:false, message:"ค้นหา partner id ไม่เจอ"})
+                    .send({status:false, data:response.data})
+        }else{
+            return res
+                    .status(200)
+                    .send({status:true, message:"เชื่อมต่อสำเร็จ", data:response.data})
         }
     }catch(err){
+        console.log(err)
         return res
-                .status(500)
-                .send({status: false, message:"มีบางอย่างผิดพลาด"})
+                .status(200)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
     }
 }
-getAll = async (req, res)=>{
+statusOrder = async (req, res)=>{
     try{
-        const get = await dropOffs.find()
-        async function getData() {
-            try{
-                const apiUrl = process.env.TRAINING_URL
-                console.log(apiUrl)
-                const response = await axios.post(`${apiUrl}/open/v1/warehouses`)
-                console.log(response)
-            }catch(error){
-                console.error(error)
-            }
-        }
-        getData();
-        if(get){
-            return res
-                    .status(200)
-                    .send({status:true, data: get})
-        }else{
+        const apiUrl = process.env.TRAINING_URL
+        const mchId = req.body.mchId
+        const pno = req.body.pno
+        const {sign, nonceStr} = await generateSign(mchId)
+        const formData = {
+            sign: sign,
+            mchId: mchId,
+            nonceStr: nonceStr,
+            //body: body,
+            // เพิ่ม key-value pairs ตามต้องการ
+          };
+          const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/routes`,formData,{
+              headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Accept': 'application/json',
+              }
+          })
+        if(response.data.code !== 1){
             return res
                     .status(400)
-                    .send({status:false, message:"ไม่สามารถค้นหาได้"})
+                    .send({status:false, data:response.data})
+        }else{
+            return res
+                    .status(200)
+                    .send({status:true, message:"เชื่อมต่อสำเร็จ", data:response.data})
         }
     }catch(err){
+        console.log(err)
         return res
-                .status(500)
-                .send({status: false, message:"มีบางอย่างผิดพลาด"})
-    }
-}
-update = async (req, res)=>{
-    try{
-        const id = req.params.id
-        const updateDrop = await dropOffs.findByIdAndUpdate(id, {...req.body,
-            $set: {
-                "drop_off.address": req.body.address,
-                "drop_off.street": req.body.street,
-                "drop_off.sub_district": req.body.sub_district,
-                "drop_off.district": req.body.district,
-                "drop_off.province": req.body.province,
-                "drop_off.postcode": req.body.postcode,
-            }}, {new:true})
-        if(updateDrop){
-            return res
-                    .status(200)
-                    .send({status:true, data:updateDrop})
-        }else{
-            return res
-                    .status(400)
-                    .send({status:false, message:"ไม่สามารถอัพเดทได้"})
-        }
-    }catch(err){
-        return res 
                 .status(500)
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
     }
 }
-delend = async (req, res)=>{
-    try{
-        const id = req.params.id
-        const deleteDrop = await dropOffs.findByIdAndDelete(id)
-        if(deleteDrop){
-            return res
-                    .status(200)
-                    .send({status:true, delete: deleteDrop})
-        }else{
-            return res
-                    .status(400)
-                    .send({status:false, message:"ไม่สามารถลบได้"})
-        }
-    }catch(err){
-        return res 
-                .status(500)
-                .send({status:false, message:"มีบางอย่างผิดพลาด"})
-    }
-}
-module.exports = { getAll, create, update, delend}
+module.exports = { createOrder, statusOrder }

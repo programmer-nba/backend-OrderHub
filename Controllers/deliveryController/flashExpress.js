@@ -10,39 +10,34 @@ const dayTime = dayjsTimestamp.format('YYYY/MM/DD HH:mm:ss')
 const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
 const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
 //ใช้ method valueOf ของ dayjs ใช้เพื่อดึงค่า timestamp ของวัตถุนั้นในรูปของจำนวนเต็ม (milliseconds) ที่แสดงถึงเวลาของวัตถุนั้นๆ ตั้งแต่ Epoch (January 1, 1970, 00:00:00 UTC) ไปจนถึงวันที่และเวลาปัจจุบัน.
-//console.log(milliseconds)
+
 const apiUrl = process.env.TRAINING_URL
 const mchId = process.env.MCH_ID
 const key = process.env.SECRET_KEY
 const body = 'ORDER_HUB'
 const nonceStr = milliseconds
-const stringA = `body=${body}&mchId=${mchId}&nonceStr=${nonceStr}`
-//const stringA = `mchId=${mchId}&nonceStr=${nonceStr}`
-//const stringSignTemp = stringA+`&key=${key}`
 
-const asciiSortedSignature = [
+const asciiSortedSignature = [ //ทำให้ parameter เรียงแบบ ASCII
     //`body=${body}`,
     `mchId=${mchId}`,
     `nonceStr=${nonceStr}`,
   ].sort().join('&');
 
-const stringSignTemp = asciiSortedSignature +`&key=${key}`
+const stringSignTemp = asciiSortedSignature +`&key=${key}` //นำไปรวมกับ secret_key
 
-//console.log('ASCII Sorted Signature:', stringSignTemp);
+//console.log('ASCII Sorted Signature:', asciiSortedSignature);
 
 const hash = crypto.createHash('sha256'); //ใช้สร้างอ็อบเจ็กต์ Hash สำหรับการใช้ SHA-256.
 hash.update(stringSignTemp);//ใช้เพิ่มข้อมูลที่ต้องการแฮช.
 
 const sign = hash.digest('hex').toUpperCase();//ให้ค่าแฮชเป็น string ในรูปแบบ hex (16 ฐาน)และเป็นตัวพิมพ์ใหญ่ทั้งหมด.
-//console.log(sign);
 
 getData = async(req, res)=> { //เรียกดูคลังสินค้า
     try{
-        console.log(apiUrl)
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
-            body: body,
+            //body: body,
             sign: sign
             // เพิ่ม key-value pairs ตามต้องการ
           };
@@ -64,10 +59,10 @@ getData = async(req, res)=> { //เรียกดูคลังสินค้
 createOrder = async(req, res)=>{ //สร้างออเดอร์(ใช้ไม่ได้)
     try{
         const formData = {
+            sign: sign,
             mchId: mchId,
             nonceStr: nonceStr,
             //body: body,
-            sign: sign,
             outTradeNo: `#${nonceStr}#`,
             srcName: 'หรรมรวม',//src ชื่อผู้ส่ง
             srcPhone: '0630101454', //เบอร์ผู้ส่ง
@@ -84,6 +79,13 @@ createOrder = async(req, res)=>{ //สร้างออเดอร์(ใช�
             dstDistrictName: 'สันพระเนตร',
             dstPostalCode: '50210',
             dstDetailAddress: '127 หมู่ 3 ต.หนองแหย่ง อ.สันทราย จ.เชียงใหม่ create order test address',
+            returnName:'dfsdff',
+            returnPhone:'54987213',
+            returnProvinceName: 'กรุงเทพ',
+            returnCityName: 'ดอนเมือง',
+            returnDistrictName: 'สนามบิน',
+            returnPostalCode: '10210',
+            returnDetailAddress: '123',
             articleCategory: 1,
             expressCategory: 1,
             weight: 1000,
@@ -271,7 +273,7 @@ statusOrderPack = async(req, res)=>{ //ตรวจสอบสถานะพ�
             pnos: 'TH0112BX4K4A'
             // เพิ่ม key-value pairs ตามต้องการ
           };
-        const response = await axios.post(`${apiUrl}/open/v1/orders/routesBatch`,formData,{
+        const response = await axios.post(`${apiUrl}/open/v1/orders/routesBatch`,querystring.stringify(formData),{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
@@ -592,7 +594,7 @@ webhook_status = async(req, res)=>{ //ตรวจสอบข้อมูล We
 }
 
 //ใช้ไม่ได้
-createOrder(); //ใช้ไม่ได้ code 1002
+//createOrder(); //ใช้ไม่ได้ code 1002
 //newSub(); //ใช้ไม่ได้ code 1002
 //statusOrderPack(); //ใช้ไม่ได้ code 1002
 //merchant_tracking(); //ใช้ไม่ได้ code 1002
