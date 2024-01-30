@@ -224,6 +224,7 @@ confirmShop = async (req, res)=>{
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
     }
 }
+
 async function credit(data, creditPartner){
   let Number = data + creditPartner;
   return Number

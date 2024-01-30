@@ -12,12 +12,27 @@ create = async (req, res)=>{
                     .status(403)
                     .send({ status: false, message: error.details[0].message });
         }
+        const taxOrCom = await shopPartner.findOne({
+            $or: [
+              { "tax.taxName": req.body.taxName },
+              { "tax.taxNumber": req.body.taxNumber },
+              { "commercial.commercialName": req.body.commercialName },
+              { "commercial.commercialNumber": req.body.commercialNumber }
+            ]
+          });
+        if(taxOrCom){
+            return res
+                    .status(400)
+                    .send({status:false, message:'ชื่อที่จดทะเบียนหรือเลขที่จดทะเบียนมีอยู่แล้วในระบบ',data:taxOrCom})
+        }
         const findId = await Partner.findOne({_id:id})
         if(findId){
             const createShop = await shopPartner.create(
                 {...req.body,
-                "tax.name_regis":req.body.name_regis,
-                "tax.number_regis":req.body.number_regis,
+                "tax.taxName":req.body.taxName,
+                "tax.taxNumber":req.body.taxNumber,
+                "commercial.commercialName":req.body.commercialName,
+                "commercial.commercialNumber":req.body.commercialNumber,
                 partnerID:id,
                 firstname:findId.firstname,
                 lastname:findId.lastname})
