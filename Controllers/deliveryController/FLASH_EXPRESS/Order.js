@@ -129,22 +129,23 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
             //body: body,
             // เพิ่ม key-value pairs ตามต้องการ
           };
-        const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/pre_print`,formData,{
+        try{
+            const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/pre_print`,formData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-            },
+                },
             responseType: 'arraybuffer', // ระบุให้ axios รับ binary data ในรูปแบบ array buffer
-        })
-        if(response.data.code !== 1){
-            return res
-                    .status(400)
-                    .send({status:false, data:response.data})
-        }else{
+            })
             const pdfBuffer = await Buffer.from(response.data);
-            
             return res
                     .status(200)
-                    .send({status:true, message:"เชื่อมต่อสำเร็จ", data:pdfBuffer})
+                    .setHeader('Content-Type', 'application/pdf')
+                    .send(pdfBuffer);
+        }catch(error){
+            console.error('Error fetching or processing PDF:', error)
+            return res
+                    .status(500)
+                    .send({ status: false, message: 'เกิดข้อผิดพลาดในการดึงหรือประมวลผล PDF' });
         }
     }catch(err){
         console.log(err)
@@ -156,23 +157,34 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
 
 print100x75 = async(req, res)=>{ //ปริ้นใบปะหน้า(ขนาด 100*75 มม.)
     try{
+        const apiUrl = process.env.TRAINING_URL
+        const mchId = req.body.mchId
+        const pno = req.body.pno
+        const {sign, nonceStr} = await generateSign(mchId)
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
-            body: body,
             sign: sign,
+            //body: body,
             // เพิ่ม key-value pairs ตามต้องการ
           };
-        const pno = 'TH01011C27'
-        const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/small/pre_print`,formData,{
+        try{
+            const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/small/pre_print`,formData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        })
-        if(response.status === 200){
-            return console.log("print100x75",response.data)
-        }else{
-            return console.log("ไม่สามารถเรียกข้อมูลได้")
+                },
+            responseType: 'arraybuffer', // ระบุให้ axios รับ binary data ในรูปแบบ array buffer
+            })
+            const pdfBuffer = await Buffer.from(response.data);
+            return res
+                    .status(200)
+                    .setHeader('Content-Type', 'application/pdf')
+                    .send(pdfBuffer);
+        }catch(error){
+            console.error('Error fetching or processing PDF:', error)
+            return res
+                    .status(500)
+                    .send({ status: false, message: 'เกิดข้อผิดพลาดในการดึงหรือประมวลผล PDF' });
         }
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
