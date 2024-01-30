@@ -30,4 +30,6 @@ router.route('/orderhub/member/update/:id').put( member_shop.update )
 //Flash express
 router.route('/orderhub/flash/create').post( flash.createOrder )
 router.route('/orderhub/flash/status').post( flash.statusOrder )
+router.route('/orderhub/flash/getware').post( flash.getWareHouse )
+router.route('/orderhub/flash/print180').post( flash.print100x180 )
 module.exports = router;
