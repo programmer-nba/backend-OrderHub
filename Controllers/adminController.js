@@ -163,6 +163,54 @@ confirmTopup = async (req, res)=>{
   }
 }
 
+cancelTopup = async (req, res)=>{
+  try{
+    const nameAdmin = req.decoded.firstname
+    const lastAdmin = req.decoded.lastname
+    const invoiceSlip = req.params.id
+
+    const findSlip = await TopupWallet.findOne({invoice:invoiceSlip})
+    if(findSlip){
+
+      //อัพเดทส่วน admin และ status ใน Schema (topupList) เพื่อแสดงว่าแอดมินยืนยันแล้วและแอดมินคนไหนยืนยัน
+      const replaceAdmin = await TopupWallet.findOneAndUpdate(
+        {invoice:invoiceSlip},
+        {
+          "admin.name_admin": nameAdmin + " " + lastAdmin,
+          status: "ไม่อนุมัติ"
+        },
+        { new: true })
+
+            //อัพเดท ประวัติเติมเงิน schema (history_topup) ในส่วน after เพื่อแสดงผลลัพธ์หลังแอดมินยืนยัน
+            if(replaceAdmin){
+            const replaceHistory = await historyWallet.findOneAndUpdate(
+              {orderid:invoiceSlip},
+              { after:'แอดมินไม่อนุมัติ' },
+              {new:true})
+
+              return res 
+                      .status(200)
+                      .send({status:true, 
+                      topup: replaceAdmin,
+                      historyTopup: replaceHistory
+                      })
+            }else{
+              return res
+                    .status(400)
+                    .send({status:false,message:"ไม่สามารถแก้ไขรายการเติมเงินได้"})
+            }  
+    }else{
+        return res
+                .status(400)
+                .send({status:false, message:"ค้นหาหมายเลขธุรกรรมไม่เจอ"})
+    }
+  
+  }catch(err){
+    console.log(err);
+    return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+  }
+}
+
 cancelBlacklist = async (req, res)=>{
   try{
     const id = req.params.id
@@ -229,4 +277,6 @@ async function credit(data, creditPartner){
   let Number = data + creditPartner;
   return Number
 }
-module.exports = { createAdmin, confirmContract, cancelContract, confirmTopup, confirmShop };
+module.exports = { createAdmin, confirmContract, 
+  cancelContract, confirmTopup, confirmShop,
+  cancelTopup };

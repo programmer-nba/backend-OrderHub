@@ -35,12 +35,11 @@ router.route('/orderhub/me').get( auth.checkToken, main.getPartnerByID )
 router.route('/orderhub/contract').post( auth.checkToken, con.twoContract )
 router.route('/orderhub/getcontract/:id').get( con.getContractByID )
 
-//Admin Confirm contract
-router.route('/orderhub/confirm/:id').put( authAdmin.checkToken, admin.confirmContract )
-//Admin Confirm topup
-router.route('/orderhub/confirm/topup/:id').put( authAdmin.checkToken, admin.confirmTopup )
-//Admin Cancel(blacklist)
-router.route('/orderhub/cancel/:id').put( authAdmin.checkToken, admin.cancelContract )
+//Admin
+router.route('/orderhub/confirm/:id').put( authAdmin.checkToken, admin.confirmContract ) //Admin Confirm contract
+router.route('/orderhub/confirm/topup/:id').put( authAdmin.checkToken, admin.confirmTopup ) //Admin Confirm topup
+router.route('/orderhub/cancel/topup/:id').put( authAdmin.checkToken, admin.cancelTopup ) //Admin Cancel topup
+router.route('/orderhub/cancel/:id').put( authAdmin.checkToken, admin.cancelContract ) //Admin Cancel(blacklist)
 
 //slip
 router.route('/orderhub/topup').post( auth.checkToken, slip.create )

@@ -64,10 +64,10 @@ create = async (req,res)=>{
               media: media,
             });
 
-            generatePublicUrl(response.data.id);
+            generatePublicUrl(response.data.id); //เข้า function gen url
             console.log(req.body);
             const { error } = Validate_topup_wallet(req.body);
-            const invoice = await invoiceNumber(req.body.timestamp);
+            const invoice = await invoiceNumber(req.body.timestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+invoice);
             if (error)
               return res
@@ -84,7 +84,7 @@ create = async (req,res)=>{
                     slip_img : response.data.id,
                 }
             }
-            const topup = await TopupWallet.create(data);
+            const topup = await TopupWallet.create(data); //สร้าง Schema รายการเติมเงิน
 
             const walletCredit = await Partner.findOne({_id:getid})
             console.log(topup.amount)
@@ -98,7 +98,7 @@ create = async (req,res)=>{
               before: walletCredit.credit,
               type: "slip"
             }
-            const history = await historyWallet.create(dataHistory)
+            const history = await historyWallet.create(dataHistory) //สร้าง Schema ประวัติเติมเงิน
 
             return res
                     .status(201)
