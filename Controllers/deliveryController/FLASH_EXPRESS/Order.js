@@ -136,11 +136,10 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
                 },
             responseType: 'arraybuffer', // ระบุให้ axios รับ binary data ในรูปแบบ array buffer
             })
-            const pdfBuffer = await Buffer.from(response.data);
             return res
                     .status(200)
                     .setHeader('Content-Type', 'application/pdf')
-                    .send(pdfBuffer);
+                    .send(response.data);
         }catch(error){
             console.error('Error fetching or processing PDF:', error)
             return res
