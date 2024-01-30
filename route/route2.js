@@ -18,7 +18,8 @@ router.route('/orderhub/shop/getMember/:id').get( shop.findShopMember )//ค้�
 router.route('/orderhub/shopAdmin/getOne/:id').get( authAdmin.checkToken, shop.getShopOne ) //ดึงข้อมูลร้านค้าเดียวที่สนใจ
 router.route('/orderhub/shopAdmin/getAll').get( authAdmin.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
 router.route('/orderhub/shopAdmin/getPartner/:id').get( authAdmin.checkToken, shop.getShopPartnerByAdmin ) //ดึงข้อมูลร้านค้าทั้งหมดของคนๆนั้น
-router.route('/orderhub/shopAdmin/confirmShop/:id').post( authAdmin.checkToken, admin.confirmShop ) //ดึงข้อมูลร้านค้าทั้งหมดของคนๆนั้น
+router.route('/orderhub/shopAdmin/confirmShop/:id').put( authAdmin.checkToken, admin.confirmShop ) //อนุมัติร้านค้า
+router.route('/orderhub/shopAdmin/cancelShop/:id').put( authAdmin.checkToken, admin.cancelShop ) //ไม่อนุมัติร้านค้า
 
 //MEMBER SHOP
 router.route('/orderhub/member/create').post( member_shop.create )

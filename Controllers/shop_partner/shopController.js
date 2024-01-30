@@ -106,7 +106,7 @@ delend = async (req, res)=>{
     try{
         const id = req.params.id
         const partner_id = req.decoded.userid
-        const findShop = await shopPartner.findOneAndDelete({_id:id},{new:true})
+        const findShop = await shopPartner.findOneAndDelete({shop_number:id},{new:true})
         if(findShop){
             const delShop_partner = await Partner.updateOne(
                 { _id: partner_id },

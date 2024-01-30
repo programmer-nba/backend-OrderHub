@@ -273,10 +273,34 @@ confirmShop = async (req, res)=>{
     }
 }
 
+cancelShop = async (req, res)=>{
+  try{
+      const shopId = req.params.id
+      const findShop = await shopPartner.findOneAndUpdate(
+        {shop_number:shopId},
+        {status:"ไม่อนุมัติ"},
+        {new:true})
+      if(findShop){
+        return res
+                .status(200)
+                .send({status:true, status:findShop})
+      }else{
+        return res
+                .status(400)
+                .send({status:true, message:"ไม่สามารถแก้ไขได้"})
+      }
+  }catch(err){
+      console.log(err)
+      return res
+              .status(500)
+              .send({status:false, message:"มีบางอย่างผิดพลาด"})
+  }
+}
+
 async function credit(data, creditPartner){
   let Number = data + creditPartner;
   return Number
 }
 module.exports = { createAdmin, confirmContract, 
   cancelContract, confirmTopup, confirmShop,
-  cancelTopup };
+  cancelShop, cancelTopup };
