@@ -27,14 +27,14 @@ findId = async (req, res)=>{
     try{
         const getid = req.params.id
         const getbyid = await historyWallet.find({partnerID:getid})
-        if(getbyid){
+        if(getbyid.length > 0){
             return res  
                     .status(200)
                     .send({status:true,data: getbyid})
         }else{
             return res  
                     .status(400)
-                    .send({status:false,message:"ไม่สามารถค้นหาได้"})
+                    .send({status:false,message:"ไม่มีข้อมูลประวัติการเติมเงินของบุคคลนี้"})
         }
     }catch(err){
         console.error(err);
@@ -48,12 +48,12 @@ findIdForUser = async (req, res)=>{
     try{
         const getid = req.decoded.userid
         const getbyid = await historyWallet.find({partnerID:getid})
-        if(getbyid){
-            return res  
+        if(getbyid && getbyid.length > 0){
+            return res
                     .status(200)
                     .send({status:true,data: getbyid})
         }else{
-            return res  
+            return res
                     .status(400)
                     .send({status:false,message:"ไม่สามารถค้นหาได้"})
         }

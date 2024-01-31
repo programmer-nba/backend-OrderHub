@@ -34,4 +34,6 @@ router.route('/orderhub/flash/status').get( flash.statusOrder )
 router.route('/orderhub/flash/getware').get( flash.getWareHouse )
 router.route('/orderhub/flash/print180').get( flash.print100x180 )
 router.route('/orderhub/flash/print75').get( flash.print100x75 )
+router.route('/orderhub/flash/POD').get( flash.statusPOD )
+
 module.exports = router;

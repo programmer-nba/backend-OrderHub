@@ -7,6 +7,7 @@ const { TopupWallet } = require("../Models/topUp/topupList");
 const { historyWallet } = require("../Models/topUp/history_topup");
 const { Blacklist } = require("../Models/blacklist");
 const { shopPartner } = require("../Models/shop/shop_partner");
+const { memberShop } = require("../Models/shop/member_shop");
 
 createAdmin = async (req, res) => {
   try {
@@ -25,7 +26,20 @@ createAdmin = async (req, res) => {
         .send({ status: false,
           message: "มีผู้ใช้ User ID นี้แล้ว" });
     }
-
+    const duplicatePartner = await Partner.findOne({ username: req.body.username})
+    if(duplicatePartner){
+      return res
+        .status(401)
+        .send({ status: false,
+          message: "มีผู้ใช้ User ID นี้แล้ว" });
+    }
+    const duplicateMember = await memberShop.findOne({ username: req.body.username})
+    if(duplicateMember){
+      return res
+        .status(401)
+        .send({ status: false,
+          message: "มีผู้ใช้ User ID นี้แล้ว" });
+    }
     const adminCreate = await Admin.create(req.body); //เพิ่มพนักงานเข้าระบบ
     if (adminCreate) {
       return res
@@ -37,6 +51,89 @@ createAdmin = async (req, res) => {
       return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
   }
 };
+
+findAllAdmin = async (req, res)=>{
+    try{
+        const find = await Admin.find()
+        if(find.length > 0){
+            return res
+                    .status(200)
+                    .send({status:true, data:find})
+        }else{
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีแอดมินในระบบ"})
+        }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
+
+updateAdmin = async (req, res)=>{
+    try{
+      const upID = req.params.id; //รับไอดีที่ต้องการอัพเดท
+      if(!req.body.password){ //กรณีที่ไม่ได้ยิง password
+        Admin.findByIdAndUpdate(upID,req.body, {new:true}).then((data) =>{
+          if (!data) {
+            return res
+                    .status(400)
+                    .send({status:false, message: "ไม่สามารถแก้ไขผู้ใช้งานนี้ได้"})
+          }else {
+            return res
+                    .status(200)
+                    .send({status:true, message: "อัพเดทข้อมูลแล้ว",data: data})
+          }
+        })
+        .catch((err)=>{
+          return res
+                  .status(500)
+                  .send({status: false, message: "มีบางอย่างผิดพลาด"})
+      })
+    } else { //กรณีที่ได้ยิง password
+        const salt = await bcrypt.genSalt(Number(process.env.SALT));
+        const hashPassword = await bcrypt.hash(req.body.password, salt);
+        const updateAdmin = await Admin.findByIdAndUpdate(upID, {...req.body,password: hashPassword}, {new:true}); //หา id ที่ต้องการจากนั้นทำการอัพเดท
+      if(updateAdmin){
+        return res
+                .status(200)
+                .send({status: true, data: updateAdmin})
+      } else {
+        return res
+                .status(400)
+                .send({ status: false, message: "อัพเดทข้อมูลไม่สำเร็จ" });
+      }
+    }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({ status: false, message: "มีบางอย่างผิดพลาด" });
+    }
+}
+
+delAdmin = async (req, res)=>{
+    try{
+        const id = req.params.id
+        const del = await Admin.findByIdAndDelete(id)
+        if(del){
+            return res
+                    .status(200)
+                    .send({status:true, del: del})
+        }else{
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีบัญชีแอดมินนี้อยู่ในระบบ"})
+        }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
 
 confirmContract = async (req,res)=>{
   try{
@@ -303,4 +400,5 @@ async function credit(data, creditPartner){
 }
 module.exports = { createAdmin, confirmContract, 
   cancelContract, confirmTopup, confirmShop,
-  cancelShop, cancelTopup };
+  cancelShop, cancelTopup, findAllAdmin,
+  updateAdmin, delAdmin };

@@ -13,7 +13,7 @@ create = async (req, res)=>{
                     .send({ status: false, message: error.details[0].message });
         }
         const taxOrCom = await shopPartner.findOne({
-            $or: [
+            $or: [ //$or ใช้เพื่อเช็คถ้าเข้าเงื่อนไขใดเงื่อนไขหนึ่งให้เก็บ ducument ของคนๆนั้นไว้(กรณีด้านล่างมี 4 เงื่อนไข)
               { "tax.taxName": req.body.taxName },
               { "tax.taxNumber": req.body.taxNumber },
               { "commercial.commercialName": req.body.commercialName },
@@ -117,6 +117,10 @@ delend = async (req, res)=>{
                 return res 
                         .status(200)
                         .send({status:true,data:findShop, del_partner:delShop_partner})
+            }else{
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถลบข้อมูลได้"})
             }
         }else{
             return res

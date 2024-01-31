@@ -16,7 +16,12 @@ const flash = require('../Controllers/deliveryController/flashExpress')
 
 //Register
 router.route('/orderhub/regis').post(main.createPartner)//ใช้กำหนด path ที่ต้องการทำให้ไม่ต้องไปประกาศใน File Server แล้ว
+
+//จัดการข้อมูล Admin
 router.route('/orderhub/admin').post(admin.createAdmin)
+router.route('/orderhub/admin/findAll').get(admin.findAllAdmin)
+router.route('/orderhub/admin/update/:id').put(admin.updateAdmin)
+router.route('/orderhub/admin/del/:id').delete(admin.delAdmin)
 
 //Admin Partner
 router.route('/orderhub/post').post(main.createPartner)
@@ -35,7 +40,7 @@ router.route('/orderhub/me').get( auth.checkToken, main.getPartnerByID )
 router.route('/orderhub/contract').post( auth.checkToken, con.twoContract )
 router.route('/orderhub/getcontract/:id').get( con.getContractByID )
 
-//Admin
+//Admin confirm/cancel
 router.route('/orderhub/confirm/:id').put( authAdmin.checkToken, admin.confirmContract ) //Admin Confirm contract
 router.route('/orderhub/confirm/topup/:id').put( authAdmin.checkToken, admin.confirmTopup ) //Admin Confirm topup
 router.route('/orderhub/cancel/topup/:id').put( authAdmin.checkToken, admin.cancelTopup ) //Admin Cancel topup
