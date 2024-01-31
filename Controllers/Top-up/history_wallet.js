@@ -48,7 +48,7 @@ findIdForUser = async (req, res)=>{
     try{
         const getid = req.decoded.userid
         const getbyid = await historyWallet.find({partnerID:getid})
-        if(getbyid && getbyid.length > 0){
+        if(getbyid){
             return res
                     .status(200)
                     .send({status:true,data: getbyid})
