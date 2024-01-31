@@ -10,12 +10,12 @@ const shopSchema = new Schema({
     lastname:{type:String, require: false},
     type:{type:String, default: '', require: false},
     tax:{
-        taxName:{type:String, require: false},
-        taxNumber:{type:String, require: false},
+        taxName:{type:String, default: '', require: false},
+        taxNumber:{type:String, default: '', require: false},
     },
     commercial:{
-        commercialName:{type:String, require: false},
-        commercialNumber:{type:String, require: false},
+        commercialName:{type:String, default: '', require: false},
+        commercialNumber:{type:String, default: '', require: false},
     },
     status: {type:String, default:'รอแอดมินอนุมัติ', require:false},
     address: {type:String, default:'none', require: true},
