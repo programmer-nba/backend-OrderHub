@@ -8,6 +8,7 @@ const shopSchema = new Schema({
     shop_name:{type:String, require: true},
     firstname:{type:String, require: false},
     lastname:{type:String, require: false},
+    type:{type:String, default: '', require: false},
     tax:{
         taxName:{type:String, default: '', require: false},
         taxNumber:{type:String, default: '', require: false},
@@ -50,6 +51,7 @@ const validate = (data)=>{
         shop_name:Joi.string(),
         firstname:Joi.string(),
         lastname:Joi.string(),
+        type:Joi.string(),
         taxName:Joi.string().optional(),
         taxNumber:Joi.string().optional(),
         commercialName:Joi.string().optional(),

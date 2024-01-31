@@ -3,7 +3,7 @@ const { generateSign } = require('./generate.sign')
 const querystring = require('querystring');
 const fs = require('fs');
 
-createOrder = async (req, res)=>{
+createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash express
     try{
         const apiUrl = process.env.TRAINING_URL
         const mchId = req.body.mchId
@@ -40,7 +40,7 @@ createOrder = async (req, res)=>{
     }
 }
 
-statusOrder = async (req, res)=>{
+statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
     try{
         const apiUrl = process.env.TRAINING_URL
         const mchId = req.body.mchId
@@ -59,10 +59,10 @@ statusOrder = async (req, res)=>{
                   'Accept': 'application/json',
               }
           })
-        if(response.data.code !== 1){
+        if(!response){
             return res
                     .status(400)
-                    .send({status:false, data:response.data})
+                    .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
         }else{
             return res
                     .status(200)
@@ -99,10 +99,10 @@ getWareHouse = async(req, res)=>{ //เรียกดูคลังสิน�
                   'Accept': 'application/json',
               }
           })
-        if(response.data.code !== 1){
+        if(!response){
             return res
                     .status(400)
-                    .send({status:false, data:response.data})
+                    .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
         }else{
             return res
                     .status(200)
@@ -189,7 +189,7 @@ print100x75 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
     }
 }
 
-statusPOD = async (req, res)=>{
+statusPOD = async (req, res)=>{ //ตรวจสอบข้อมูล POD(การเซ็นรับ Order)
     try{
         const apiUrl = process.env.TRAINING_URL
         const mchId = req.body.mchId
@@ -208,10 +208,10 @@ statusPOD = async (req, res)=>{
                   'Accept': 'application/json',
               }
           })
-        if(response.data.code !== 1){
+        if(!response){
             return res
                     .status(400)
-                    .send({status:false, data:response.data})
+                    .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
         }else{
             return res
                     .status(200)

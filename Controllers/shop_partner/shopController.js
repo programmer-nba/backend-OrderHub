@@ -106,9 +106,9 @@ delend = async (req, res)=>{
     try{
         const id = req.params.id
         const partner_id = req.decoded.userid
-        const findShop = await shopPartner.findOneAndDelete({shop_number:id},{new:true})
+        const findShop = await shopPartner.findOneAndDelete({shop_number:id},{new:true}) //ลบข้อมูลร้านค้าในฐานข้อมูล shop_partner
         if(findShop){
-            const delShop_partner = await Partner.updateOne(
+            const delShop_partner = await Partner.updateOne( //ลบข้อมูลร้านค้าในฐานข้อมูลของ partner โดยตรง
                 { _id: partner_id },
                 { $pull: { shop_partner: { _id:findShop._id } } },
                 { multi: false, new: true }
