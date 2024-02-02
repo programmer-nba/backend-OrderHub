@@ -487,9 +487,9 @@ notify = async(req, res)=>{ //เรียกคูเรียร์/พนั�
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
-            body: body,
+            //body: body,
             sign: sign,
-            date: '2018-09-27',
+            date: '2024-01-01',
             srcName: 'หอมรวม  nofity test name',
             srcPhone: '0630101454',
             srcProvinceName: 'อุบลราชธานี',
@@ -600,7 +600,7 @@ webhook_status = async(req, res)=>{ //ตรวจสอบข้อมูล We
 //merchant_tracking(); //ใช้ไม่ได้ code 1002
 //estimate_rate(); //ใช้ไม่ได้ code 1002
 //nontifications(); //ใช้ไม่ได้ code 1002
-//notify(); //ใช้ไม่ได้ code 1002
+notify(); //ใช้ไม่ได้ code 1002
 //notify_cancel(); //ใช้ไม่ได้ code 0 'ไม่สามารถทำงานได้'
 //webhook_service(); //ใช้ไม่ได้ code 1002
 //order_modify(); //ใช้ไม่ได้ code 1002

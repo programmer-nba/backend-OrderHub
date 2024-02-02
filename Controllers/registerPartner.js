@@ -19,8 +19,8 @@ createPartner = async (req, res) => {
     const {error} = Validate(req.body); //ตรวจสอบความถูกต้องของข้อมูลที่เข้ามา
     if (error)
       return res
-        .status(403)
-        .send({ status: false, message: error.details[0].message });
+              .status(403)
+              .send({ status: false, message: error.details[0].message });
     const blacklist = await Blacklist.findOne({
       iden_number: req.body.iden_number
     })
@@ -34,46 +34,44 @@ createPartner = async (req, res) => {
     });
     if (duplicate){
       return res
-        .status(401)
-        .send({ status: false,
-          message: "มีเลขบัตรประชาชนนี้แล้ว" });
+              .status(401)
+              .send({ status: false, message: "มีเลขบัตรประชาชนนี้แล้ว" });
     }
     const duplicateID = await Partner.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
     if(duplicateID){
       return res
-        .status(401)
-        .send({ status: false,
-          message: "มีผู้ใช้ User ID นี้แล้ว" });
+              .status(401)
+              .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
     }
     const findAdmin = await Admin.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
     if(findAdmin){
       return res
-        .status(401)
-        .send({ status: false,
-          message: "มีผู้ใช้ User ID นี้แล้ว" });
+              .status(401)
+              .send({ status: false,message: "มีผู้ใช้ User ID นี้แล้ว" });
     }
     const findMemberShop = await memberShop.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
     if(findMemberShop){
       return res
-        .status(401)
-        .send({ status: false,
-          message: "มีผู้ใช้ User ID นี้แล้ว" });
+              .status(401)
+              .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
     }
     const employee = await Partner.create(req.body); //เพิ่มพนักงานเข้าระบบ
     if (employee) {
       return res
-        .status(201)
-        .send({ status: true, message: "เพิ่มรายชื่อพนักงานเสร็จสิ้น",data: employee });
+              .status(201)
+              .send({ status: true, message: "เพิ่มรายชื่อพนักงานเสร็จสิ้น",data: employee });
     }
   } catch (err) {
       console.log(err);
-      return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+      return res
+              .status(500)
+              .send({ message: "มีบางอย่างผิดพลาด" });
   }
 };
 
