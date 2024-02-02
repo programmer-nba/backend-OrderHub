@@ -202,7 +202,7 @@ confirmTopup = async (req, res)=>{
 
     const findSlip = await TopupWallet.findOne({invoice:invoiceSlip})
     if(findSlip){
-      const walletCredit = await Partner.findOne({_id:findSlip.partnerID}) 
+      const walletCredit = await shopPartner.findOne({_id:findSlip.partnerID}) 
       console.log(walletCredit.credit) //เช็คดู credit Wallet ของ partner คนนั้นว่าเหลือเท่าไหร่
       let result = await credit(findSlip.amount,walletCredit.credit) //นำคำตอบที่ได้จาก fucntion มาเก็บไว้ใน result แต่มันส่งมาเป็น type string 
       console.log(result)
@@ -217,7 +217,7 @@ confirmTopup = async (req, res)=>{
 
           if(replaceAdmin){
             //อัพเดทส่วน Credits ใน Schema (partner) เพื่อเอาไปแสดง
-            const replaceCredit = await Partner.findOneAndUpdate(
+            const replaceCredit = await shopPartner.findOneAndUpdate(
               {_id:findSlip.partnerID},
               {credit:result},
               {new:true})

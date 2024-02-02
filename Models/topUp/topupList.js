@@ -4,7 +4,7 @@ const Joi = require("joi");
 
 const topupSchema = new Schema({
     partnerID:{type:String, require: false},
-    shop_id:{type:String, require: false},
+    shop_number:{type:String, require: false},
     invoice:{type:String, require: false},//เลขที่ทำรายการ
     amount:{type:Number, require: true,},
     charge:{type:Number, require: false, default: 0},
@@ -25,8 +25,9 @@ const TopupWallet = mongoose.model("topup", topupSchema);
  const Validate_topup_wallet = (data)=>{
    const schema = Joi.object({
         partnerID:Joi.string(),
-        shop_id:Joi.string(),
+        shop_number:Joi.string(),
         invoice:Joi.string(),
+        shop_id:Joi.string(),
         amount:Joi.number().required().label('กรุณาจำนวนเงิน'),
         charge:Joi.number().default(0),
         payment_type:Joi.string(),

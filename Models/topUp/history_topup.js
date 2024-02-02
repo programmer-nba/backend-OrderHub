@@ -5,7 +5,7 @@ const dayjs = require("dayjs")
 
 const historySchema = new Schema({
     partnerID:{type:String, require: false},
-    shop_id:{type:String,default:"none", require: false},
+    shop_number:{type:String, require: false},
     orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
     firstname:{type:String, require: false},
     lastname:{type:String, require: false},

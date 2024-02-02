@@ -5,6 +5,7 @@ const multer = require("multer");
 const fs = require("fs");
 const { google } = require("googleapis");
 const { historyWallet } = require('../../Models/topUp/history_topup');
+const { shopPartner } = require('../../Models/shop/shop_partner');
 
 const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
@@ -46,11 +47,20 @@ create = async (req,res)=>{
           }
         });
 
-
         async function uploadFileCreate(req, res) {
           const filePath = req.file.path;
-          const getid = req.decoded.userid    
-          
+          const getid = req.decoded.userid
+          const findShop = await shopPartner.findOne({partnerID:getid, shop_number:req.body.shop_number})
+          console.log(findShop)
+            if(!findShop){
+              return res
+                      .status(400)
+                      .send({status:false, message:"ไม่พบหมายเลขร้านค้าที่ท่านระบุ"})
+            }else if(findShop.status !== "อนุมัติแล้ว"){
+              return res
+                      .status(400)
+                      .send({status:false, message:"กรุณารอแอดมินอนุมัติร้านค้าของท่าน"})
+            }
           let fileMetaData = {
             name: req.file.originalname,
             parents: [process.env.GOOGLE_DRIVE_WALLET_TOPUP],
@@ -69,10 +79,11 @@ create = async (req,res)=>{
             const { error } = Validate_topup_wallet(req.body);
             const invoice = await invoiceNumber(req.body.timestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+invoice);
-            if (error)
+            if (error){
               return res
                       .status(400)
                       .send({ message: error.details[0].message });
+            }
             
             const data = {
                 ...req.body,
@@ -86,16 +97,14 @@ create = async (req,res)=>{
             }
             const topup = await TopupWallet.create(data); //สร้าง Schema รายการเติมเงิน
 
-            const walletCredit = await Partner.findOne({_id:getid})
-            console.log(topup.amount)
-
             const dataHistory = {...req.body,
+              shop_number: req.body.shop_number,
               partnerID:topup.partnerID,
               orderid: topup.invoice,
-              firstname: walletCredit.firstname,
-              lastname: walletCredit.lastname,
+              firstname: findShop.firstname,
+              lastname: findShop.lastname,
               amount: topup.amount,
-              before: walletCredit.credit,
+              before: findShop.credit,
               type: "slip"
             }
             const history = await historyWallet.create(dataHistory) //สร้าง Schema ประวัติเติมเงิน

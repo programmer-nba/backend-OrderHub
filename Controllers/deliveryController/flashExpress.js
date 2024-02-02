@@ -600,7 +600,7 @@ webhook_status = async(req, res)=>{ //ตรวจสอบข้อมูล We
 //merchant_tracking(); //ใช้ไม่ได้ code 1002
 //estimate_rate(); //ใช้ไม่ได้ code 1002
 //nontifications(); //ใช้ไม่ได้ code 1002
-notify(); //ใช้ไม่ได้ code 1002
+//notify(); //ใช้ไม่ได้ code 1002
 //notify_cancel(); //ใช้ไม่ได้ code 0 'ไม่สามารถทำงานได้'
 //webhook_service(); //ใช้ไม่ได้ code 1002
 //order_modify(); //ใช้ไม่ได้ code 1002
