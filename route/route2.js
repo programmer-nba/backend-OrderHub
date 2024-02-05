@@ -6,6 +6,7 @@ const member_shop = require('../Controllers/shop_partner/memberShop');
 const admin = require('../Controllers/adminController')
 const dfd = require ('../Controllers/deliveryController/FLASH_EXPRESS/generate.sign')
 const flash = require ('../Controllers/deliveryController/FLASH_EXPRESS/Order')
+const partner = require('../Controllers/registerPartner');
 
 //SHOP
 router.route('/orderhub/shop/post').post(auth.checkToken, shop.create)//ใช้กำหนด path
@@ -27,6 +28,8 @@ router.route('/orderhub/member/getAll').get( member_shop.getAll )
 router.route('/orderhub/member/getMe').get( auth.checkToken, member_shop.getMe )
 router.route('/orderhub/member/del/:id').delete( member_shop.delend )
 router.route('/orderhub/member/update/:id').put( member_shop.update )
+router.route('/orderhub/member/approve/:id').put( partner.approveMemberShop )
+router.route('/orderhub/member/cancel/:id').put( partner.cancelMemberShop )
 
 //Flash express
 router.route('/orderhub/flash/create').post( flash.createOrder )

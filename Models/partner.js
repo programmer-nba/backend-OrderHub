@@ -35,7 +35,6 @@ const partnerSchema = new Schema({
         status: {type:String, require: false}
       }
     ],
-    credit:{type:Number,default: 0, require: true},
     role: {type:String, default: "partner", require: true},
     status_partner: {type:String, default: "newpartner", require: true},
     contractOne: {type:String, default: "false", require: true}, // สถานะสัญญาที่ 1
@@ -85,7 +84,6 @@ const Partner = mongoose.model("partner", partnerSchema);
           postcode: Joi.string().optional(),
         })).optional(),
         role: Joi.string(),
-        credit: Joi.number(),
         status_partner: Joi.string(),
         contractOne: Joi.string(),
         contractTwo: Joi.string(),

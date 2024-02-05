@@ -202,11 +202,11 @@ confirmTopup = async (req, res)=>{
 
     const findSlip = await TopupWallet.findOne({invoice:invoiceSlip})
     if(findSlip){
-      const walletCredit = await shopPartner.findOne({_id:findSlip.partnerID}) 
-      console.log(walletCredit.credit) //เช็คดู credit Wallet ของ partner คนนั้นว่าเหลือเท่าไหร่
+      const walletCredit = await shopPartner.findOne({shop_number:findSlip.shop_number}) 
+      console.log(walletCredit.credit) //เช็คดู credit Wallet ของ shop นั้นว่าเหลือเท่าไหร่
       let result = await credit(findSlip.amount,walletCredit.credit) //นำคำตอบที่ได้จาก fucntion มาเก็บไว้ใน result แต่มันส่งมาเป็น type string 
       console.log(result)
-      //อัพเดทส่วน admin และ status ใน Schema (topupList) เพื่อแสดงว่าแอดมินยืนยันแล้วและแอดมินคนไหนยืนยัน
+      //อัพเดทส่วน admin และ status ใน Schema รายการเติมเงิน (topupList) เพื่อแสดงว่าแอดมินยืนยันแล้วและแอดมินคนไหนยืนยัน
       const replaceAdmin = await TopupWallet.findOneAndUpdate(
         {invoice:invoiceSlip},
         {
@@ -216,9 +216,9 @@ confirmTopup = async (req, res)=>{
         { new: true })
 
           if(replaceAdmin){
-            //อัพเดทส่วน Credits ใน Schema (partner) เพื่อเอาไปแสดง
+            //อัพเดทส่วน Credits ใน Schema (shop_partner) เพื่อเอาไปแสดง
             const replaceCredit = await shopPartner.findOneAndUpdate(
-              {_id:findSlip.partnerID},
+              {shop_number:findSlip.shop_number},
               {credit:result},
               {new:true})
               
@@ -233,7 +233,7 @@ confirmTopup = async (req, res)=>{
                 return res 
                         .status(200)
                         .send({status:true, 
-                        partner: replaceCredit,
+                        shop: replaceCredit,
                         topup: replaceAdmin,
                         historyTopup: replaceHistory
                         })
@@ -401,3 +401,4 @@ module.exports = { createAdmin, confirmContract,
   cancelContract, confirmTopup, confirmShop,
   cancelShop, cancelTopup, findAllAdmin,
   updateAdmin, delAdmin };
+  

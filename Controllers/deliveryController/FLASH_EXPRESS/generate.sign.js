@@ -22,7 +22,7 @@ generateSign = async(id)=>{
         ].sort().join('&');
 
         const stringSignTemp = asciiSortedSignature +`&key=${key}` //นำไปรวมกับ secret_key
-
+        console.log(stringSignTemp)
         const hash = crypto.createHash('sha256'); //ใช้สร้างอ็อบเจ็กต์ Hash สำหรับการใช้ SHA-256.
         await hash.update(stringSignTemp);//ใช้เพิ่มข้อมูลที่ต้องการแฮช.
 

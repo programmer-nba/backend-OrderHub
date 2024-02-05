@@ -222,9 +222,10 @@ order_modify = async(req, res)=>{ //แก้ไขข้อมูลออเ�
             subParcelQuantity: 2,
             // เพิ่ม key-value pairs ตามต้องการ
           };
-        const response = await axios.post(`${apiUrl}/open/v1/orders/modify`,formData,{
+        const response = await axios.post(`${apiUrl}/open/v1/orders/modify`,querystring.stringify(formData),{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json'
             },
         })
         if(response.status === 200){

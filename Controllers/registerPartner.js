@@ -238,7 +238,56 @@ uploadPicture = async (req,res)=>{
   }
 }
 
+approveMemberShop = async (req, res)=>{
+    try{
+        const memberNumber = req.params.id
+        const findMember = await memberShop.findOneAndUpdate(
+          {member_number:memberNumber},
+          {status:"อนุมัติแล้ว"},
+          {new:true})
+        if(findMember){
+          return res
+                  .status(200)
+                  .send({status:true, data:findMember})
+        }else{
+          return res
+                  .status(400)
+                  .send({status:false, message:"ไม่สามารถค้นหาหมายเลขพนักงานได้"})
+        }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
+
+cancelMemberShop = async (req, res)=>{
+  try{
+      const memberNumber = req.params.id
+      const findMember = await memberShop.findOneAndUpdate(
+        {member_number:memberNumber},
+        {status:"ไม่อนุมัติ"},
+        {new:true})
+      if(findMember){
+        return res
+                .status(200)
+                .send({status:true, data:findMember})
+      }else{
+        return res
+                .status(400)
+                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขพนักงานได้"})
+      }
+  }catch(err){
+      console.log(err)
+      return res
+              .status(500)
+              .send({status:false, message:"มีบางอย่างผิดพลาด"})
+  }
+}
+
 module.exports = { createPartner, 
 getAllPartner, getPartnerByID, 
 upPartnerByID, deleteById,
-uploadPicture };
+uploadPicture, approveMemberShop,
+cancelMemberShop };

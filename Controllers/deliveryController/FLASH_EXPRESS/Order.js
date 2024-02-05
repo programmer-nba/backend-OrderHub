@@ -12,11 +12,12 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             sign: sign,
             mchId: mchId,
             nonceStr: nonceStr,
-            //body: body,
+            //body: 'ORDER_HUB',
             outTradeNo: `#${nonceStr}#`,
             ...req.body
             // เพิ่ม key-value pairs ตามต้องการ
           };
+
         const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formData),{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -53,7 +54,7 @@ statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
             //body: body,
             // เพิ่ม key-value pairs ตามต้องการ
           };
-          const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/routes`,formData,{
+          const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/routes`,querystring.stringify(formData),{
               headers: {
                   'Content-Type': 'application/x-www-form-urlencoded',
                   'Accept': 'application/json',
@@ -185,7 +186,7 @@ print100x75 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
                     .send({ status: false, message: 'เกิดข้อผิดพลาดในการดึงหรือประมวลผล PDF' });
         }
     }catch(err){
-        console.log("มีบางอย่างผิดพลาด")
+        console.log("มีบางอย่างผิดพลาด",err)
     }
 }
 
