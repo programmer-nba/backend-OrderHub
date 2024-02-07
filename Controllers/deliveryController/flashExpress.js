@@ -16,9 +16,11 @@ const mchId = process.env.MCH_ID
 const key = process.env.SECRET_KEY
 const body = 'ORDER_HUB'
 const nonceStr = milliseconds
+const date = '2018-09-27'
 
 const asciiSortedSignature = [ //ทำให้ parameter เรียงแบบ ASCII
     //`body=${body}`,
+    `date=${date}`,
     `mchId=${mchId}`,
     `nonceStr=${nonceStr}`,
   ].sort().join('&');
@@ -463,7 +465,7 @@ nontifications = async(req, res)=>{ //เรียกดูงานรับใ
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
-            body: body,
+            //body: body,
             sign: sign,
             date: '2018-09-27'
             //เพิ่ม key-value pairs ตามต้องการ
