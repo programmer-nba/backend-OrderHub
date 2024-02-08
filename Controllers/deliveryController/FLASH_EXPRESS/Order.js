@@ -3,6 +3,7 @@ const { generateSign } = require('./generate.sign')
 const querystring = require('querystring');
 const dayjs = require('dayjs')
 const fs = require('fs');
+const { costPlus } = require('../../../Models/costPlus');
 
  //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
@@ -395,5 +396,73 @@ nontification = async (req, res)=>{ //เรียกดูงานรับใ
     }
 }
 
+estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash express
+    try{
+        const apiUrl = process.env.TRAINING_URL
+        const mchId = req.body.mchId
+        const id = req.params.id
+        const formData = {
+            mchId: mchId,
+            nonceStr: nonceStr,
+            srcProvinceName: req.body.srcProvinceName,
+            srcCityName: req.body.srcCityName,
+            srcDistrictName: req.body.srcDistrictName,
+            srcPostalCode: req.body.srcPostalCode,
+            dstProvinceName: req.body.dstProvinceName,
+            dstCityName: req.body.dstCityName,
+            dstDistrictName: req.body.dstDistrictName,
+            dstPostalCode: req.body.dstPostalCode,
+            weight: req.body.weight,
+            width: req.body.width,
+            length: req.body.length,
+            height: req.body.height,
+            pricingTable: 1,
+            ...req.body
+            // expressCategory: req.body.expressCategory,
+            // insureDeclareValue: req.body.insureDeclareValue,
+            // insured: req.body.insured,
+            // opdInsureEnabled: req.body.opdInsureEnabled,
+            // pricingTable: req.body.pricingTable
+            //  เพิ่ม key-value pairs ตามต้องการ
+          };
+        const newData = await generateSign(formData)
+        const formDataOnly = newData.formData
+            //console.log(formDataOnly)
+        const response = await axios.post(`${apiUrl}/open/v1/orders/estimate_rate`,querystring.stringify(formDataOnly),{
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+            },
+        })
+        if(response.data.code !== 1){
+            return res
+                    .status(400)
+                    .send({status:false, data:response.data})
+        }else{
+            const estimatedPrice = parseFloat(response.data.data.estimatePrice)
+            let totalPrice;
+            const findPartner = await costPlus.findOne({partnerID:id})
+            if (findPartner && findPartner.cost_level[0]) {
+                const costPlusValue = parseFloat(findPartner.cost_level[0].cost_plus);
+                // นำค่า cost_plus และ estimatedPrice มาบวกกัน
+                totalPrice = costPlusValue + estimatedPrice;
+                
+                console.log(totalPrice);
+              } else {
+                console.log('Partner or cost level not found');
+              }
+            return res
+                    .status(200)
+                    .send({status:true, data:response.data, result: totalPrice})
+        }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(200)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
+
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
-                    ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification }
+                    ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
+                    estimateRate }

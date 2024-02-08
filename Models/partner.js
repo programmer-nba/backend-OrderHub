@@ -4,6 +4,7 @@ const Joi = require("joi");
 var bcrypt = require("bcrypt");
 
 const partnerSchema = new Schema({
+    partnerNumber : {type:String, required: false},
     antecedent: {type:String, required: true},
     firstname: {type:String, required: true},
     lastname:{type:String, require: true},
@@ -35,26 +36,49 @@ const partnerSchema = new Schema({
         status: {type:String, require: false}
       }
     ],
+    upline:{
+        upline_number: {type:String, require: false},
+        level: {type:String, require: false}
+    },
     role: {type:String, default: "partner", require: true},
     status_partner: {type:String, default: "newpartner", require: true},
     contractOne: {type:String, default: "false", require: true}, // สถานะสัญญาที่ 1
     contractTwo: {type:String, default: "false", require: true}, //สถานะสัญญาที่ 2 
 },{timestamps: true});
 
-partnerSchema.pre('save',function(next){   //ทำ Middleware การ Hash ก่อน EmployeeScheme ที่ User กรอกมาจะ save
-  const user = this
-  bcrypt.hash(user.password, 10).then(hash => {
-      user.password = hash
-      next()
-  }).catch(error =>{
-      console.error(error)
-  })
+partnerSchema.pre('save',async function(next){   //ทำ Middleware การ Hash ก่อน EmployeeScheme ที่ User กรอกมาจะ save
+      const user = this;
+
+      // สุ่มหมายเลขในช่วง 30000-39999
+      const randomShopNumber = Math.floor(Math.random() * (399999 - 300000 + 1)) + 300000;
+
+      // ตรวจสอบว่าหมายเลขนี้ไม่ซ้ำกับหมายเลขอื่น ๆ ในฐานข้อมูล
+      const existingPartner = await user.constructor.findOne({ partnerNumber: randomShopNumber });
+
+      if (existingPartner) {
+          // ถ้าซ้ำให้สุ่มใหม่
+          return user.pre('save', next);
+      }
+
+      // กำหนดหมายเลขให้กับ partnerNumber
+      user.partnerNumber = randomShopNumber;
+
+      try {
+          // ทำการ hash password โดย bcrypt
+          const hash = await bcrypt.hash(user.password, 10);
+          user.password = hash;
+          next();
+      } catch (error) {
+          console.error(error);
+          next(error);
+      }
 })
 
 const Partner = mongoose.model("partner", partnerSchema);
 
  const Validate = (data)=>{
    const schema = Joi.object({
+        partnerNumber: Joi.string(),
         antecedent: Joi.string().required().label('กรุณาใส่คำนำหน้าชื่อ'),
         firstname: Joi.string().required().label('กรุณากรอกชื่อจริง'),
         lastname: Joi.string().required().label('กรุณากรอกนามสกุล'),
@@ -83,6 +107,8 @@ const Partner = mongoose.model("partner", partnerSchema);
           province: Joi.string().optional(),
           postcode: Joi.string().optional(),
         })).optional(),
+        upline_number: Joi.string(),
+        level: Joi.string(),
         role: Joi.string(),
         status_partner: Joi.string(),
         contractOne: Joi.string(),

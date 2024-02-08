@@ -7,6 +7,7 @@ const admin = require('../Controllers/adminController')
 const dfd = require ('../Controllers/deliveryController/FLASH_EXPRESS/generate.sign')
 const flash = require ('../Controllers/deliveryController/FLASH_EXPRESS/Order')
 const partner = require('../Controllers/registerPartner');
+const cost = require('../Controllers/cost_level/costPlus')
 
 //SHOP
 router.route('/orderhub/shop/post').post(auth.checkToken, shop.create)//ใช้กำหนด path
@@ -42,5 +43,10 @@ router.route('/orderhub/flash/statusPack').get( flash.statusOrderPack )
 router.route('/orderhub/flash/cancel').delete( flash.cancelOrder )
 router.route('/orderhub/flash/notify').post( flash.notifyFlash )
 router.route('/orderhub/flash/notification').get( flash.nontification )
+router.route('/orderhub/flash/estimate/:id').get( flash.estimateRate )
+
+//cost level
+router.route('/orderhub/cost/create').post( auth.checkToken, cost.create )
+router.route('/orderhub/cost/edit').put( auth.checkToken, cost.editCostPlus )
 
 module.exports = router;

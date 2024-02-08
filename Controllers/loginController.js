@@ -66,7 +66,7 @@ async function checkAdmin(req, res){
                     if(match){
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
-                            id: Admin._id,
+                            userid: Admin._id,
                             username: Admin.username,
                             firstname: Admin.firstname,
                             lastname: Admin.lastname,
@@ -112,7 +112,7 @@ async function checkShopMember(req, res){
                     if(match){
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
-                            id: memberShop._id,
+                            userid: memberShop._id,
                             memberNumber: memberShop.member_number,
                             username: memberShop.username,
                             shop_number: memberShop.shop_number,
