@@ -6,10 +6,48 @@ const { shopPartner } = require('../../../Models/shop/shop_partner');
 const { BookingParcel } = require('../../../Models/Delivery/ship_pop/purchase_id');
 const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { historyWallet } = require('../../../Models/topUp/history_topup');
+const { costPlus } = require('../../../Models/costPlus');
 
 priceList = async (req, res)=>{
     try{
         const percent = await PercentCourier.find();
+        const shop = req.body.shop_number
+        if(req.decoded.role === 'shop_member'){
+            if(req.decoded.shop_number !== shop){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
+            }
+        }else if (req.decoded.role === 'partner'){
+            const idPartner = req.decoded.userid
+            const findShop = await shopPartner.findOne(
+                {
+                    _id:idPartner,
+                    shop_partner:{
+                        $elemMatch: { shop_number: shop }
+                    }
+                })
+            if(!findShop){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ"})
+            }else if(findShop.shop_partner.length === 0){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาสร้างร้านค้าของท่าน"})
+            }
+        }
+        const findForCost = await shopPartner.findOne({shop_number:shop})
+        if(!findForCost){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
+        }
+        const costFind = await costPlus.findOne(
+            {
+                'cost_level.partner_number':findForCost.partner_number,
+            })
+        
         let data = [];
         data.push(req.body);
         const value = {

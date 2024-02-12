@@ -37,8 +37,9 @@ const partnerSchema = new Schema({
       }
     ],
     upline:{
-        upline_number: {type:String, require: false},
-        level: {type:String, require: false}
+        head_line: {type:String, default:'ICE', require: false},
+        upline_number: {type:String, default:'ICE', require: false},
+        level: {type:String, default: 1, require: false}
     },
     role: {type:String, default: "partner", require: true},
     status_partner: {type:String, default: "newpartner", require: true},

@@ -8,6 +8,7 @@ const { uploadFileCreate, deleteFile } = require("../functions/uploadfilecreate"
 const { Blacklist } = require("../Models/blacklist");
 const { Admin } = require("../Models/admin");
 const { memberShop } = require("../Models/shop/member_shop");
+const { costPlus } = require("../Models/costPlus");
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-");
@@ -18,55 +19,114 @@ createPartner = async (req, res) => {
   try {
     const {error} = Validate(req.body); //ตรวจสอบความถูกต้องของข้อมูลที่เข้ามา
     if (error)
-      return res
-              .status(403)
-              .send({ status: false, message: error.details[0].message });
+        return res
+                .status(403)
+                .send({ status: false, message: error.details[0].message });
     const blacklist = await Blacklist.findOne({
       iden_number: req.body.iden_number
     })
     if (blacklist){
-      return res
-              .status(401)
-              .send({status: false, message:"หมายเลขบัตรประชาชนนี้ติด Blacklist"})
+        return res
+                .status(401)
+                .send({status: false, message:"หมายเลขบัตรประชาชนนี้ติด Blacklist"})
     }
     const duplicate = await Partner.findOne({ //ตรวจสอบบัตรประชาชนพนักงานว่ามีซ้ำกันหรือไม่
       iden_number: req.body.iden_number
     });
     if (duplicate){
-      return res
-              .status(401)
-              .send({ status: false, message: "มีเลขบัตรประชาชนนี้แล้ว" });
+        return res
+                .status(401)
+                .send({ status: false, message: "มีเลขบัตรประชาชนนี้แล้ว" });
     }
     const duplicateID = await Partner.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
     if(duplicateID){
-      return res
-              .status(401)
-              .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
+        return res
+                .status(401)
+                .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
     }
     const findAdmin = await Admin.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
     if(findAdmin){
-      return res
-              .status(401)
-              .send({ status: false,message: "มีผู้ใช้ User ID นี้แล้ว" });
-    }
-    const findMemberShop = await memberShop.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
+        return res
+                .status(401)
+                .send({ status: false,message: "มีผู้ใช้ User ID นี้แล้ว" });
+      }
+    const findMemberShop = await memberShop.findOne({ //ตรวจสอบ userID ของพนักงาน shop ว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
     if(findMemberShop){
-      return res
-              .status(401)
-              .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
+        return res
+                .status(401)
+                .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
     }
-    const employee = await Partner.create(req.body); //เพิ่มพนักงานเข้าระบบ
-    if (employee) {
-      return res
-              .status(201)
-              .send({ status: true, message: "เพิ่มรายชื่อพนักงานเสร็จสิ้น",data: employee });
+    //สมัครกับคุณไอซ์โดยตรงไม่ต้องระบุ upline_number
+    if(!req.body.upline_number){
+        const employee = await Partner.create(req.body); //เพิ่มพนักงานเข้าระบบ
+        const createCost = await costPlus.create(
+            {_id: employee._id,
+            partner_number: employee.partnerNumber}
+        )
+        return res
+                .status(200)
+                .send({ status: true, message: "เพิ่มรายชื่อพนักงานเสร็จสิ้น",data: employee, cost: createCost });
     }
+
+    //ได้รับรหัสแนะนำ partner คนอื่นไม่ใช่คุณไอซ์
+    //เช็ครหัสพาร์ทเนอร์ก่อนว่ามีตัวตนอยู่จริงไหม และ เช็คว่ารหัสพาร์ทเนอร์ที่ได้รับมี upline ที่ไม่ใช่คุณไอซ์อยู่แล้วหรือเปล่าถ้าใช่ ให้ res "รหัสพาร์ทเนอร์นี้ไม่สามารถแนะนำต่อได้"(รหัสพาร์ทเนอร์ที่ได้รับต้นทุนมาจากคุณไอซ์สามารถแนะนำได้แค่ 1 คนเท่านั้น)
+    const findPartner = await Partner.findOne({partnerNumber:req.body.upline_number})
+        if(!findPartner){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลขพาร์ทเนอร์เจอ"})
+        }else if (findPartner.upline.upline_number !== 'ICE'){
+            return res
+                    .status(200)
+                    .send({status:false, message:"รหัสพาร์ทเนอร์นี้ไม่สามารถแนะนำต่อได้"})
+        }
+        
+    //หลังจากเช็คว่าเป็น Partner_number == 'ICE' แล้ว(แสดงว่าสมัครกับคุณไอซ์โดยตรง) จากนั้นนำ upline_number ไปเช็คใน costPlus เพื่อตรวจว่ารหัสนี้มีมีการแนะนำไปแล้วหรือเปล่าถ้าใช่ให้ res "รหัสพาร์ทเนอร์นี้มีผู้ใช้ไปแล้ว"
+    const findCost = await costPlus.findOne({partner_number: req.body.upline_number})
+        if(!findCost){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลขพาร์ทเนอร์เจอ"})
+        }else if (findCost.cost_level.length === 0){
+            // สร้างข้อมูลที่ต้อง push เข้าไป
+            const newData = {
+              level: 1,
+              cost_plus: "",
+              partner_number: ""
+            };
+
+            const employee = await Partner.create( //เพิ่มพนักงานเข้าระบบ
+              {
+                ...req.body,
+                "upline.head_line":findCost._id,
+                "upline.upline_number":req.body.upline_number
+              }
+            );
+      
+            // กำหนด partner_number ใน newData เพื่อเป็นค่าที่ได้จากการสร้างพนักงาน
+            newData.partner_number = employee.partnerNumber;
+            // Push ข้อมูลใหม่เข้าไปใน cost_level
+            const pushData = await costPlus.findOneAndUpdate(
+                {partner_number: req.body.upline_number},
+                {
+                  $push:{ cost_level: newData }
+                },{new:true}
+              )
+            return res
+                    .status(200)
+                    .send({ status: true, message: "เพิ่มรายชื่อพนักงานเสร็จสิ้น",data: employee, cost: pushData });
+
+        }else if (findCost.cost_level.length > 0){
+            return res
+                    .status(400)
+                    .send({status: false, message:"รหัสพาร์ทเนอร์นี้มีผู้ใช้ไปแล้ว"})
+        }
   } catch (err) {
       console.log(err);
       return res

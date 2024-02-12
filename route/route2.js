@@ -52,7 +52,7 @@ router.route('/orderhub/cost/create').post( auth.checkToken, cost.create )
 router.route('/orderhub/cost/edit').put( auth.checkToken, cost.editCostPlus )
 
 //shippop
-router.route('/orderhub/shippop/pricelist').post( ship.priceList )
+router.route('/orderhub/shippop/pricelist').post( auth.checkToken, ship.priceList )
 router.route('/orderhub/shippop/booking').post( auth.checkToken, ship.booking )
 router.route('/orderhub/shippop/cancel/:id').delete( auth.checkToken, ship.cancelOrder )
 router.route('/orderhub/shippop/tracking/:id').get( ship.tracking )

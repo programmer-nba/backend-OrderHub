@@ -4,6 +4,7 @@ const Joi = require("joi");
 
 const shopSchema = new Schema({
     partnerID:{type:String, require: false},
+    partner_number:{type:String, require: false},
     shop_number: {type:String, require: false},
     shop_name:{type:String, require: true},
     firstname:{type:String, require: false},
@@ -48,6 +49,7 @@ const shopPartner = mongoose.model("shop_partner", shopSchema);
 const validate = (data)=>{
     const schema = Joi.object({
         partnerID:Joi.string(),
+        partner_number:Joi.string(),
         shop_number:Joi.string(),
         shop_name:Joi.string(),
         firstname:Joi.string(),

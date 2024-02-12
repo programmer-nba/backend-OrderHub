@@ -34,6 +34,7 @@ create = async (req, res)=>{
                 "commercial.commercialName":req.body.commercialName,
                 "commercial.commercialNumber":req.body.commercialNumber,
                 partnerID:id,
+                partner_number:findId.partnerNumber,
                 firstname:findId.firstname,
                 lastname:findId.lastname})
             return res

@@ -21,7 +21,7 @@ loginController = async(req,res) =>{
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
                             userid: Partner._id,
-                            firstname: Partner.firstname,
+                            partnerNumber: Partner.partnerNumber,
                             email: Partner.email,
                             role: Partner.role,
                             status: Partner.status_partner
@@ -33,8 +33,7 @@ loginController = async(req,res) =>{
                                     message:"เข้าสู่ระบบสำเร็จ",
                                     token: token,
                                     partners_id: Partner._id,
-                                    firstname: Partner.firstname,
-                                    lastname: Partner.lastname,
+                                    partnerNumber: Partner.partnerNumber,
                                     role: Partner.role,
                                     status: Partner.status_partner
                                 })
