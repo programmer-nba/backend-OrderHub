@@ -6,6 +6,7 @@ const fs = require("fs");
 const { google } = require("googleapis");
 const { historyWallet } = require('../../Models/topUp/history_topup');
 const { shopPartner } = require('../../Models/shop/shop_partner');
+const { historyWalletShop } = require('../../Models/shop/shop_history');
 
 const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
@@ -55,7 +56,7 @@ create = async (req,res)=>{
             if(!findShop){
               return res
                       .status(400)
-                      .send({status:false, message:"ไม่พบหมายเลขร้านค้าที่ท่านระบุ"})
+                      .send({status:false, message:"ไม่พบหมายเลขร้านค้าของท่าน"})
             }else if(findShop.status !== "อนุมัติแล้ว"){
               return res
                       .status(400)
@@ -98,23 +99,35 @@ create = async (req,res)=>{
             const topup = await TopupWallet.create(data); //สร้าง Schema รายการเติมเงิน
 
             const dataHistory = {...req.body,
-              shop_number: req.body.shop_number,
-              partnerID:topup.partnerID,
-              orderid: topup.invoice,
-              firstname: findShop.firstname,
-              lastname: findShop.lastname,
-              amount: topup.amount,
-              before: findShop.credit,
-              type: "slip"
+                shop_number: req.body.shop_number,
+                partnerID:topup.partnerID,
+                orderid: topup.invoice,
+                firstname: findShop.firstname,
+                lastname: findShop.lastname,
+                amount: topup.amount,
+                before: findShop.credit,
+                type: "slip",
             }
             const history = await historyWallet.create(dataHistory) //สร้าง Schema ประวัติเติมเงิน
+
+            const dataHistoryShop = {
+                partnerID: topup.partnerID,
+                shop_number: req.body.shop_number,
+                orderid: topup.invoice,
+                amount: topup.amount,
+                before: findShop.credit,
+                type: "slip",
+                remark: "พาร์ทเนอร์เติมเงินเข้าร้านค้า"
+            }
+            const historyShop = await historyWalletShop.create(dataHistoryShop)
 
             return res
                     .status(201)
                     .send({ message: "สร้างรายงานใหม่เเล้ว",
                     status: true,
                     data: topup,
-                    history: history
+                    history: history,
+                    historyShop: historyShop
                     });
 
           } catch (error) {

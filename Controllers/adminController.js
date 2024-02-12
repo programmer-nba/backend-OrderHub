@@ -8,6 +8,7 @@ const { historyWallet } = require("../Models/topUp/history_topup");
 const { Blacklist } = require("../Models/blacklist");
 const { shopPartner } = require("../Models/shop/shop_partner");
 const { memberShop } = require("../Models/shop/member_shop");
+const { historyWalletShop } = require("../Models/shop/shop_history");
 
 createAdmin = async (req, res) => {
   try {
@@ -230,13 +231,23 @@ confirmTopup = async (req, res)=>{
                   after:result},
                 {new:true})
 
-                return res 
+                  //อัพเดท ประวัติเติมเงิน schema (historyWallet_shop) ในส่วน after เพื่อแสดงผลลัพธ์หลังแอดมินยืนยัน
+                  if(replaceHistory){
+                    const replaceHistoryShop = await historyWalletShop.findOneAndUpdate(
+                      {orderid:invoiceSlip},
+                      { before:walletCredit.credit,
+                        after:result},
+                      {new:true})
+
+                      return res 
                         .status(200)
                         .send({status:true, 
                         shop: replaceCredit,
                         topup: replaceAdmin,
-                        historyTopup: replaceHistory
+                        historyTopup: replaceHistory,
+                        historyShop: replaceHistoryShop
                         })
+                  }
               }else{
                 return res
                       .status(400)

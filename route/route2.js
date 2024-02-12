@@ -8,6 +8,8 @@ const dfd = require ('../Controllers/deliveryController/FLASH_EXPRESS/generate.s
 const flash = require ('../Controllers/deliveryController/FLASH_EXPRESS/Order')
 const partner = require('../Controllers/registerPartner');
 const cost = require('../Controllers/cost_level/costPlus')
+const ship = require('../Controllers/deliveryController/Shippop/ship.controller')
+const percent = require('../Controllers/deliveryController/Shippop/percent.controller')
 
 //SHOP
 router.route('/orderhub/shop/post').post(auth.checkToken, shop.create)//ใช้กำหนด path
@@ -48,5 +50,22 @@ router.route('/orderhub/flash/estimate/:id').get( flash.estimateRate )
 //cost level
 router.route('/orderhub/cost/create').post( auth.checkToken, cost.create )
 router.route('/orderhub/cost/edit').put( auth.checkToken, cost.editCostPlus )
+
+//shippop
+router.route('/orderhub/shippop/pricelist').post( ship.priceList )
+router.route('/orderhub/shippop/booking').post( auth.checkToken, ship.booking )
+router.route('/orderhub/shippop/cancel/:id').delete( auth.checkToken, ship.cancelOrder )
+router.route('/orderhub/shippop/tracking/:id').get( ship.tracking )
+router.route('/orderhub/shippop/confirm/:purchase_id').post( ship.confirmOrder )
+router.route('/orderhub/shippop/callpick/:courier_tracking_code').post( ship.callPickup )
+router.route('/orderhub/shippop/tracking_purchase/:purchase_id').get( ship.trackingPurchase )
+router.route('/orderhub/shippop/lebelHtml').post( ship.labelHtml )
+
+//percent
+router.route('/orderhub/percent/create').post( percent.create )
+router.route('/orderhub/percent/getAll').get( percent.getAll )
+router.route('/orderhub/percent/getid/:id').get( percent.getById )
+router.route('/orderhub/percent/update/:id').put( percent.update )
+router.route('/orderhub/percent/del/:id').delete( percent.delend )
 
 module.exports = router;
