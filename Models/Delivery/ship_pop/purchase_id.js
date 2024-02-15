@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
+const { flashOrder } = require("../flash_express/create_order");
 
 const BookingParcelSchema = new mongoose.Schema({
     purchase_id : {type:String, required : true},
@@ -14,6 +15,7 @@ const BookingParcelSchema = new mongoose.Schema({
     price : {type : Number , required : true},
     cod_amount : {type: Number ,required : true},
     cod_charge : {type: Number , required: true},
+    cod_vat : {type: Number , required: false},
     cost_hub : {type: Number, required : true},
     cost : {type: Number ,required : true},
     discount: {type: Number, required : true},
@@ -34,6 +36,7 @@ const validate = (data)=>{
         courier_tracking_code : Joi.string().default("ไม่มี"),
         cod_amount: Joi.number().default(0),
         cod_charge : Joi.number().default(0),
+        cod_vat : Joi.number().default(0),
         cost_hub : Joi.number().required.label("ไม่พบราคาต้นทุน"),
         cost : Joi.number().required().label("ไม่พบราคาต้นทุน"),
         discount : Joi.number().default(0),

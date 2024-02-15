@@ -21,7 +21,7 @@ loginController = async(req,res) =>{
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
                             userid: Partner._id,
-                            partnerNumber: Partner.partnerNumber,
+                            number: Partner.partnerNumber,
                             email: Partner.email,
                             role: Partner.role,
                             status: Partner.status_partner
@@ -33,7 +33,7 @@ loginController = async(req,res) =>{
                                     message:"เข้าสู่ระบบสำเร็จ",
                                     token: token,
                                     partners_id: Partner._id,
-                                    partnerNumber: Partner.partnerNumber,
+                                    number: Partner.partnerNumber,
                                     role: Partner.role,
                                     status: Partner.status_partner
                                 })
@@ -112,7 +112,7 @@ async function checkShopMember(req, res){
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
                             userid: memberShop._id,
-                            memberNumber: memberShop.member_number,
+                            number: memberShop.member_number,
                             username: memberShop.username,
                             shop_number: memberShop.shop_number,
                             role: memberShop.role

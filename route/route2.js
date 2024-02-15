@@ -10,6 +10,8 @@ const partner = require('../Controllers/registerPartner');
 const cost = require('../Controllers/cost_level/costPlus')
 const ship = require('../Controllers/deliveryController/Shippop/ship.controller')
 const percent = require('../Controllers/deliveryController/Shippop/percent.controller')
+const FPSign = require('../Controllers/flashPay/generate.signFP')
+const FP = require('../Controllers/flashPay/flash_pay.controller')
 
 //SHOP
 router.route('/orderhub/shop/post').post(auth.checkToken, shop.create)//ใช้กำหนด path

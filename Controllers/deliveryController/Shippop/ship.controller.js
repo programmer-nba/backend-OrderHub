@@ -84,8 +84,8 @@ priceList = async (req, res)=>{
                     }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(obj[ob].price);
-                    let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let price = cost + (cost * p.percent_shop) / 100;
+                    let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
                     let status = null;
                     
                     const walletShop = await shopPartner.findOne({ shop_number: data[0].shop_number });
@@ -139,10 +139,11 @@ priceList = async (req, res)=>{
                         }
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(obj[ob].price);
-                        let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                         let price = (cost + (cost * p.percent_shop) / 100) + cost_plus
-
-                        let cod_amount = (costPlus + (costPlus * cod) / 100) + (parseFloat(cod) || 0)
+                        let priceInteger = Math.ceil(price)
+            
+                        let cod_amount = 0
                         let status = null;
                         
                         const walletShop = await shopPartner.findOne({ shop_number: data[0].shop_number });
@@ -163,11 +164,12 @@ priceList = async (req, res)=>{
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
                             status: status,
-                            price: Number(price.toFixed()),
+                            price: Number(priceInteger.toFixed()),
                         };
 
                         if (cod !== undefined) {
-                            v.cod_amount = Number(cod_amount.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
+                            v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                         }
                         new_data.push(v);
                         // console.log(new_data);
@@ -265,11 +267,11 @@ booking = async(req, res)=>{
                         "Content-Type": "application/json"},
             }
           );
-        if (!resp.data.status) {
-            return res
-                    .status(400)
-                    .send({status: false, message: resp.data.data[0]});
-        }
+            if (!resp.data.status) {
+                return res
+                        .status(400)
+                        .send({status: false, message: resp.data.data[0]});
+            }
         const Data = resp.data.data[0]
         const parcel = data[0].parcel
         const new_data = []
@@ -284,9 +286,9 @@ booking = async(req, res)=>{
           };
          new_data.push(v);
         const booking_parcel = await BookingParcel.create(v);
-        if(!booking_parcel){
-            console.log("ไม่สามารถสร้างข้อมูล booking ได้")
-        }
+            if(!booking_parcel){
+                console.log("ไม่สามารถสร้างข้อมูล booking ได้")
+            }
         
         return res
                 .status(200)
@@ -334,12 +336,11 @@ cancelOrder = async(req, res)=>{
                         .status(400)
                         .send({ status: false, message: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" });
             }
-        } 
-        // else {
-        //     return res
-        //             .status(400)
-        //             .send({status: false, message:"ไม่สามารถยกเลิกสินค้าได้"})
-        // }
+        } else {
+            return res
+                    .status(400)
+                    .send({status: false, message:"ไม่สามารถยกเลิกสินค้าได้"})
+        }
 
         const respStatus = await axios.post(`${process.env.SHIPPOP_URL}/cancel/`,valueCheck,
             {
@@ -458,15 +459,15 @@ confirmOrder = async (req, res)=>{
                             "Content-Type": "application/json"},
             }
         )
-        if(resp.data.code !== 1){
+        console.log(resp.data.status)
+        if(!resp.data.status){
             return res
                     .status(400)
                     .send({
-                        status:resp.data.status, 
-                        code:resp.data.code,
-                        message:resp.data.message,
+                        data:resp.data, 
                     })
         }
+
         const findShop = await shopPartner.findOne({shop_number:fixStatus.shop_id})
         const diff = findShop.credit - fixStatus.price
         const diffShop = await shopPartner.findOneAndUpdate(
@@ -568,7 +569,7 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
     }
 }
 
-callPickup = async (req, res)=>{ //ใช้ไม่ได้เพราะ shippop ไม่ได้ให้ courier_tracking_code มา
+callPickup = async (req, res)=>{ //ใช้ไม่ได้
     try{
         const courier_tracking_code = req.params.courier_tracking_code
         const valueCheck = {
@@ -612,7 +613,6 @@ getAllBooking = async (req, res) => { //Get All Bookin Only Admin
         return res.status(500).send({message: "มีบางอย่างผิดพลาด"});
     }
 }
-
 
 
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup

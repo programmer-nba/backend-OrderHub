@@ -39,7 +39,7 @@ create = async (req, res)=>{
 
 editCostPlus = async (req, res)=>{
     try{
-        const partnerNumber = req.decoded.partnerNumber
+        const partnerNumber = req.decoded.number
         const cost_plus = req.body.cost_plus
         const fixCost = await costPlus.findOneAndUpdate(
             { partner_number:partnerNumber, 'cost_level.level': '1' },
