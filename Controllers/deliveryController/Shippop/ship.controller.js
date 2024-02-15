@@ -12,42 +12,47 @@ priceList = async (req, res)=>{
     try{
         const percent = await PercentCourier.find();
         const shop = req.body.shop_number
+        const cod = req.body.cod
         if(req.decoded.role === 'shop_member'){
-            if(req.decoded.shop_number !== shop){
+            if(req.decoded.shop_number != shop){
+                console.log(req.decoded.shop_number, shop)
                 return res
                         .status(400)
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
             }
         }else if (req.decoded.role === 'partner'){
             const idPartner = req.decoded.userid
-            const findShop = await shopPartner.findOne(
+            
+            const findShop = await Partner.findOne(
                 {
                     _id:idPartner,
                     shop_partner:{
                         $elemMatch: { shop_number: shop }
                     }
                 })
+            
             if(!findShop){
                 return res
                         .status(400)
-                        .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ"})
-            }else if(findShop.shop_partner.length === 0){
-                return res
-                        .status(400)
-                        .send({status:false, message:"กรุณาสร้างร้านค้าของท่าน"})
+                        .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
             }
         }
+        
         const findForCost = await shopPartner.findOne({shop_number:shop})
         if(!findForCost){
             return res
                     .status(400)
                     .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
         }
-        const costFind = await costPlus.findOne(
-            {
-                'cost_level.partner_number':findForCost.partner_number,
-            })
-        
+
+        const findPartner = await Partner.findOne({partnerNumber:findForCost.partner_number})
+        if(!findPartner){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีหมายเลขพาร์ทเนอร์ของท่าน"})
+        }
+        const upline = findPartner.upline.head_line
+
         let data = [];
         data.push(req.body);
         const value = {
@@ -66,53 +71,118 @@ priceList = async (req, res)=>{
         }
         const obj = resp.data.data[0];
         const new_data = [];
-        for (const ob of Object.keys(obj)) {
-            if (obj[ob].available) {
-                // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
-                // ตัวอย่าง: คำนวนตัวเลข, เรียก function, หรือทำอย่างอื่น
-                let v = null;
-                let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
-                if (!p) {
-                    console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
-                }
-                // คำนวนต้นทุนของร้านค้า
-                let cost_hub = Number(obj[ob].price);
-                let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                let price = cost + (cost * p.percent_shop) / 100;
-                let status = null;
-                
-                const walletShop = await shopPartner.findOne({ shop_number: data[0].shop_number });
-                try {
-                    await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-                    if (walletShop.credit < price) {
-                        status = 'จำนวนเงินของท่านไม่เพียงพอ';
-                    } else {
-                        status = 'พร้อมใช้บริการ';
+
+        if(upline === 'ICE'){
+            for (const ob of Object.keys(obj)) {
+                if (obj[ob].available) {
+                    // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
+                    // ตัวอย่าง: คำนวนตัวเลข, เรียก function, หรือทำอย่างอื่น
+                    let v = null;
+                    let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
+                    if (!p) {
+                        console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
                     }
-                } catch (error) {
-                    console.error('เกิดข้อผิดพลาดในการรอรับค่า');
-                    console.error(error);
+                    // คำนวนต้นทุนของร้านค้า
+                    let cost_hub = Number(obj[ob].price);
+                    let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = cost + (cost * p.percent_shop) / 100;
+                    let status = null;
+                    
+                    const walletShop = await shopPartner.findOne({ shop_number: data[0].shop_number });
+                    try {
+                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                        if (walletShop.credit < price) {
+                            status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                        } else {
+                            status = 'พร้อมใช้บริการ';
+                        }
+                    } catch (error) {
+                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                        console.error(error);
+                    }
+                    v = {
+                        ...obj[ob],
+                        cost_hub: cost_hub,
+                        cost: cost,
+                        status: status,
+                        price: Number(price.toFixed()),
+                    };
+                    new_data.push(v);
+                    // console.log(new_data);
+                } else {
+                    // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
+                    console.log(`Skipping ${obj[ob].courier_code} because available is false`);
                 }
-                v = {
-                    ...obj[ob],
-                    cost_hub: cost_hub,
-                    cost: cost,
-                    status: status,
-                    price: Number(price.toFixed()),
-                };
-                new_data.push(v);
-                // console.log(new_data);
-            } else {
-                // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
-                console.log(`Skipping ${obj[ob].courier_code} because available is false`);
             }
+        }else {
+                const costFind = await costPlus.findOne(
+                    {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
+                    { _id: 0, 'cost_level.$': 1 })
+                if(!costFind){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ค้นหาหมายเลขแนะนำไม่เจอ"})
+                }else if(costFind.cost_level[0].cost_plus === ""){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่ทำการแนะนำระบุส่วนต่าง"})
+                }
+                const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
+                for (const ob of Object.keys(obj)) {
+                    if (obj[ob].available) {
+                        // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
+                        // ตัวอย่าง: คำนวนตัวเลข, เรียก function, หรือทำอย่างอื่น
+                        let v = null;
+                        let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
+                        if (!p) {
+                            console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
+                        }
+                        // คำนวนต้นทุนของร้านค้า
+                        let cost_hub = Number(obj[ob].price);
+                        let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let price = (cost + (cost * p.percent_shop) / 100) + cost_plus
+
+                        let cod_amount = (costPlus + (costPlus * cod) / 100) + (parseFloat(cod) || 0)
+                        let status = null;
+                        
+                        const walletShop = await shopPartner.findOne({ shop_number: data[0].shop_number });
+                        try {
+                            await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                            if (walletShop.credit < price) {
+                                status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                            } else {
+                                status = 'พร้อมใช้บริการ';
+                            }
+                        } catch (error) {
+                            console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                            console.error(error);
+                        }
+                        v = {
+                            ...obj[ob],
+                            cost_hub: cost_hub,
+                            cost: cost,
+                            cod_amount: Number(cod_amount.toFixed()),
+                            status: status,
+                            price: Number(price.toFixed()),
+                        };
+
+                        if (cod !== undefined) {
+                            v.cod_amount = Number(cod_amount.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                        }
+                        new_data.push(v);
+                        // console.log(new_data);
+                    } else {
+                        // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
+                        console.log(`Skipping ${obj[ob].courier_code} because available is false`);
+                    }
+                }
         }
         return res
                 .status(200)
                 .send({ 
                     status: true, 
                     origin_data: req.body, 
-                    new: new_data 
+                    new: new_data,
                 });
     }catch(err){
         console.log(err)
@@ -124,7 +194,7 @@ priceList = async (req, res)=>{
 
 booking = async(req, res)=>{
     try{
-        const courierCode = req.body.courierCode
+        const role = req.decoded.role
         const price = req.body.price
         const costHub = req.body.cost_hub
         const cost = req.body.cost
@@ -143,7 +213,7 @@ booking = async(req, res)=>{
         
             const data_sender = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
                 ...sender,
-                partnerID: id,
+                ID: id,
                 status: 'ผู้ส่ง',
                 shop_id: shop_id,
                 postcode: String(sender.postcode),
@@ -160,12 +230,13 @@ booking = async(req, res)=>{
 
         //ผู้รับ
         const recipient = data[0].to; // ผู้รับ
-        const filter = { partnerID: id, tel: recipient.tel, status: 'ผู้รับ' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+        const filter = { ID: id, tel: recipient.tel, status: 'ผู้รับ' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
 
             const update = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
                 ...recipient,
-                partnerID: id,
+                ID: id,
                 status: 'ผู้รับ',
+                shop_id: shop_id,
                 postcode: String(recipient.postcode),
             };
 
@@ -187,7 +258,7 @@ booking = async(req, res)=>{
             },
             data: data,
         };
-      
+        
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/booking/`,value,
             {
               headers: {"Accept-Encoding": "gzip,deflate,compress",
@@ -197,7 +268,7 @@ booking = async(req, res)=>{
         if (!resp.data.status) {
             return res
                     .status(400)
-                    .send({status: false, message: resp.data.message});
+                    .send({status: false, message: resp.data.data[0]});
         }
         const Data = resp.data.data[0]
         const parcel = data[0].parcel
@@ -211,7 +282,7 @@ booking = async(req, res)=>{
                 parcel:parcel,
                 price: Number(price.toFixed()),
           };
-        //  new_data.push(v);
+         new_data.push(v);
         const booking_parcel = await BookingParcel.create(v);
         if(!booking_parcel){
             console.log("ไม่สามารถสร้างข้อมูล booking ได้")
@@ -263,11 +334,12 @@ cancelOrder = async(req, res)=>{
                         .status(400)
                         .send({ status: false, message: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" });
             }
-        } else {
-            return res
-                    .status(400)
-                    .send({status: false, message:"ไม่สามารถยกเลิกสินค้าได้"})
-        }
+        } 
+        // else {
+        //     return res
+        //             .status(400)
+        //             .send({status: false, message:"ไม่สามารถยกเลิกสินค้าได้"})
+        // }
 
         const respStatus = await axios.post(`${process.env.SHIPPOP_URL}/cancel/`,valueCheck,
             {
@@ -275,6 +347,13 @@ cancelOrder = async(req, res)=>{
                         "Content-Type": "application/json"},
             }
           )
+        if(respStatus.data.code !== 1){
+            return res
+                    .status(400)
+                    .send({
+                        data:respStatus.data
+                    })
+        }
         // //คืนเงินให้ SHOP
         // const findShop = await shopPartner.findOne({shop_number:findStatus.shop_id})
         // if(!findShop){
@@ -356,6 +435,8 @@ tracking = async (req, res)=>{
 
 confirmOrder = async (req, res)=>{
     try{
+        const id = req.decoded.userid
+        const role = req.decoded.role
         const purchase_id = req.params.purchase_id
         const valueCheck = {
             api_key: process.env.SHIPPOP_API_KEY,
@@ -373,10 +454,19 @@ confirmOrder = async (req, res)=>{
         }
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/confirm/`,valueCheck,
             {
-            headers: {"Accept-Encoding": "gzip,deflate,compress",
-                        "Content-Type": "application/json"},
+                headers: {"Accept-Encoding": "gzip,deflate,compress",
+                            "Content-Type": "application/json"},
             }
         )
+        if(resp.data.code !== 1){
+            return res
+                    .status(400)
+                    .send({
+                        status:resp.data.status, 
+                        code:resp.data.code,
+                        message:resp.data.message,
+                    })
+        }
         const findShop = await shopPartner.findOne({shop_number:fixStatus.shop_id})
         const diff = findShop.credit - fixStatus.price
         const diffShop = await shopPartner.findOneAndUpdate(
@@ -387,14 +477,15 @@ confirmOrder = async (req, res)=>{
             console.log("ไม่สามารถแก้ไขเงินของ shop ได้")
         }
         const history = {
-            partnerID: findShop.partnerID,
+            ID: id,
+            role: role,
             shop_number: fixStatus.shop_id,
             orderid: fixStatus.purchase_id,
             amount: fixStatus.price,
             before: findShop.credit,
             after: diff,
             type: fixStatus.courier_code,
-            remark: "ขนส่งสินค้า"
+            remark: "ขนส่งสินค้า(SHIPPOP)"
         }
         const historyShop = await historyWalletShop.create(history)
         if(!historyShop){

@@ -4,7 +4,7 @@ const Joi = require("joi");
 var bcrypt = require("bcrypt");
 //จุดรับส่งสินค้าของ partners
 const dropoffSchema = new Schema({
-    partnerID:{type:String, default:"", required: false},
+    ID:{type:String, default:"", required: false},
     shop_id:{type:String,  default:"", required:false},
     status:{type:String, required:false},
     name: {type:String, required: false},
