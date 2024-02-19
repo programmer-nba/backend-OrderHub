@@ -11,14 +11,9 @@ const historySchema = new Schema({
     lastname:{type:String, require: false},
     amount:{type:Number, require: false},
     before:{type:String, require: false},
-    after:{type:String, require: false, default: "รอแอดมินยืนยัน"},
+    after:{type:String, require: false, default: "รอตรวจสอบ"},
     type:{type:String, require: false, default: "none"},
-    timestamps:{
-        type: String,
-        default: function() {
-          return dayjs(Date.now()).format('YYYY-MM-DD');
-        }
-      }
+    image:{type:String, require: false, default: "none"},
 },{timestamps:true});
 
 const historyWallet = mongoose.model("historytopup", historySchema);

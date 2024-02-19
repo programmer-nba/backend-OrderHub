@@ -15,7 +15,7 @@ generateSign_FP = async(formData)=>{
                 acc[key] = jsonData[key];
                 return acc;
             }, {});
-        console.log(sortedJsonData)
+        // console.log(sortedJsonData)
         //เมื่อทำการ sort ภายใน Object data แบบ alphabet in ascending order ทำการนำ object ที่ได้ไปทับใน Object data ใน formData
         formData.data = sortedJsonData
         
@@ -34,8 +34,7 @@ generateSign_FP = async(formData)=>{
         //console.log(sortedFormData)
 
         // Reading keys from files.
-        const privateKey = fs.readFileSync('./private.key');
-        const publicKey = fs.readFileSync('./public.key');
+        const privateKey = fs.readFileSync('./private.key')
 
         // สร้างอ็อบเจ็กต์ Sign สำหรับการลงนามด้วย RSA-SHA256(พ่องตายกว่าจะได้)
         const signature = crypto.sign('RSA-SHA256', utf8Bytes, privateKey).toString("base64")
@@ -49,11 +48,12 @@ generateSign_FP = async(formData)=>{
                 return acc;
         }, {});
 
-        console.log(newSortData)
+        //console.log(`FLASH Notify`,newSortData)
         return {newSortData}
 }
 
 generateVetify = async(formData, receivedSignature)=>{
+    try{
         const jsonData = formData.data;
 
         // Sort keys within alphabet in ascending order the JSON object
@@ -63,7 +63,7 @@ generateVetify = async(formData, receivedSignature)=>{
                 acc[key] = jsonData[key];
                 return acc;
             }, {});
-        console.log(sortedJsonData)
+        //console.log(sortedJsonData)
         //เมื่อทำการ sort ภายใน Object data แบบ alphabet in ascending order ทำการนำ object ที่ได้ไปทับใน Object data ใน formData
         formData.data = sortedJsonData
         
@@ -85,13 +85,10 @@ generateVetify = async(formData, receivedSignature)=>{
 
         const isSignatureValid = verify.verify(publicKey, receivedSignature, 'base64');
 
-        if (isSignatureValid) {
-            console.log('ลายเซ็นถูกต้อง');
-            // ดำเนินการเพิ่มเติมที่นี่
-        } else {
-            console.log('ลายเซ็นไม่ถูกต้อง');
-            // ดำเนินการเพิ่มเติมที่นี่
-        }
+        return isSignatureValid
+    }catch(err){
+        console.log(err)
+    }
 }
 
 module.exports = { generateSign_FP, generateVetify }

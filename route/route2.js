@@ -76,4 +76,12 @@ router.route('/orderhub/flashpay/payment/results').get( auth.checkToken, FP.paym
 router.route('/orderhub/flashpay/payment/transaction').get( auth.checkToken, FP.transactionResult )
 router.route('/orderhub/flashpay/payment/notify').post( auth.checkToken, FP.notifyTransaction )
 router.route('/orderhub/flashpay/payment/vertify').post( FP.vertifyNotify )
+
+//shop history (ประวัติการเงินของแต่ละช็อป)
+const historyShop = require('../Controllers/shop_partner/shop.history')
+router.route('/orderhub/historyShop/getAll').get( historyShop.getAll )
+router.route('/orderhub/historyShop/getOne/:shop_number').get( historyShop.getOne )
+
+
+
 module.exports = router;

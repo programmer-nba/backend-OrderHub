@@ -54,10 +54,10 @@ priceList = async (req, res)=>{
         const upline = findPartner.upline.head_line
 
         let data = [];
-        data.push(req.body);
-        const value = {
-        api_key: process.env.SHIPPOP_API_KEY,
-        data: data,
+            data.push(req.body);
+            const value = {
+            api_key: process.env.SHIPPOP_API_KEY,
+            data: data,
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/pricelist/`,value,
             {
@@ -87,6 +87,7 @@ priceList = async (req, res)=>{
                     let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
                     let status = null;
+                    let cod_amount = 0
                     
                     const walletShop = await shopPartner.findOne({ shop_number: data[0].shop_number });
                     try {
@@ -104,9 +105,15 @@ priceList = async (req, res)=>{
                         ...obj[ob],
                         cost_hub: cost_hub,
                         cost: cost,
+                        cod_amount: Number(cod_amount.toFixed()),
                         status: status,
                         price: Number(price.toFixed()),
                     };
+
+                    if (cod !== undefined) {
+                        let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
+                        v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                    }
                     new_data.push(v);
                     // console.log(new_data);
                 } else {
