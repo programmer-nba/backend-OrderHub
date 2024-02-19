@@ -23,10 +23,13 @@
     "googleapis": "^131.0.0",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
+    "jsqr": "^1.4.0",
     "moment": "^2.30.1",
     "mongoose": "^8.0.3",
     "multer": "^1.4.5-lts.1",
     "nodemon": "^3.0.2",
+    "qr-image": "^3.2.0",
+    "qrcode": "^1.5.3",
     "twilio": "^4.20.0"
   },
   "repository": {

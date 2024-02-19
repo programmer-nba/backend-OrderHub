@@ -70,4 +70,10 @@ router.route('/orderhub/percent/getid/:id').get( percent.getById )
 router.route('/orderhub/percent/update/:id').put( percent.update )
 router.route('/orderhub/percent/del/:id').delete( percent.delend )
 
+//flash_pay
+router.route('/orderhub/flashpay/qrcreate').post( auth.checkToken, FP.QRCreate )
+router.route('/orderhub/flashpay/payment/results').get( auth.checkToken, FP.paymentResults )
+router.route('/orderhub/flashpay/payment/transaction').get( auth.checkToken, FP.transactionResult )
+router.route('/orderhub/flashpay/payment/notify').post( auth.checkToken, FP.notifyTransaction )
+router.route('/orderhub/flashpay/payment/vertify').post( FP.vertifyNotify )
 module.exports = router;
