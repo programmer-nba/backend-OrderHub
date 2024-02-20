@@ -26,6 +26,7 @@ QRCreate = async (req, res)=>{
         const apiUrl = process.env.FLASHPAY_URL
         const amount = req.body.amount
         const shop = req.body.shop_number
+        console.log(amount)
         const findPartner = await Partner.findOne(
             {
                 partnerNumber:number,
@@ -208,14 +209,17 @@ notifyTransaction = async (req, res)=>{
     try{
         const KEY = process.env.FLASHPAY_KEY
         const apiUrl = process.env.FLASHPAY_URL
+        const outTradeNo = req.body.outTradeNo
+        const tradeNo = req.body.tradeNo
+        const tradeTime = req.body.tradeTime
         const fromData = {
             appKey : KEY,
             charset : 'UTF-8',
             data:{
-                "outTradeNo": "20240295878023",
-                "tradeNo": "240220049932754508",
+                "outTradeNo": outTradeNo,
+                "tradeNo": tradeNo,
                 "tradeStatus": 3,
-                "tradeTime": "2024-02-20 04:27:11",
+                "tradeTime": tradeTime,
                 "completeTime": dayTime,
                 "paymentAmount": 40000,
                 "cur": "THB",
@@ -228,7 +232,7 @@ notifyTransaction = async (req, res)=>{
         const newData = await generateSign_FP(fromData)
         const formDataOnly = newData.newSortData
             // console.log(formDataOnly)
-        const response = await axios.post(`http://api.tossaguns.online/flashpay/payment/vertify`,formDataOnly,{
+        const response = await axios.post(`http://localhost:9019/orderhub/flashpay/payment/vertify`,formDataOnly,{
             headers: {
                 'Content-Type': 'application/json',
                 'Accept-Language': 'TH',
@@ -268,6 +272,11 @@ vertifyNotify = async (req, res)=>{
             let findShop
             if(tradeStatus == 3){
                 const currentWallet = await historyWallet.findOne({ orderid: tradeNo });
+                if(!currentWallet){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลข tradeNo ได้"})
+                }
                 const findBefore = await shopPartner.findOne({shop_number:currentWallet.shop_number})
                 let wallet = Number(findBefore.credit) + amount
 
