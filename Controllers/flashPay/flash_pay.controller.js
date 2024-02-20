@@ -5,20 +5,13 @@ const path = require('path');
 const fs = require('fs');
 const qrcode = require('qrcode');
 const qr = require('qr-image');
-const jsQR = require('jsqr');
-const fsPromiss = require('fs').promises;
 const crypto = require('crypto');
 const { Partner } = require('../../Models/partner');
 const { historyWallet } = require('../../Models/topUp/history_topup');
+const { shopPartner } = require("../../Models/shop/shop_partner");
 
  //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
- const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
- const dayTimePlusOneHour = dayjs(dayTime).add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
-
- const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
- const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
- const outTradeNo = milliseconds
 
 QRCreate = async (req, res)=>{
     try{
@@ -27,19 +20,21 @@ QRCreate = async (req, res)=>{
         const apiUrl = process.env.FLASHPAY_URL
         const amount = req.body.amount
         const shop = req.body.shop_number
-        const findShop = await Partner.findOne(
+        const findPartner = await Partner.findOne(
             {
                 partnerNumber:number,
                 shop_partner:{
                     $elemMatch: { shop_number: shop }
                 }
             })
-        if(!findShop){
+        if(!findPartner){
             return res
                     .status(400)
                     .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
         }
-        const amountBath = amount * 100
+        const outTradeNo = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
+            // console.log('invoice : '+outTradeNo);
+        const amountBath = amount * 100 //เปลี่ยนบาท เป็น สตางค์
         const fromData = {
             appKey : KEY,
             charset : 'UTF-8',
@@ -75,12 +70,19 @@ QRCreate = async (req, res)=>{
             if (err) throw err;
             console.log('สร้าง QR Code และบันทึกไฟล์ output.png เรียบร้อยแล้ว');
         });
+        const findShop = await shopPartner.findOne({shop_number:shop})
+        if(!findShop){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่สามารถค้นหาร้านค้าที่ท่านระบุได้"})
+        }
         const new_data = {
-            partnerID:findShop._id,
-            shop_id: shop,
+            partnerID:findPartner._id,
+            shop_number: shop,
             orderid:response.data.data.tradeNo,
-            firstname: findShop.firstname,
-            lastname: findShop.lastname,
+            outTradeNo: outTradeNo,
+            firstname: findPartner.firstname,
+            lastname: findPartner.lastname,
             amount: amount,
             before: findShop.credit,
             type: "QRCODE FLASHPAY"
@@ -185,10 +187,10 @@ transactionResult = async (req, res)=>{
                 .status(200)
                 .send({status:true, data: response.data})
     }catch(err){
-        console.log(err)
+        // console.log(err)
         return res
                 .status(500)
-                .send({status:false, message:err.message})
+                .send({status:false, message:err})
     }
 }
 
@@ -200,10 +202,10 @@ notifyTransaction = async (req, res)=>{
             appKey : KEY,
             charset : 'UTF-8',
             data:{
-                "outTradeNo": "1708323976000",
-                "tradeNo": "240219043563837208",
+                "outTradeNo": "20240200000006",
+                "tradeNo": "240220047488658608",
                 "tradeStatus": 3,
-                "tradeTime": "2024-02-19 11:57:50",
+                "tradeTime": "2024-02-20 04:27:11",
                 "completeTime": dayTime,
                 "paymentAmount": 40000,
                 "cur": "THB",
@@ -248,9 +250,83 @@ vertifyNotify = async (req, res)=>{
         console.log(isSignatureValid)
         if (isSignatureValid) {
             console.log('ลายเซ็นถูกต้อง');
+            const tradeNo = receivedData.data.tradeNo
+            const tradeStatus = receivedData.data.tradeStatus
+            const amount = receivedData.data.paymentAmount / 100
+            let findTradeNo
+            let findShop
+            if(tradeStatus == 3){
+                const currentWallet = await historyWallet.findOne({ orderid: tradeNo });
+                const findBefore = await shopPartner.findOne({shop_number:currentWallet.shop_number})
+                let wallet = Number(findBefore.credit) + amount
+
+                findTradeNo = await historyWallet.findOneAndUpdate(
+                    {orderid:tradeNo},
+                    {
+                        before: findBefore.credit,
+                        after: wallet
+                    },
+                    {new:true})
+                    if(!findTradeNo){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้"})
+                    }
+                findShop = await shopPartner.findOneAndUpdate(
+                    {shop_number:currentWallet.shop_number},
+                    {credit: wallet},
+                    {new:true})
+                    if(!findShop){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาร้านค้าได้"})
+                    }
+            }else if(tradeStatus == 2){
+                findTradeNo = await historyWallet.findOneAndUpdate(
+                    {orderid:tradeNo},
+                    {
+                        after:"กำลังประมวลผล"
+                    }, 
+                    {new:true})
+                if(!findTradeNo){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้"})
+                }
+            }else if(tradeStatus == 4){
+                findTradeNo = await historyWallet.findOneAndUpdate(
+                    {orderid:tradeNo},
+                    {
+                        after:"รายการเติมเงินล้มเหลว"
+                    }, 
+                    {new:true})
+                if(!findTradeNo){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้"})
+                }
+            }else{
+                findTradeNo = await historyWallet.findOneAndUpdate(
+                    {orderid:tradeNo},
+                    {
+                        after:"QR CODE หมดอายุ"
+                    }, 
+                    {new:true})
+                if(!findTradeNo){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้"})
+                }
+            }
+
             return res
                     .status(200)
-                    .send({code:0, message:"SUCCESS"})
+                    .send({
+                        code:0, 
+                        data:findTradeNo, 
+                        shop:findShop,
+                        message:"SUCCESS"
+                    })
         } else {
             console.log('ลายเซ็นไม่ถูกต้อง');
             return res
@@ -264,6 +340,30 @@ vertifyNotify = async (req, res)=>{
                 .status(500)
                 .send({status:false, message:err.message})
     }
+}
+
+async function invoiceNumber(date) {
+    const order = await historyWallet.find();
+    let invoice_number = null;
+    if (order.length !== 0) {
+      let data = "";
+      let num = 0;
+      let check = null;
+      do {
+        num = num + 1;
+        data = `${dayjs(date).format("YYYYMM")}`.padEnd(13, "0") + num;
+        check = await historyWallet.find({outTradeNo: data});
+        //console.log(check);
+        if (check.length === 0) {
+          invoice_number =
+            `${dayjs(date).format("YYYYMM")}`.padEnd(13, "0") + num;
+        }
+      } while (check.length !== 0);
+    } else {
+      invoice_number = `${dayjs(date).format("YYYYMM")}`.padEnd(13, "0") + "1";
+    }
+    console.log(invoice_number);
+    return invoice_number;
 }
 
 module.exports = { QRCreate, paymentResults, transactionResult, notifyTransaction, vertifyNotify}
