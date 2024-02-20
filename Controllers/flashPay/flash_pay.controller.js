@@ -17,7 +17,7 @@ const { shopPartner } = require("../../Models/shop/shop_partner");
 
  const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
  const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
-
+ 
 
 QRCreate = async (req, res)=>{
     try{
@@ -39,7 +39,7 @@ QRCreate = async (req, res)=>{
                     .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
         }
         const outTradeNo = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
-            // console.log('invoice : '+outTradeNo);
+            console.log('invoice : '+outTradeNo);
         const amountBath = amount * 100 //เปลี่ยนบาท เป็น สตางค์
         const fromData = {
             appKey : KEY,
@@ -61,20 +61,24 @@ QRCreate = async (req, res)=>{
         const newData = await generateSign_FP(fromData)
         const formDataOnly = newData.newSortData
              console.log(formDataOnly)
-        const response = await axios.post(`${apiUrl}/upay/create-qrcode-payment`,formDataOnly,{
+        const response = await axios.post(`${apiUrl}/upay/create-qrcode-payment`, formDataOnly, {
             headers: {
-                'Content-Type': 'application/json',
-                'Accept-Language': 'TH',
+                    'Content-Type': 'application/json',
+                    'Accept-Language': 'TH',
             },
-        })
+        });
 
         // ข้อมูลขนาดใหญ่ที่ถูกเข้ารหัส base64
         const qrRawData  = response.data.data.qrRawData
-
+        console.log(qrRawData)
+        const qrCodeFilePath = `D:\\QRCODE\\${outTradeNo}.png`
         // สร้าง QR Code จากข้อมูล
         qrcode.toFile(`D:\QRCODE/${outTradeNo}.png`, qrRawData, { type: 'png' }, (err) => {
-            if (err) throw err;
-            console.log('สร้าง QR Code และบันทึกไฟล์ output.png เรียบร้อยแล้ว');
+            if (err) {
+                console.error('Error creating QR Code:', err);
+            } else {
+                console.log('QR Code created and saved successfully:', qrCodeFilePath);
+            }
         });
         const findShop = await shopPartner.findOne({shop_number:shop})
         if(!findShop){
@@ -208,8 +212,8 @@ notifyTransaction = async (req, res)=>{
             appKey : KEY,
             charset : 'UTF-8',
             data:{
-                "outTradeNo": "20240200000008",
-                "tradeNo": "240220049523894008",
+                "outTradeNo": "20240295878023",
+                "tradeNo": "240220049932754508",
                 "tradeStatus": 3,
                 "tradeTime": "2024-02-20 04:27:11",
                 "completeTime": dayTime,
@@ -224,7 +228,7 @@ notifyTransaction = async (req, res)=>{
         const newData = await generateSign_FP(fromData)
         const formDataOnly = newData.newSortData
             // console.log(formDataOnly)
-        const response = await axios.post(`http://api.tossaguns.online/orderhub/flashpay/payment/vertify`,formDataOnly,{
+        const response = await axios.post(`http://api.tossaguns.online/flashpay/payment/vertify`,formDataOnly,{
             headers: {
                 'Content-Type': 'application/json',
                 'Accept-Language': 'TH',
@@ -252,6 +256,7 @@ vertifyNotify = async (req, res)=>{
             time: receivedData.time,
             version: receivedData.version
         }
+        console.log(receivedData)
         const isSignatureValid = await generateVetify(formData, receivedSignature)
         console.log(isSignatureValid)
         if (isSignatureValid) {
@@ -329,8 +334,8 @@ vertifyNotify = async (req, res)=>{
                     .status(200)
                     .send({
                         code:0, 
-                        data:findTradeNo, 
-                        shop:findShop,
+                        // data:findTradeNo, 
+                        // shop:findShop,
                         message:"SUCCESS"
                     })
         } else {
@@ -349,27 +354,22 @@ vertifyNotify = async (req, res)=>{
 }
 
 async function invoiceNumber(date) {
-    const order = await historyWallet.find();
-    let invoice_number = null;
-    if (order.length !== 0) {
-      let data = "";
-      let num = 0;
-      let check = null;
-      do {
-        num = num + 1;
-        data = `${dayjs(date).format("YYYYMM")}`.padEnd(13, "0") + num;
-        check = await historyWallet.find({outTradeNo: data});
-        //console.log(check);
-        if (check.length === 0) {
-          invoice_number =
-            `${dayjs(date).format("YYYYMM")}`.padEnd(13, "0") + num;
-        }
-      } while (check.length !== 0);
-    } else {
-      invoice_number = `${dayjs(date).format("YYYYMM")}`.padEnd(13, "0") + "1";
+    data = `${dayjs(date).format("YYYYMM")}`
+    let random = Math.floor(Math.random() * 100000000)
+    const combinedData = data + random;
+    const findInvoice = await historyWallet.find({orderid:combinedData})
+
+    while (findInvoice && findInvoice.length > 0) {
+        // สุ่ม random ใหม่
+        random = Math.floor(Math.random() * 100000000);
+        combinedData = data + random;
+
+        // เช็คใหม่
+        findInvoice = await historyWallet.find({orderid: combinedData});
     }
-    console.log(invoice_number);
-    return invoice_number;
+
+    console.log(combinedData);
+    return combinedData;
 }
 
 module.exports = { QRCreate, paymentResults, transactionResult, notifyTransaction, vertifyNotify}
