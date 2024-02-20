@@ -12,6 +12,12 @@ const { shopPartner } = require("../../Models/shop/shop_partner");
 
  //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
+ const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
+ const dayTimePlusOneHour = dayjs(dayTime).add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
+
+ const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
+ const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
+
 
 QRCreate = async (req, res)=>{
     try{
@@ -47,7 +53,7 @@ QRCreate = async (req, res)=>{
                 "subject": "พาร์ทเนอร์เติมเงินเข้าระบบ",
                 "body": "ORDER HUB สแกนเติมเงิน",
                 "expireTime": dayTimePlusOneHour,
-                "notifyUrl": "http://localhost:9019/orderhub/flashpay/payment/vertify",
+                "notifyUrl": "http://api.tossaguns.online/orderhub/flashpay/payment/vertify",
             },
             time: dayTime,
             version: 1.1
@@ -202,8 +208,8 @@ notifyTransaction = async (req, res)=>{
             appKey : KEY,
             charset : 'UTF-8',
             data:{
-                "outTradeNo": "20240200000006",
-                "tradeNo": "240220047488658608",
+                "outTradeNo": "20240200000008",
+                "tradeNo": "240220049523894008",
                 "tradeStatus": 3,
                 "tradeTime": "2024-02-20 04:27:11",
                 "completeTime": dayTime,
@@ -218,7 +224,7 @@ notifyTransaction = async (req, res)=>{
         const newData = await generateSign_FP(fromData)
         const formDataOnly = newData.newSortData
             // console.log(formDataOnly)
-        const response = await axios.post(`http://localhost:9019/orderhub/flashpay/payment/vertify`,formDataOnly,{
+        const response = await axios.post(`http://api.tossaguns.online/orderhub/flashpay/payment/vertify`,formDataOnly,{
             headers: {
                 'Content-Type': 'application/json',
                 'Accept-Language': 'TH',
