@@ -552,7 +552,7 @@ estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash expre
     try{
         const percent = await PercentCourier.find();
         const apiUrl = process.env.TRAINING_URL
-        const mchId = req.body.mchId
+        const mchId = process.env.MCH_ID
         const shop = req.body.shop_number
         if(req.decoded.role === 'shop_member'){
             if(req.decoded.shop_number != shop){
@@ -708,10 +708,10 @@ estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash expre
                         }
                         v = {
                             ...response.data.data,
-                            cost_hub: cost_hub,
-                            cost: cost,
+                            cost_hub: cost_hub, //ต้นทุนที่ทาง flash ให้คุณไอซ์
+                            cost: cost, //คุณไอซ์เก็บ 5%
                             priceOne: Number(priceOne.toFixed()),
-                            price: Number(price.toFixed()),
+                            price: Number(price.toFixed()), //พาร์ทเนอร์โดนเก็บเพิ่ม 10%
                             status: status,
                         };
                         new_data.push(v);

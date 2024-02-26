@@ -54,8 +54,37 @@ priceList = async (req, res)=>{
         const upline = findPartner.upline.head_line
 
         let data = [];
-            data.push(req.body);
-            const value = {
+            data.push({
+            "from": {
+                "name": req.body.from.name,
+                "address": req.body.from.address,
+                "district": req.body.from.district,
+                "state": req.body.from.state,
+                "province": req.body.from.province,
+                "postcode": req.body.from.postcode,
+                "tel": req.body.from.tel
+            },
+            "to": {
+                "name": req.body.to.name,
+                "address": req.body.to.address,
+                "district": req.body.to.district,
+                "state": req.body.to.state,
+                "province": req.body.to.province,
+                "postcode": req.body.to.postcode,
+                "tel": req.body.to.tel
+            },
+            "parcel": {
+                // "name": "สินค้าชิ้นที่ 1",
+                "weight": req.body.parcel.weight,
+                "width": req.body.parcel.width,
+                "length": req.body.parcel.length,
+                "height": req.body.parcel.height
+            },
+         //DHL FLE
+            "showall": 1,
+            "shop_number": req.body.shop_number//524854
+        });
+        const value = {
             api_key: process.env.SHIPPOP_API_KEY,
             data: data,
         };

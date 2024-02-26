@@ -133,7 +133,7 @@ createPartner = async (req, res) => {
               .status(500)
               .send({ message: "มีบางอย่างผิดพลาด" });
   }
-};
+}
 
 getAllPartner = async (req,res)=>{
     try{

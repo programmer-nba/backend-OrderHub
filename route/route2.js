@@ -64,11 +64,11 @@ router.route('/orderhub/shippop/tracking_purchase/:purchase_id').get( ship.track
 router.route('/orderhub/shippop/lebelHtml').post( ship.labelHtml )
 
 //percent
-router.route('/orderhub/percent/create').post( percent.create )
-router.route('/orderhub/percent/getAll').get( percent.getAll )
-router.route('/orderhub/percent/getid/:id').get( percent.getById )
-router.route('/orderhub/percent/update/:id').put( percent.update )
-router.route('/orderhub/percent/del/:id').delete( percent.delend )
+router.route('/orderhub/percent/create').post( authAdmin.checkToken, percent.create )
+router.route('/orderhub/percent/getAll').get( authAdmin.checkToken, percent.getAll )
+router.route('/orderhub/percent/getid/:id').get( authAdmin.checkToken, percent.getById )
+router.route('/orderhub/percent/update/:id').put( authAdmin.checkToken, percent.update )
+router.route('/orderhub/percent/del/:id').delete( authAdmin.checkToken, percent.delend )
 
 //flash_pay
 router.route('/orderhub/flashpay/qrcreate').post( auth.checkToken, FP.QRCreate )
@@ -82,6 +82,19 @@ const historyShop = require('../Controllers/shop_partner/shop.history')
 router.route('/orderhub/historyShop/getAll').get( historyShop.getAll )
 router.route('/orderhub/historyShop/getOne/:shop_number').get( historyShop.getOne )
 
+//J&T
+const genKey = require('../Controllers/deliveryController/๋J&T/generate.signJ&T')
+const JT = require('../Controllers/deliveryController/๋J&T/J&T.controller')
+router.route('/orderhub/JT/create').post( auth.checkToken, JT.createOrder )
+router.route('/orderhub/JT/tracking').get( JT.trackingOrder )
+router.route('/orderhub/JT/cancel').delete( JT.cancelOrder )
+router.route('/orderhub/JT/label').post( JT.label )
 
+//COD
+const cod = require('../Controllers/deliveryController/COD/cod.controller')
+router.route('/orderhub/cod/post').post( cod.createCOD )
+router.route('/orderhub/cod/getAll').get( cod.getAll )
+router.route('/orderhub/cod/edit/:id').put( cod.editCOD )
+router.route('/orderhub/cod/del/:id').delete( cod.delend )
 
 module.exports = router;

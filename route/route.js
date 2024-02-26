@@ -9,7 +9,6 @@ const authAdmin = require('../lib/authAdmin');
 const his = require('../Controllers/Top-up/history_wallet')
 const topup = require('../Controllers/Top-up/topupController')
 const drop = require('../Controllers/deliveryController/dropoff_point')
-const flash = require('../Controllers/deliveryController/flashExpress')
 
 //CRUD employees table(Admin Only)
 //router.route('/orderhub/post').post(main.Post) //ใช้กำหนด path ที่ต้องการทำให้ไม่ต้องไปประกาศใน File Server แล้ว
