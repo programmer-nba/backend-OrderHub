@@ -7,12 +7,20 @@ const { BookingParcel } = require('../../../Models/Delivery/ship_pop/purchase_id
 const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { historyWallet } = require('../../../Models/topUp/history_topup');
 const { costPlus } = require('../../../Models/costPlus');
+const { codExpress } = require('../../../Models/COD/cod.model');
 
 priceList = async (req, res)=>{
     try{
         const percent = await PercentCourier.find();
         const shop = req.body.shop_number
-        const cod = req.body.cod
+        let reqCod = req.body.cod
+        let percentCod
+        if(reqCod !== undefined){
+            const findCod = await codExpress.findOne({express:"SHIPPOP"})
+            percentCod = findCod.percent
+        }
+        const cod = percentCod
+        console.log(cod)
         if(req.decoded.role === 'shop_member'){
             if(req.decoded.shop_number != shop){
                 console.log(req.decoded.shop_number, shop)
@@ -115,6 +123,7 @@ priceList = async (req, res)=>{
                     let cost_hub = Number(obj[ob].price);
                     let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
+                    let priceInteger = Math.ceil(price)
                     let status = null;
                     let cod_amount = 0
                     

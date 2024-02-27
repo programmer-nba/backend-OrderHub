@@ -9,6 +9,7 @@ const { shopPartner } = require('../../../Models/shop/shop_partner');
 const { PercentCourier } = require('../../../Models/Delivery/ship_pop/percent');
 const { flashOrder } = require('../../../Models/Delivery/flash_express/create_order');
 const { historyWalletShop } = require('../../../Models/shop/shop_history');
+const { codExpress } = require('../../../Models/COD/cod.model');
 
  //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
@@ -164,7 +165,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
 statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
     try{
         const apiUrl = process.env.TRAINING_URL
-        const mchId = req.body.mchId
+        const mchId = process.env.MCH_ID
         const pno = req.body.pno
         const formData = {
             mchId: mchId,
@@ -240,7 +241,7 @@ getWareHouse = async(req, res)=>{ //เรียกดูคลังสิน�
 print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ขนาด 100*180 มม.)
     try{
         const apiUrl = process.env.TRAINING_URL
-        const mchId = req.body.mchId
+        const mchId = process.env.MCH_ID
         const pno = req.body.pno
         const formData = {
             mchId: mchId,
@@ -279,7 +280,7 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
 print100x75 = async(req, res)=>{ //ปริ้นใบปะหน้า(ขนาด 100*75 มม.)
     try{
         const apiUrl = process.env.TRAINING_URL
-        const mchId = req.body.mchId
+        const mchId = process.env.MCH_ID
         const pno = req.body.pno
         const formData = {
             mchId: mchId,
@@ -352,7 +353,7 @@ statusPOD = async (req, res)=>{ //ตรวจสอบข้อมูล POD(�
 statusOrderPack = async (req, res)=>{ //ตรวจสอบข้อมูลพัสดุแบบชุด
     try{
         const apiUrl = process.env.TRAINING_URL
-        const mchId = req.body.mchId
+        const mchId = process.env.MCH_ID
         const pnos = req.body.pnos
         const formData = {
             mchId: mchId,
@@ -392,7 +393,7 @@ cancelOrder = async (req, res)=>{ //ตรวจสอบข้อมูลพ�
         const role = req.decoded.role
         const id = req.decoded.userid
         const apiUrl = process.env.TRAINING_URL
-        const mchId = req.body.mchId
+        const mchId = process.env.MCH_ID
         const pno = req.body.pno
         const formData = {
             mchId: mchId,
@@ -554,6 +555,13 @@ estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash expre
         const apiUrl = process.env.TRAINING_URL
         const mchId = process.env.MCH_ID
         const shop = req.body.shop_number
+        let codReq = req.body.cod
+        let percentCod
+        if(codReq !== undefined){
+            const findCod = await codExpress.findOne({express:"FLASH"})
+            percentCod = findCod.percent
+        }
+        const cod = percentCod
         if(req.decoded.role === 'shop_member'){
             if(req.decoded.shop_number != shop){
                 console.log(req.decoded.shop_number, shop)
@@ -578,24 +586,48 @@ estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash expre
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
             }
         }
-
         const formData = {
-                mchId: mchId,
-                nonceStr: nonceStr,
-                srcProvinceName: req.body.srcProvinceName,
-                srcCityName: req.body.srcCityName,
-                srcDistrictName: req.body.srcDistrictName,
-                srcPostalCode: req.body.srcPostalCode,
-                dstProvinceName: req.body.dstProvinceName,
-                dstCityName: req.body.dstCityName,
-                dstDistrictName: req.body.dstDistrictName,
-                dstPostalCode: req.body.dstPostalCode,
-                weight: req.body.weight,
-                width: req.body.width,
-                length: req.body.length,
-                height: req.body.height,
-                pricingTable: 1,
-                ...req.body
+            mchId: mchId,
+            nonceStr: nonceStr,
+            srcName: req.body.from.name,
+            srcAdress: req.body.from.address,
+            srcProvinceName: req.body.from.province,
+            srcCityName: req.body.from.district,
+            srcDistrictName: req.body.from.state,
+            srcPostalCode: req.body.from.postcode,
+            srcPhone: req.body.from.tel,
+            dstName: req.body.to.name,
+            dstAdress: req.body.to.address,
+            dstProvinceName: req.body.to.province,
+            dstCityName: req.body.to.district,
+            dstDistrictName: req.body.to.state,
+            dstPostalCode: req.body.to.postcode,
+            dstPhone: req.body.to.tel,
+            weight: req.body.parcel.weight,
+            width: req.body.parcel.width,
+            length: req.body.parcel.length,
+            height: req.body.parcel.height,
+                // mchId: mchId,
+                // nonceStr: nonceStr,
+                // srcName: "Mahunnop",
+                // srcAdress: "เลขที่ 12/1",
+                // srcProvinceName: req.body.srcProvinceName,
+                // srcCityName: req.body.srcCityName,
+                // srcDistrictName: req.body.srcDistrictName,
+                // srcPostalCode: req.body.srcPostalCode,
+                // srcPhone: "054355132",
+                // dstName: "Kapkhao",
+                // dstAdress: "54กดก",
+                // dstProvinceName: req.body.dstProvinceName,
+                // dstCityName: req.body.dstCityName,
+                // dstDistrictName: req.body.dstDistrictName,
+                // dstPostalCode: req.body.dstPostalCode,
+                // dstPhone: "054755232",
+                // weight: req.body.weight,
+                // width: req.body.width,
+                // length: req.body.length,
+                // height: req.body.height,
+                pricingTable: 1
                 // expressCategory: req.body.expressCategory,
                 // insureDeclareValue: req.body.insureDeclareValue,
                 // insured: req.body.insured,
@@ -645,9 +677,11 @@ estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash expre
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(estimatedPriceInBaht);
                         let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                        let price = cost + (cost * p.percent_shop) / 100;
+                        let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
+                        let priceInteger = Math.ceil(price)
                         let status = null;
-                        
+                        let cod_amount = 0
+
                         const walletShop = await shopPartner.findOne({ shop_number: shop });
                         try {
                             await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
@@ -664,9 +698,14 @@ estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash expre
                             ...response.data.data,
                             cost_hub: cost_hub,
                             cost: cost,
+                            cod_amount: Number(cod_amount.toFixed()),
                             status: status,
                             price: Number(price.toFixed()),
                         };
+                        if (cod !== undefined) {
+                            let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
+                            v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                        }
                         new_data.push(v);
             }else{
                 const costFind = await costPlus.findOne(
@@ -690,8 +729,10 @@ estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash expre
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(estimatedPriceInBaht);
                     let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let priceOne = cost + (cost * p.percent_shop) / 100
-                    let price = (cost + (cost * p.percent_shop) / 100) + cost_plus
+                    let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
+                    let price = Math.ceil((cost + (cost * p.percent_shop) / 100) + cost_plus)
+                    let priceInteger = Math.ceil(price)
+                    let cod_amount = 0
                     let status = null;
                     
                     const walletShop = await shopPartner.findOne({ shop_number: shop });
@@ -710,10 +751,15 @@ estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash expre
                             ...response.data.data,
                             cost_hub: cost_hub, //ต้นทุนที่ทาง flash ให้คุณไอซ์
                             cost: cost, //คุณไอซ์เก็บ 5%
+                            cod_amount: Number(cod_amount.toFixed()),
                             priceOne: Number(priceOne.toFixed()),
                             price: Number(price.toFixed()), //พาร์ทเนอร์โดนเก็บเพิ่ม 10%
                             status: status,
                         };
+                        if (cod !== undefined) {
+                            let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
+                            v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                        }
                         new_data.push(v);
             }
 
