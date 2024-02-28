@@ -549,7 +549,7 @@ nontification = async (req, res)=>{ //เรียกดูงานรับใ
     }
 }
 
-estimateRate = async (req, res)=>{ //สร้าง Order ให้ Flash express
+estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
     try{
         const percent = await PercentCourier.find();
         const apiUrl = process.env.TRAINING_URL

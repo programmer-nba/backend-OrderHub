@@ -97,4 +97,5 @@ getContractByID = async (req,res)=>{
     }
     
 }
+
 module.exports = { twoContract, getContractByID };

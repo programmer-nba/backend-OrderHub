@@ -89,12 +89,20 @@ router.route('/orderhub/JT/create').post( auth.checkToken, JT.createOrder )
 router.route('/orderhub/JT/tracking').get( JT.trackingOrder )
 router.route('/orderhub/JT/cancel').delete( JT.cancelOrder )
 router.route('/orderhub/JT/label').post( JT.label )
+router.route('/orderhub/JT/price').get( JT.priceList )
 
-//COD
+//COD(คุณไอซ์กำหนด)
 const cod = require('../Controllers/deliveryController/COD/cod.controller')
 router.route('/orderhub/cod/post').post( cod.createCOD )
 router.route('/orderhub/cod/getAll').get( cod.getAll )
 router.route('/orderhub/cod/edit/:id').put( cod.editCOD )
 router.route('/orderhub/cod/del/:id').delete( cod.delend )
+
+//กำหนักราคา/น้ำหนัก J&T
+const priceWeight = require('../Controllers/deliveryController/๋J&T/priceWeight.control')
+router.route('/orderhub/weight/post').post( priceWeight.createWeight )
+router.route('/orderhub/weight/edit/:id').put( priceWeight.editWeight )
+router.route('/orderhub/weight/getAll').get( priceWeight.getAll )
+router.route('/orderhub/weight/del/:id').delete( priceWeight.delend )
 
 module.exports = router;

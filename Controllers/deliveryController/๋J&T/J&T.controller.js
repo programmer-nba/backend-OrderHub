@@ -2,6 +2,12 @@ const { generateJT } = require("./generate.signJ&T")
 const { jntOrder } = require("../../../Models/Delivery/J&T/orderJT");
 const dayjs = require('dayjs')
 const axios = require('axios');
+const { priceWeight } = require("../../../Models/Delivery/J&T/priceWeight");
+const { Partner } = require("../../../Models/partner");
+const { shopPartner } = require("../../../Models/shop/shop_partner");
+const { costPlus } = require("../../../Models/costPlus");
+const { PercentCourier } = require("../../../Models/Delivery/ship_pop/percent");
+const { codExpress } = require("../../../Models/COD/cod.model");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -191,18 +197,139 @@ label = async (req, res)=>{
 }
 
 priceList = async (req, res)=>{
+    // console.log(req.body)
     try{
+        const percent = await PercentCourier.find();
+        const formData = req.body
+        const shop = formData.shop_number
+        const weight = formData.parcel.weight
+        let codReq = req.body.cod
+        let percentCod 
+        const result  = await priceWeight.find({weight: {$gte: weight}})
+            .sort({weight:1})
+            .limit(1)
+            .exec()
 
-    }catch(err){
+            if(result.length == 0){
+                return res
+                        .status(400)
+                        .send({status: false, message:"น้ำหนักของคุณมากเกินไป"})
+            }
+            if(codReq !== undefined){
+                const findCod = await codExpress.findOne({express:"J&T"})
+                percentCod = findCod.percent
+            }
+        const cod = percentCod
+        const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
+            if(!findForCost){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
+            }
+        
+        const findPartner = await Partner.findOne({partnerNumber:findForCost.partner_number}) //เช็คว่ามี partner เจ้าของ shop จริงหรือเปล่า
+            if(!findPartner){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีหมายเลขพาร์ทเนอร์ของท่าน"})
+            }
+        
+        const upline = findPartner.upline.head_line
+        console.log(upline)
+        let new_data = []
+        if(upline === 'ICE'){
+            let v = null;
+            let p = percent.find((c) => c.courier_code === 'J&T');
+                if (!p) {
+                    console.log(`ยังไม่มี courier name: J&T`);
+                }
+                    // คำนวนต้นทุนของร้านค้า
+                    let cost_hub = result[0].price;
+                    let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
+                    let priceInteger = Math.ceil(price)
+                    let status = null;
+                    let cod_amount = 0
+
+                    try {
+                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                        if (findForCost.credit < price) {
+                            status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                        } else {
+                            status = 'พร้อมใช้บริการ';
+                        }
+                    } catch (error) {
+                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                    }
+                    v = {
+                        express: "J&T",
+                        cost_hub: cost_hub,
+                        cost: cost,
+                        cod_amount: Number(cod_amount.toFixed()),
+                        status: status,
+                        price: Number(price.toFixed()),
+                    };
+                    if (cod !== undefined) {
+                        let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
+                        v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                    }
+                    new_data.push(v);
+        }else{
+            const costFind = await costPlus.findOne(
+                {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
+                { _id: 0, 'cost_level.$': 1 })
+            if(!costFind){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ค้นหาหมายเลขแนะนำไม่เจอ"})
+            }else if(costFind.cost_level[0].cost_plus === ""){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่ทำการแนะนำระบุส่วนต่าง"})
+            }
+            const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
+                let v = null;
+                let p = percent.find((c) => c.courier_code === 'J&T');
+                if (!p) {
+                    console.log(`ยังไม่มี courier name: J&T`);
+                }
+                // คำนวนต้นทุนของร้านค้า
+                let cost_hub = result[0].price;
+                let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
+                let price = Math.ceil((cost + (cost * p.percent_shop) / 100) + cost_plus)
+                let priceInteger = Math.ceil(price)
+                let cod_amount = 0
+                let status = null;
+                    try {
+                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                        if (findForCost.credit < price) {
+                            status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                        } else {
+                            status = 'พร้อมใช้บริการ';
+                        }
+                    } catch (error) {
+                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                    }
+                    v = {
+                        express: "J&T",
+                        cost_hub: cost_hub, //ต้นทุนที่ทาง flash ให้คุณไอซ์
+                        cost: cost, //คุณไอซ์เก็บ 5%
+                        cod_amount: Number(cod_amount.toFixed()),
+                        priceOne: Number(priceOne.toFixed()),
+                        price: Number(price.toFixed()), //พาร์ทเนอร์โดนเก็บเพิ่ม 10%
+                        status: status,
+                    };
+                    console.log(v)
+                    if (cod !== undefined) {
+                        let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
+                        v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                    }
+                    new_data.push(v);
+        }
         return res
-                .status(500)
-                .send({status:false, message:err})
-    }
-}
-
-weightPrice = async (req, res)=>{
-    try{
-
+                .status(200)
+                .send({ status: true, data: result, new:new_data });
     }catch(err){
         return res
                 .status(500)
@@ -233,4 +360,4 @@ async function invoiceNumber(date) {
     }
 }
 
-module.exports = {createOrder, trackingOrder, cancelOrder, label}
+module.exports = {createOrder, trackingOrder, cancelOrder, label, priceList}
