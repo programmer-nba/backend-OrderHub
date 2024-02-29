@@ -89,7 +89,7 @@ router.route('/orderhub/JT/create').post( auth.checkToken, JT.createOrder )
 router.route('/orderhub/JT/tracking').get( JT.trackingOrder )
 router.route('/orderhub/JT/cancel').delete( JT.cancelOrder )
 router.route('/orderhub/JT/label').post( JT.label )
-router.route('/orderhub/JT/price').get( JT.priceList )
+router.route('/orderhub/JT/price').post( JT.priceList )
 
 //COD(คุณไอซ์กำหนด)
 const cod = require('../Controllers/deliveryController/COD/cod.controller')

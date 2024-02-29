@@ -8,6 +8,7 @@ const { shopPartner } = require("../../../Models/shop/shop_partner");
 const { costPlus } = require("../../../Models/costPlus");
 const { PercentCourier } = require("../../../Models/Delivery/ship_pop/percent");
 const { codExpress } = require("../../../Models/COD/cod.model");
+const { historyWalletShop } = require("../../../Models/shop/shop_history");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -19,6 +20,8 @@ createOrder = async (req, res)=>{
     try{
         const id = req.decoded.userid
         const role = req.decoded.role
+        const cod_amount = req.body.cod_amount
+        const price = req.body.price
         const shop = req.body.shop_number
         const txlogisticid = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+txlogisticid);
@@ -49,6 +52,10 @@ createOrder = async (req, res)=>{
             "msg_type": "ORDERCREATE",
             "eccompanyid": ecom_id,
         }
+        if(cod_amount != undefined){
+            fromData.logistics_interface.itemsvalue = cod_amount
+            console.log(cod_amount)
+        }
         const newData = await generateJT(fromData)
             console.log(newData)
         const response = await axios.post(`${apiUrl}/order/create`,newData,{
@@ -72,6 +79,8 @@ createOrder = async (req, res)=>{
                 ID:id,
                 shop_number:shop,
                 role:role,
+                cod_amount:cod_amount,
+                price: price,
                 ...new_data
             })
             if(!createOrder){
@@ -79,9 +88,65 @@ createOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
+        let historyShop
+
+        if(cod_amount == undefined){
+            const findShop = await shopPartner.findOneAndUpdate(
+                {shop_number:shop},
+                { $inc: { credit: -price } },
+                {new:true})
+                if(!findShop){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                }
+            console.log(findShop.credit)
+                
+            const plus = findShop.credit + price
+            const history = {
+                    ID: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: new_data.txlogisticid,
+                    amount: price,
+                    before: plus,
+                    after: findShop.credit,
+                    type: 'J&T',
+                    remark: "ขนส่งสินค้า(J&Tตรง)"
+                }
+            // console.log(history)
+            historyShop = await historyWalletShop.create(history)
+                if(!historyShop){
+                    console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                }
+        }else{
+            const findShopTwo = await shopPartner.findOne({shop_number:shop})
+            const historytwo = {
+                ID: id,
+                role: role,
+                shop_number: shop,
+                orderid: new_data.txlogisticid,
+                amount: price,
+                before: findShopTwo.credit,
+                after: "COD",
+                type: 'J&T',
+                remark: "ขนส่งสินค้า(J&Tตรง)"
+            }
+            // console.log(history)
+            historyShop = await historyWalletShop.create(historytwo)
+                if(!historyShop){
+                    console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                }
+        }
+        
         return res
                 .status(200)
-                .send({status:true, data: response.data, order: createOrder})
+                .send({
+                    status:true, 
+                    data: response.data, 
+                    order: createOrder,
+                    history: historyShop
+                })
     }catch(err){
         // console.log(err)
         return res

@@ -28,23 +28,24 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
             }
-        }else if (req.decoded.role === 'partner'){
-            const idPartner = req.decoded.userid
-            
-            const findShop = await Partner.findOne(
-                {
-                    _id:idPartner,
-                    shop_partner:{
-                        $elemMatch: { shop_number: shop }
-                    }
-                })
-            
-            if(!findShop){
-                return res
-                        .status(400)
-                        .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
-            }
         }
+        // else if (req.decoded.role === 'partner'){
+        //     const idPartner = req.decoded.userid
+            
+        //     const findShop = await Partner.findOne(
+        //         {
+        //             _id:idPartner,
+        //             shop_partner:{
+        //                 $elemMatch: { shop_number: shop }
+        //             }
+        //         })
+            
+        //     if(!findShop){
+        //         return res
+        //                 .status(400)
+        //                 .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
+        //     }
+        // }
         
         const findForCost = await shopPartner.findOne({shop_number:shop})
         if(!findForCost){
@@ -127,10 +128,9 @@ priceList = async (req, res)=>{
                     let status = null;
                     let cod_amount = 0
                     
-                    const walletShop = await shopPartner.findOne({ shop_number: data[0].shop_number });
                     try {
                         await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-                        if (walletShop.credit < price) {
+                        if (findForCost.credit < price) {
                             status = 'จำนวนเงินของท่านไม่เพียงพอ';
                         } else {
                             status = 'พร้อมใช้บริการ';
@@ -151,8 +151,14 @@ priceList = async (req, res)=>{
                     if (cod !== undefined) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+
+                        if(price >= 100){
+                            new_data.push(v);
+                        }
+
+                    }else{
+                        new_data.push(v);
                     }
-                    new_data.push(v);
                     // console.log(new_data);
                 } else {
                     // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
@@ -191,17 +197,15 @@ priceList = async (req, res)=>{
                         let cod_amount = 0
                         let status = null;
                         
-                        const walletShop = await shopPartner.findOne({ shop_number: data[0].shop_number });
                         try {
                             await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-                            if (walletShop.credit < price) {
+                            if (findForCost.credit < price) {
                                 status = 'จำนวนเงินของท่านไม่เพียงพอ';
                             } else {
                                 status = 'พร้อมใช้บริการ';
                             }
                         } catch (error) {
                             console.error('เกิดข้อผิดพลาดในการรอรับค่า');
-                            console.error(error);
                         }
                         v = {
                             ...obj[ob],
@@ -215,8 +219,14 @@ priceList = async (req, res)=>{
                         if (cod !== undefined) {
                             let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                             v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+
+                            if(price >= 100){
+                                new_data.push(v);
+                            }
+                            
+                        }else{
+                            new_data.push(v);
                         }
-                        new_data.push(v);
                         // console.log(new_data);
                     } else {
                         // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false

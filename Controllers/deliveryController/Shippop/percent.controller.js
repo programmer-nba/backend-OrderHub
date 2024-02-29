@@ -77,11 +77,15 @@ getById = async(req, res)=>{
 update = async(req, res)=>{
     try{
         const id = req.params.id;
-        const percent  = await PercentCourier.findByIdAndUpdate(id, req.body);
+        const percent  = await PercentCourier.findByIdAndUpdate(id,
+            {
+                percent_orderHUB: req.body.percent_orderHUB,
+                percent_shop: req.body.percent_shop
+            },{new:true});
         if(percent){
             return res
                     .status(200)
-                    .send({status: true, message : "แก้ไขข้อมูลสำเร็จ"})
+                    .send({status: true, data:percent})
         }else{
             return res
                     .status(400)

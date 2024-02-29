@@ -28,18 +28,19 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const codForPrice = req.body.codForPrice
         const priceOrder = req.body.price
         const shop = req.body.shop_number
-        let codxPrice = priceOrder + (priceOrder * codForPrice)/100
-        let cod_amount = Math.ceil(codxPrice)*100 //ทำ cod_amount เป็นหน่วย สตางค์ และปัดเศษขึ้น เพื่อให้ยิง flash ได้(flash ไม่รับ COD AMOUNT เป็น ทศนิยม)
+        let cod_amount = Math.ceil(codForPrice)*100 //ทำ cod_amount เป็นหน่วย สตางค์ และปัดเศษขึ้น เพื่อให้ยิง flash ได้(flash ไม่รับ COD AMOUNT เป็น ทศนิยม)
         let cod_integer = cod_amount / 100 //ทำ cod_amount เป็นหน่วย บาท เพื่อบันทึกลง database(จะได้ดูง่าย)
 
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
             outTradeNo: `${nonceStr}`,
+            codEnabled: 0,
             ...req.body
             // เพิ่ม key-value pairs ตามต้องการ
           };
         if(codForPrice !== undefined){
+            formData.codEnabled = 1
             formData.codAmount = cod_amount;
             console.log(cod_amount)
         }
@@ -121,7 +122,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         .status(400)
                         .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
             }
-        console.log(findShop.credit)
+        // console.log(findShop.credit)
         const create = await flashOrder.create(new_data)
             if(!create){
                 return res
@@ -569,23 +570,24 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         .status(400)
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
             }
-        }else if (req.decoded.role === 'partner'){
-            const idPartner = req.decoded.userid
-            
-            const findShop = await Partner.findOne(
-                {
-                    _id:idPartner,
-                    shop_partner:{
-                        $elemMatch: { shop_number: shop }
-                    }
-                })
-            
-            if(!findShop){
-                return res
-                        .status(400)
-                        .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
-            }
         }
+        // else if (req.decoded.role === 'partner'){
+        //     const idPartner = req.decoded.userid
+            
+        //     const findShop = await Partner.findOne(
+        //         {
+        //             _id:idPartner,
+        //             shop_partner:{
+        //                 $elemMatch: { shop_number: shop }
+        //             }
+        //         })
+            
+        //     if(!findShop){
+        //         return res
+        //                 .status(400)
+        //                 .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
+        //     }
+        // }
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
@@ -682,10 +684,9 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         let status = null;
                         let cod_amount = 0
 
-                        const walletShop = await shopPartner.findOne({ shop_number: shop });
                         try {
                             await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-                            if (walletShop.credit < price) {
+                            if (findForCost.credit < price) {
                                 status = 'จำนวนเงินของท่านไม่เพียงพอ';
                             } else {
                                 status = 'พร้อมใช้บริการ';
@@ -735,10 +736,9 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     let cod_amount = 0
                     let status = null;
                     
-                    const walletShop = await shopPartner.findOne({ shop_number: shop });
                         try {
                             await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-                            if (walletShop.credit < price) {
+                            if (findForCost.credit < price) {
                                 status = 'จำนวนเงินของท่านไม่เพียงพอ';
                             } else {
                                 status = 'พร้อมใช้บริการ';
