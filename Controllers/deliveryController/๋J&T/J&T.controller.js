@@ -235,7 +235,7 @@ priceList = async (req, res)=>{
             }
         
         const upline = findPartner.upline.head_line
-        console.log(upline)
+
         let new_data = []
         if(upline === 'ICE'){
             let v = null;
@@ -313,7 +313,7 @@ priceList = async (req, res)=>{
                     }
                     v = {
                         express: "J&T",
-                        cost_hub: cost_hub, //ต้นทุนที่ทาง flash ให้คุณไอซ์
+                        cost_hub: cost_hub, //ต้นทุนที่ทางคุณไอซ์ กำหนด
                         cost: cost, //คุณไอซ์เก็บ 5%
                         cod_amount: Number(cod_amount.toFixed()),
                         priceOne: Number(priceOne.toFixed()),

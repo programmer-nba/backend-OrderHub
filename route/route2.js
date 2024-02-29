@@ -47,7 +47,7 @@ router.route('/orderhub/flash/statusPack').get( flash.statusOrderPack )
 router.route('/orderhub/flash/cancel').delete( auth.checkToken, flash.cancelOrder )
 router.route('/orderhub/flash/notify').post( flash.notifyFlash )
 router.route('/orderhub/flash/notification').get( flash.nontification )
-router.route('/orderhub/flash/estimate').get( auth.checkToken, flash.estimateRate )
+router.route('/orderhub/flash/estimate').post( auth.checkToken, flash.estimateRate )
 
 //cost level
 router.route('/orderhub/cost/create').post( auth.checkToken, cost.create )

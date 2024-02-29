@@ -24,7 +24,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const apiUrl = process.env.TRAINING_URL
         const id = req.decoded.userid
         const role = req.decoded.role
-        const mchId = req.body.mchId
+        const mchId = process.env.MCH_ID
         const codForPrice = req.body.codForPrice
         const priceOrder = req.body.price
         const shop = req.body.shop_number
