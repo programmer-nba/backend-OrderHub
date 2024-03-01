@@ -416,14 +416,14 @@ vertifyNotify = async (req, res)=>{
 }
 
 async function invoiceNumber(date) {
-    data = `${dayjs(date).format("YYYYMM")}`
-    let random = Math.floor(Math.random() * 100000000)
+    data = `${dayjs(date).format("YYYYMMDD")}`
+    let random = Math.floor(Math.random() * 1000000)
     const combinedData = data + random;
     const findInvoice = await historyWallet.find({orderid:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
-        random = Math.floor(Math.random() * 100000000);
+        random = Math.floor(Math.random() * 1000000);
         combinedData = data + random;
 
         // เช็คใหม่

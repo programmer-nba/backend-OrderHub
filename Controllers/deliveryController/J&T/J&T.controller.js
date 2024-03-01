@@ -280,7 +280,7 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status: false, message:"น้ำหนักของคุณมากเกินไป"})
             }
-            if(codReq !== undefined){
+            if(codReq == true){
                 const findCod = await codExpress.findOne({express:"J&T"})
                 percentCod = findCod.percent
             }

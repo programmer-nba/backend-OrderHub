@@ -15,7 +15,7 @@ priceList = async (req, res)=>{
         const shop = req.body.shop_number
         let reqCod = req.body.cod
         let percentCod
-        if(reqCod !== undefined){
+        if(reqCod == true){
             const findCod = await codExpress.findOne({express:"SHIPPOP"})
             percentCod = findCod.percent
         }

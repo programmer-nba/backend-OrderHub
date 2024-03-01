@@ -558,7 +558,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         const shop = req.body.shop_number
         let codReq = req.body.cod
         let percentCod
-        if(codReq !== undefined){
+        if(codReq == true){
             const findCod = await codExpress.findOne({express:"FLASH"})
             percentCod = findCod.percent
         }

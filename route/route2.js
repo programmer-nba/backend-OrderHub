@@ -83,8 +83,8 @@ router.route('/orderhub/historyShop/getAll').get( historyShop.getAll )
 router.route('/orderhub/historyShop/getOne/:shop_number').get( historyShop.getOne )
 
 //J&T
-const genKey = require('../Controllers/deliveryController/๋J&T/generate.signJ&T')
-const JT = require('../Controllers/deliveryController/๋J&T/J&T.controller')
+const genKey = require('../Controllers/deliveryController/J&T/generate.signJ&T')
+const JT = require('../Controllers/deliveryController/J&T/J&T.controller')
 router.route('/orderhub/JT/create').post( auth.checkToken, JT.createOrder )
 router.route('/orderhub/JT/tracking').get( JT.trackingOrder )
 router.route('/orderhub/JT/cancel').delete( JT.cancelOrder )
@@ -99,10 +99,14 @@ router.route('/orderhub/cod/edit/:id').put( cod.editCOD )
 router.route('/orderhub/cod/del/:id').delete( cod.delend )
 
 //กำหนักราคา/น้ำหนัก J&T
-const priceWeight = require('../Controllers/deliveryController/๋J&T/priceWeight.control')
+const priceWeight = require('../Controllers/deliveryController/J&T/priceWeight.control')
 router.route('/orderhub/weight/post').post( priceWeight.createWeight )
 router.route('/orderhub/weight/edit/:id').put( priceWeight.editWeight )
 router.route('/orderhub/weight/getAll').get( priceWeight.getAll )
 router.route('/orderhub/weight/del/:id').delete( priceWeight.delend )
+
+//best express
+const best = require('../Controllers/deliveryController/BEST_EXPRESS/best.controller')
+router.route('/orderhub/best/post').post( best.createOrder )
 
 module.exports = router;
