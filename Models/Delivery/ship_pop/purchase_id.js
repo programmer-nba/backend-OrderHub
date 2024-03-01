@@ -3,6 +3,8 @@ const Joi = require("joi");
 const { flashOrder } = require("../flash_express/create_order");
 
 const BookingParcelSchema = new mongoose.Schema({
+    ID: {type:String, required : false},
+    role: {type:String, required : false},
     purchase_id : {type:String, required : true},
     from : {type: Object, required : true},
     to : {type: Object, required : true},
@@ -28,6 +30,8 @@ const BookingParcel = mongoose.model("booking_parcel", BookingParcelSchema);
 
 const validate = (data)=>{
     const schema = Joi.object({
+        ID : Joi.string(),
+        role: Joi.string(),
         purchase_id : Joi.string().required().label('ไม่มีเลขใบสั่งซื้อเข้ามา'),
         shop_id : Joi.string().required().label("ไม่พบ shop_id"),
         status : Joi.boolean().required().label("ไม่พบสถานะ"),

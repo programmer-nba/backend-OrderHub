@@ -332,6 +332,8 @@ booking = async(req, res)=>{
         const new_data = []
         const v = {
                 ...Data,
+                ID: id,
+                role: role,
                 purchase_id: String(resp.data.purchase_id),
                 shop_id: req.body.shop_id,
                 cost_hub: costHub,
@@ -669,6 +671,44 @@ getAllBooking = async (req, res) => { //Get All Bookin Only Admin
     }
 }
 
+getById = async(req, res)=>{
+    try{
+        const tracking_code = req.params.tracking_code
+        const findTC = await BookingParcel.findOne({tracking_code:tracking_code})
+            if(!findTC){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีหมายเลข tracking code ที่ท่านต้องการหา"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findTC})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+
+delend = async (req, res)=>{
+    try{
+        const tracking_code = req.params.tracking_code
+        const delTC = await BookingParcel.findOneAndDelete({tracking_code: tracking_code})
+            if(!delTC){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถลบได้"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:delTC})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
 
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
-                , getAllBooking, trackingPurchase, labelHtml}
+                , getAllBooking, trackingPurchase, labelHtml, getById, delend}

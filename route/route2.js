@@ -48,6 +48,18 @@ router.route('/orderhub/flash/cancel').delete( auth.checkToken, flash.cancelOrde
 router.route('/orderhub/flash/notify').post( flash.notifyFlash )
 router.route('/orderhub/flash/notification').get( flash.nontification )
 router.route('/orderhub/flash/estimate').post( auth.checkToken, flash.estimateRate )
+//drop down ประเภทสินค้า flash express
+const typeProduct = require('../Controllers/deliveryController/FLASH_EXPRESS/type.product')
+router.route('/orderhub/flash/typeProduct/post').post( typeProduct.createType )
+router.route('/orderhub/flash/typeProduct/get').get( typeProduct.getAll )
+router.route('/orderhub/flash/typeProduct/edit/:code').put( typeProduct.edit )
+router.route('/orderhub/flash/typeProduct/del/:code').delete( typeProduct.delend )
+//drop down ประเภทขนส่ง flash express
+const typeExpress = require('../Controllers/deliveryController/FLASH_EXPRESS/type.express')
+router.route('/orderhub/flash/typeExpress/post').post( typeExpress.createType )
+router.route('/orderhub/flash/typeExpress/get').get( typeExpress.getAll )
+router.route('/orderhub/flash/typeExpress/edit/:code').put( typeExpress.edit )
+router.route('/orderhub/flash/typeExpress/del/:code').delete( typeExpress.delend )
 
 //cost level
 router.route('/orderhub/cost/create').post( auth.checkToken, cost.create )
@@ -62,6 +74,9 @@ router.route('/orderhub/shippop/confirm/:purchase_id').post( auth.checkToken, sh
 router.route('/orderhub/shippop/callpick/:courier_tracking_code').post( ship.callPickup )
 router.route('/orderhub/shippop/tracking_purchase/:purchase_id').get( ship.trackingPurchase )
 router.route('/orderhub/shippop/lebelHtml').post( ship.labelHtml )
+router.route('/orderhub/shippop/getAll').get( ship.getAllBooking )
+router.route('/orderhub/shippop/getOne/:tracking_code').get( ship.getById )
+router.route('/orderhub/shippop/del/:tracking_code').delete( ship.delend )
 
 //percent
 router.route('/orderhub/percent/create').post( authAdmin.checkToken, percent.create )
