@@ -402,6 +402,105 @@ priceList = async (req, res)=>{
     }
 }
 
+getAll = async (req, res)=>{
+    try{
+        const findAll = await jntOrder.find()
+        if(!findAll){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถค้นหาได้"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findAll})
+
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getById = async(req, res)=>{
+    try{
+        const txlogisticid = req.params.txlogisticid
+        const findTC = await jntOrder.findOne({txlogisticid:txlogisticid})
+            if(!findTC){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีหมายเลข txlogisticid ที่ท่านต้องการหา"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findTC})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+delend = async (req, res)=>{
+    try{
+        const txlogisticid = req.params.txlogisticid
+        const delTC = await jntOrder.findOneAndDelete({txlogisticid:txlogisticid})
+            if(!delTC){
+                return res
+                        .status(400)
+                        .send({status:false, message:"รายการนี้ถูกลบไปแล้ว"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:delTC})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getMeBooking = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        console.log(id)
+        const findMe = await jntOrder.find({ID:id})
+        if(!findMe){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getPartnerBooking = async (req, res)=>{
+    try{
+        const id = req.params.id
+        const findMe = await jntOrder.find({ID:id})
+        if(!findMe){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber(date) {
     try{
         data = `${dayjs(date).format("YYYYMMDD")}`
@@ -425,4 +524,4 @@ async function invoiceNumber(date) {
     }
 }
 
-module.exports = {createOrder, trackingOrder, cancelOrder, label, priceList}
+module.exports = {createOrder, trackingOrder, cancelOrder, label, priceList, getAll, getById, delend, getMeBooking, getPartnerBooking, getPartnerBooking}

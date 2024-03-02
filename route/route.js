@@ -66,6 +66,8 @@ router.route('/orderhub/dropAll').get( drop.getAll )
 router.route('/orderhub/dropCreate').post( auth.checkToken, drop.create )
 router.route('/orderhub/dropUpdate/:id').put( drop.update )
 router.route('/orderhub/dropDelete/:id').delete( drop.delend )
+router.route('/orderhub/dropReceive').get( auth.checkToken, drop.getReceive )
+router.route('/orderhub/dropSender').get( auth.checkToken, drop.getSender )
 
 //router.route('/orderhub/flash').post( flash.getData )
 

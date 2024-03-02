@@ -36,6 +36,12 @@ router.route('/orderhub/member/update/:id').put( member_shop.update )
 router.route('/orderhub/member/approve/:id').put( partner.approveMemberShop )
 router.route('/orderhub/member/cancel/:id').put( partner.cancelMemberShop )
 
+//Flash Admin
+router.route('/orderhub/flash/getAll').get( authAdmin.checkToken, flash.getAll )
+router.route('/orderhub/flash/getOne/:pno').get( authAdmin.checkToken, flash.getById )
+router.route('/orderhub/flash/del/:pno').delete( authAdmin.checkToken, flash.delend )
+router.route('/orderhub/flash/getPartner/:id').get( authAdmin.checkToken, flash.getPartnerBooking )
+
 //Flash express
 router.route('/orderhub/flash/create').post( auth.checkToken, flash.createOrder )
 router.route('/orderhub/flash/status').get( flash.statusOrder )
@@ -48,6 +54,8 @@ router.route('/orderhub/flash/cancel').delete( auth.checkToken, flash.cancelOrde
 router.route('/orderhub/flash/notify').post( flash.notifyFlash )
 router.route('/orderhub/flash/notification').get( flash.nontification )
 router.route('/orderhub/flash/estimate').post( auth.checkToken, flash.estimateRate )
+router.route('/orderhub/flash/getme').get( auth.checkToken, flash.getMeBooking )
+
 //drop down ประเภทสินค้า flash express
 const typeProduct = require('../Controllers/deliveryController/FLASH_EXPRESS/type.product')
 router.route('/orderhub/flash/typeProduct/post').post( typeProduct.createType )
@@ -65,6 +73,12 @@ router.route('/orderhub/flash/typeExpress/del/:code').delete( typeExpress.delend
 router.route('/orderhub/cost/create').post( auth.checkToken, cost.create )
 router.route('/orderhub/cost/edit').put( auth.checkToken, cost.editCostPlus )
 
+//shippop admin
+router.route('/orderhub/shippop/getAll').get( authAdmin.checkToken, ship.getAllBooking )
+router.route('/orderhub/shippop/getOne/:tracking_code').get( authAdmin.checkToken, ship.getById )
+router.route('/orderhub/shippop/del/:tracking_code').delete( authAdmin.checkToken, ship.delend )
+router.route('/orderhub/shippop/getPartner/:id').get( authAdmin.checkToken, ship.getPartnerBooking )
+
 //shippop
 router.route('/orderhub/shippop/pricelist').post( auth.checkToken, ship.priceList )
 router.route('/orderhub/shippop/booking').post( auth.checkToken, ship.booking )
@@ -74,9 +88,7 @@ router.route('/orderhub/shippop/confirm/:purchase_id').post( auth.checkToken, sh
 router.route('/orderhub/shippop/callpick/:courier_tracking_code').post( ship.callPickup )
 router.route('/orderhub/shippop/tracking_purchase/:purchase_id').get( ship.trackingPurchase )
 router.route('/orderhub/shippop/lebelHtml').post( ship.labelHtml )
-router.route('/orderhub/shippop/getAll').get( ship.getAllBooking )
-router.route('/orderhub/shippop/getOne/:tracking_code').get( ship.getById )
-router.route('/orderhub/shippop/del/:tracking_code').delete( ship.delend )
+router.route('/orderhub/shippop/getme').get( auth.checkToken, ship.getMeBooking )
 
 //percent
 router.route('/orderhub/percent/create').post( authAdmin.checkToken, percent.create )
@@ -105,6 +117,13 @@ router.route('/orderhub/JT/tracking').get( JT.trackingOrder )
 router.route('/orderhub/JT/cancel').delete( JT.cancelOrder )
 router.route('/orderhub/JT/label').post( JT.label )
 router.route('/orderhub/JT/price').post( JT.priceList )
+router.route('/orderhub/JT/getme').get( auth.checkToken, JT.getMeBooking )
+
+//J&T Admin
+router.route('/orderhub/JT/getAll').get( authAdmin.checkToken, JT.getAll )
+router.route('/orderhub/JT/getOne/:txlogisticid').get( authAdmin.checkToken, JT.getById )
+router.route('/orderhub/JT/del/:txlogisticid').delete( authAdmin.checkToken, JT.delend )
+router.route('/orderhub/JT/getPartner/:id').get( authAdmin.checkToken, JT.getPartnerBooking )
 
 //COD(คุณไอซ์กำหนด)
 const cod = require('../Controllers/deliveryController/COD/cod.controller')

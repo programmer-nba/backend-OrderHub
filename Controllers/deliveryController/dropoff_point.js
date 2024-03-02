@@ -114,4 +114,45 @@ delend = async (req, res)=>{
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
     }
 }
-module.exports = { getAll, create, update, delend}
+getReceive = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        const findReceive = await dropOffs.find({ID:id ,status:"ผู้รับ"})
+                .sort({ createdAt : -1})
+        if(!findReceive){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ท่านไม่มีข้อมูลผู้รับ กรุณากรอกข้อมูลและทำการเช็คราคาเพื่อบันทึกข้อมูลผู้รับก่อน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, message:findReceive})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getSender = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        const findSender = await dropOffs.find({ID:id ,status:"ผู้ส่ง"})
+                .sort({ createdAt : -1})
+        if(!findSender){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ท่านไม่มีข้อมูลผู้ส่ง กรุณากรอกข้อมูลและทำการเช็คราคาเพื่อบันทึกข้อมูลผู้รับก่อน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, message:findSender})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+module.exports = { getAll, create, update, delend, getReceive, getSender}

@@ -775,6 +775,104 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
     }
 }
 
+getAll = async (req, res)=>{
+    try{
+        const findAll = await flashOrder.find()
+        if(!findAll){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถค้นหาได้"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findAll})
+
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getById = async(req, res)=>{
+    try{
+        const pno = req.params.pno
+        const findTC = await flashOrder.findOne({'response.pno':pno})
+            if(!findTC){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีหมายเลข tracking code ที่ท่านต้องการหา"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findTC})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+delend = async (req, res)=>{
+    try{
+        const pno = req.params.pno
+        const delTC = await flashOrder.findOneAndDelete({'response.pno':pno})
+            if(!delTC){
+                return res
+                        .status(400)
+                        .send({status:false, message:"รายการนี้ถูกลบไปแล้ว"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:delTC})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getMeBooking = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        console.log(id)
+        const findMe = await flashOrder.find({ID:id})
+        if(!findMe){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getPartnerBooking = async (req, res)=>{
+    try{
+        const id = req.params.id
+        const findMe = await flashOrder.find({ID:id})
+        if(!findMe){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
                     ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
-                    estimateRate }
+                    estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking }

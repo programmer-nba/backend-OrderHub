@@ -690,7 +690,6 @@ getById = async(req, res)=>{
     }
 }
 
-
 delend = async (req, res)=>{
     try{
         const tracking_code = req.params.tracking_code
@@ -698,7 +697,7 @@ delend = async (req, res)=>{
             if(!delTC){
                 return res
                         .status(400)
-                        .send({status:false, message:"ไม่สามารถลบได้"})
+                        .send({status:false, message:"รายการนี้ถูกลบไปแล้ว"})
             }
         return res
                 .status(200)
@@ -710,5 +709,47 @@ delend = async (req, res)=>{
     }
 }
 
+getMeBooking = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        console.log(id)
+        const findMe = await BookingParcel.find({ID:id})
+        if(!findMe){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getPartnerBooking = async (req, res)=>{
+    try{
+        const id = req.params.id
+        const findMe = await BookingParcel.find({ID:id})
+        if(!findMe){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
-                , getAllBooking, trackingPurchase, labelHtml, getById, delend}
+                , getAllBooking, trackingPurchase, labelHtml, getById, delend, getMeBooking, getMeBooking
+                , getPartnerBooking}
