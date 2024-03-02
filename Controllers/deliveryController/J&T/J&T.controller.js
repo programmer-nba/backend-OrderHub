@@ -63,7 +63,7 @@ createOrder = async (req, res)=>{
             "msg_type": "ORDERCREATE",
             "eccompanyid": ecom_id,
         }
-        if(cod_amount != undefined){
+        if(cod_amount != 0){
             fromData.logistics_interface.itemsvalue = cod_amount
             console.log(cod_amount)
         }
@@ -105,7 +105,7 @@ createOrder = async (req, res)=>{
             }
         let historyShop
         let findShop
-        if(cod_amount == undefined){
+        if(cod_amount == 0){
             findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
                 { $inc: { credit: -price } },
