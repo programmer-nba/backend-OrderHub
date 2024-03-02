@@ -39,7 +39,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             ...req.body
             // เพิ่ม key-value pairs ตามต้องการ
           };
-        if(codForPrice !== undefined){
+        if(codForPrice != 0){
             formData.codEnabled = 1
             formData.codAmount = cod_amount;
             console.log(cod_amount)
@@ -107,54 +107,86 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             price: req.body.price,
             codAmount: codForPrice
           };
+        if(codForPrice == 0){
+            const findShop = await shopPartner.findOneAndUpdate(
+                {shop_number:shop},
+                { $inc: { credit: -priceOrder } },
+                {new:true})
+                if(!findShop){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                }
+            // console.log(findShop.credit)
+            const create = await flashOrder.create(new_data)
+                if(!create){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
+                }
+            const plus = findShop.credit + priceOrder
+            const history = {
+                    ID: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: create.response.pno,
+                    amount: create.price,
+                    before: plus,
+                    after: findShop.credit,
+                    type: 'FLE(ICE)',
+                    remark: "ขนส่งสินค้า(FLASHตรง)"
+                }
+            const historyShop = await historyWalletShop.create(history)
+                if(!historyShop){
+                    console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                }
+            
+            return res
+                    .status(200)
+                    .send({
+                        status:true, message:"เชื่อมต่อสำเร็จ", 
+                        data: create,
+                        shop: findShop,
+                        history: historyShop
+                    })
 
-        if(codForPrice !== undefined){
+        }else if(codForPrice != 0){
             new_data.codAmount = cod_integer;
             console.log(cod_integer)
-        }
 
-        const findShop = await shopPartner.findOneAndUpdate(
-            {shop_number:shop},
-            { $inc: { credit: -priceOrder } },
-            {new:true})
-            if(!findShop){
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
-            }
-        // console.log(findShop.credit)
-        const create = await flashOrder.create(new_data)
-            if(!create){
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
-            }
-        const plus = findShop.credit + priceOrder
-        const history = {
+            const create = await flashOrder.create(new_data)
+                if(!create){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
+                }
+            const findShopTwo = await shopPartner.findOne({shop_number:shop})
+            const historytwo = {
                 ID: id,
                 role: role,
                 shop_number: shop,
                 orderid: create.response.pno,
                 amount: create.price,
-                before: plus,
-                after: findShop.credit,
+                before: findShopTwo.credit,
+                after: "COD",
                 type: 'FLE(ICE)',
                 remark: "ขนส่งสินค้า(FLASHตรง)"
             }
-        const historyShop = await historyWalletShop.create(history)
-            if(!historyShop){
-                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-            }
-        
-        return res
+            // console.log(history)
+            historyShop2 = await historyWalletShop.create(historytwo)
+                if(!historyShop2){
+                    console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                }
+
+            return res
                 .status(200)
                 .send({
                     status:true, message:"เชื่อมต่อสำเร็จ", 
                     data: create,
-                    shop: findShop,
-                    history: historyShop
+                    history: historyShop2
                 })
-        
+        }
+
     }catch(err){
         console.log(err)
         return res
