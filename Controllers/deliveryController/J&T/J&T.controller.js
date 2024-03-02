@@ -20,6 +20,7 @@ createOrder = async (req, res)=>{
     try{
         const id = req.decoded.userid
         const role = req.decoded.role
+        const data = req.body
         const cod_amount = req.body.cod_amount
         const price = req.body.price
         const shop = req.body.shop_number
@@ -34,10 +35,20 @@ createOrder = async (req, res)=>{
                 "servicetype": "6",
                 "deliverytype": "1",
                 "sender":{
-                    ...req.body.sender
+                    "name": data.from.name,
+                    "postcode": data.from.postcode,
+                    "mobile": data.from.tel,
+                    "city": data.from.province,
+                    "area": data.from.state,
+                    "address": data.from.address + " ตำบล " + data.from.district
                 },
                 "receiver":{
-                    ...req.body.receiver
+                    "name": data.to.name,
+                    "postcode": data.to.postcode,
+                    "mobile": data.to.tel,
+                    "city": data.to.province,
+                    "area": data.to.state,
+                    "address": data.to.address + " ตำบล " + data.to.district
                 },
                 "createordertime": dayTime,
                 "sendstarttime": dayTime,
@@ -72,6 +83,10 @@ createOrder = async (req, res)=>{
                 return res
                         .status(404)
                         .send({status:false, message:"หมายเลขรหัสการสั่งซื้อเกิดการซ้ำกัน กรุณากดสร้างสินค้าอีกครั้ง"})
+            }else if(response.data.responseitems[0].reason == "B0101"){
+                return res
+                        .status(404)
+                        .send({status:false, message:"กรุณาใส่หมายเลขโทรศัพท์ให้ถูกต้อง"})
             }
         const new_data = response.data.responseitems[0]
         const createOrder = await jntOrder.create(
@@ -89,9 +104,9 @@ createOrder = async (req, res)=>{
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
         let historyShop
-
+        let findShop
         if(cod_amount == undefined){
-            const findShop = await shopPartner.findOneAndUpdate(
+            findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
                 { $inc: { credit: -price } },
                 {new:true})
@@ -145,7 +160,8 @@ createOrder = async (req, res)=>{
                     status:true, 
                     data: response.data, 
                     order: createOrder,
-                    history: historyShop
+                    history: historyShop,
+                    // shop: findShop
                 })
     }catch(err){
         // console.log(err)

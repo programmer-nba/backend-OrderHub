@@ -1,7 +1,7 @@
 const { doSign } = require('./best.sign')
-const querystring = require('querystring');
 const axios = require('axios')
-const dayjs = require('dayjs')
+const dayjs = require('dayjs');
+const { bestOrder } = require('../../../Models/Delivery/best_express/order');
 
 const dayjsTimestamp = dayjs(Date.now());
 const BEST_URL = process.env.BEST_URL
@@ -11,53 +11,58 @@ const charset = 'utf-8'
 
 createOrder = async(req, res)=>{
     try{
-        // const txLogistic = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
-        //     console.log('txLogisticId : '+txLogistic);
+        const txLogistic = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
+            console.log('txLogisticId : '+txLogistic);
+        const id = req.decoded.userid
+        const role = req.decoded.role
+        const shop = req.body.shop_number
+        const data = req.body
+        const weight = data.parcel.weight / 1000
         const formData = {
             serviceType:"KD_CREATE_WAYBILL_ORDER_NOTIFY",
             bizData:{
-                txLogisticId:"425725",
+                txLogisticId:txLogistic,
                 special:"1",
                 sender:{
-                    "name":"sender",
-                    "postCode":"10254",
-                    "mobile":"13668122696",
-                    "prov":"Kampong Thom",
-                    "city":"Stoung",
-                    "county":"Chamna Leu",
-                    "address":"123",
-                    "email":"kkk@email.com",
+                    "name":data.from.name,
+                    "postCode":data.from.postcode,
+                    "mobile":data.from.tel,
+                    "prov":data.from.province,
+                    "city":data.from.state, //อำเภอ
+                    "county":data.from.district, //ตำบล
+                    "address":data.from.address,
+                    "email":data.from.email,
                     "country":"06"
                 },
                 receiver:{
-                    "name":"receiver",
-                    "postCode":"50110",
-                    "mobile":"13927089988",
-                    "prov":"Kandal",
-                    "city":"Kandal Stueng",
-                    "county":"Ampov Prey",
-                    "address":"456",
-                    "email":"kkk@email.com",
+                    "name":data.to.name,
+                    "postCode":data.to.postcode,
+                    "mobile":data.to.tel,
+                    "prov":data.to.province,
+                    "city":data.to.state, //อำเภอ
+                    "county":data.to.district, //ตำบล
+                    "address":data.to.address,
+                    "email":data.to.email,
                     "country":"06"
                 },
                 items:{
                     item:{
-                            "itemWeight": "1",
-                            "itemLength": "20",
-                            "itemWidth": "20",
-                            "itemHeight": "20"
+                            "itemWeight": weight,
+                            "itemLength": data.parcel.width,
+                            "itemWidth": data.parcel.length,
+                            "itemHeight": data.parcel.height
                         }
                 },
                 piece: "1",
-                itemsWeight: "1",
-                length:"20",
-                width:"20",
-                height:"20"
+                itemsWeight: weight,
+                length:data.parcel.width,
+                width:data.parcel.length,
+                height:data.parcel.height
             },
             partnerID: PARTNER_ID
         }
         const newData = await doSign(formData, charset, keys)
-        console.log(newData)
+        // console.log(newData)
         const response = await axios.post(BEST_URL,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -69,6 +74,18 @@ createOrder = async(req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
             }
+        const createOrder = await bestOrder.create(
+            {
+                ID:id,
+                shop_number:shop,
+                role:role,
+                ...response.data
+            })
+            if(!createOrder){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
+            }
         return res
                 .status(200)
                 .send({status:true, data:response.data})
@@ -79,22 +96,22 @@ createOrder = async(req, res)=>{
     }
 }
 
-// async function invoiceNumber(date) {
-//     data = `${dayjs(date).format("YYYYMMDD")}`
-//     let random = Math.floor(Math.random() * 1000000)
-//     const combinedData = data + random;
-//     const findInvoice = await historyWallet.find({orderid:combinedData})
+async function invoiceNumber(date) {
+    data = `${dayjs(date).format("YYYYMMDD")}`
+    let random = Math.floor(Math.random() * 100000)
+    const combinedData = `BE`+data + random;
+    const findInvoice = await bestOrder.find({txLogisticId:combinedData})
 
-//     while (findInvoice && findInvoice.length > 0) {
-//         // สุ่ม random ใหม่
-//         random = Math.floor(Math.random() * 1000000);
-//         combinedData = data + random;
+    while (findInvoice && findInvoice.length > 0) {
+        // สุ่ม random ใหม่
+        random = Math.floor(Math.random() * 100000);
+        combinedData = `BE`+data + random;
 
-//         // เช็คใหม่
-//         findInvoice = await historyWallet.find({orderid: combinedData});
-//     }
+        // เช็คใหม่
+        findInvoice = await bestOrder.find({txLogisticId: combinedData});
+    }
 
-//     console.log(combinedData);
-//     return combinedData;
-// }
+    // console.log(combinedData);
+    return combinedData;
+}
 module.exports = { createOrder }
