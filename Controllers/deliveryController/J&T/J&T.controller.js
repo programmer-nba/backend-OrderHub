@@ -350,7 +350,7 @@ priceList = async (req, res)=>{
                         status: status,
                         price: Number(price.toFixed()),
                     };
-                    if (cod !== undefined) {
+                    if (cod != 0) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                     }
@@ -402,7 +402,7 @@ priceList = async (req, res)=>{
                         status: status,
                     };
                     console.log(v)
-                    if (cod !== undefined) {
+                    if (cod != 0) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                     }

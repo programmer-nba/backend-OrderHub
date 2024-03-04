@@ -141,6 +141,17 @@ router.route('/orderhub/weight/del/:id').delete( priceWeight.delend )
 
 //best express
 const best = require('../Controllers/deliveryController/BEST_EXPRESS/best.controller')
-router.route('/orderhub/best/post').post( best.createOrder )
+router.route('/orderhub/best/post').post( auth.checkToken, best.createOrder )
+router.route('/orderhub/best/postPDF').post( auth.checkToken, best.createPDFOrder )
+router.route('/orderhub/best/status').get( auth.checkToken, best.statusOrder )
+router.route('/orderhub/best/status/push').post( auth.checkToken, best.statusOrderPush )
+router.route('/orderhub/best/cancel').delete( auth.checkToken, best.cancelOrder )
+//กำหนดราคา/น้ำหนัก best express
+const bestWeight = require('../Controllers/deliveryController/BEST_EXPRESS/priceWeightBest')
+router.route('/orderhub/weightBest/post').post( bestWeight.createWeight )
+router.route('/orderhub/weightBest/edit/:id').put( bestWeight.editWeight )
+router.route('/orderhub/weightBest/getAll').get( bestWeight.getAll )
+router.route('/orderhub/weightBest/del/:id').delete( bestWeight.delend )
+
 
 module.exports = router;

@@ -6,6 +6,7 @@ const bestOrderSchema = new Schema({
     ID: {type:String, required: false},
     shop_number: {type:String, default:"", required: false},
     role: {type:String, required: false},
+    type: {type:String, required: false},
     result: {type:String, required: false},
     txLogisticId: {type:String, required: false},
     triSortCode: {type:String, required: false},
