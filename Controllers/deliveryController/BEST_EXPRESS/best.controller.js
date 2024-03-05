@@ -2,7 +2,14 @@ const { doSign } = require('./best.sign')
 const axios = require('axios')
 const dayjs = require('dayjs');
 const fs = require('fs');
-const { bestOrder } = require('../../../Models/Delivery/best_express/order');
+const { bestOrder } = require('../../../Models/Delivery/best_express/order')
+const { priceWeightBest } = require('../../../Models/Delivery/best_express/priceWeightBest');
+const { PercentCourier } = require('../../../Models/Delivery/ship_pop/percent');
+const { codExpress } = require('../../../Models/COD/cod.model');
+const { shopPartner } = require('../../../Models/shop/shop_partner');
+const { Partner } = require('../../../Models/partner');
+const { costPlus } = require('../../../Models/costPlus');
+const { historyWalletShop } = require('../../../Models/shop/shop_history');
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -21,7 +28,8 @@ createOrder = async(req, res)=>{
         const id = req.decoded.userid
         const role = req.decoded.role
         const shop = req.body.shop_number
-        const cod = req.body.cod
+        const cod_amount = req.body.cod_amount
+        const price = req.body.price
         const data = req.body
         const weight = data.parcel.weight / 1000
         const formData = {
@@ -67,17 +75,16 @@ createOrder = async(req, res)=>{
             },
             partnerID: PARTNER_ID
         }
-        // console.log(formData)
-        if(cod != 0){
-            formData.bizData.items.item[0].itemValue = cod
-            formData.bizData.itemsValue = cod
+        if(cod_amount != 0){
+            formData.bizData.items.item[0].itemValue = cod_amount
+            formData.bizData.itemsValue = cod_amount
             formData.bizData.bankCardOwner = "2489444705"
             formData.bizData.bankCode = "004"
             formData.bizData.bankCardNo = "5211478224"
-            console.log(cod)
+            console.log(cod_amount)
         }
         const newData = await doSign(formData, charset, keys)
-        console.log(newData)
+            console.log(newData)
         const response = await axios.post(BEST_URL,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -94,6 +101,9 @@ createOrder = async(req, res)=>{
                 ID:id,
                 shop_number:shop,
                 role:role,
+                cod_amount:cod_amount,
+                price: price,
+                status:'booking',
                 type:'Online',
                 ...response.data
             })
@@ -102,13 +112,64 @@ createOrder = async(req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
-        
+        // console.log(createOrder)
+        let historyShop
+        let findShop
+        if(cod_amount == 0){
+                findShop = await shopPartner.findOneAndUpdate(
+                    {shop_number:shop},
+                    { $inc: { credit: -price } },
+                    {new:true})
+                    if(!findShop){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                    }
+                console.log(findShop.credit)
+                    
+                const plus = findShop.credit + price
+                const history = {
+                        ID: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: createOrder.txLogisticId,
+                        amount: price,
+                        before: plus,
+                        after: findShop.credit,
+                        type: 'BEST(ICE)',
+                        remark: "ขนส่งสินค้า(BESTตรง)"
+                    }
+                // console.log(history)
+                historyShop = await historyWalletShop.create(history)
+                    if(!historyShop){
+                        console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                    }
+        }else{
+                const findShopTwo = await shopPartner.findOne({shop_number:shop})
+                const historytwo = {
+                    ID: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: createOrder.txLogisticId,
+                    amount: price,
+                    before: findShopTwo.credit,
+                    after: "COD",
+                    type: 'BEST(ICE)',
+                    remark: "ขนส่งสินค้าแบบ COD(BESTตรง)"
+                }
+                // console.log(history)
+                historyShop = await historyWalletShop.create(historytwo)
+                    if(!historyShop){
+                        console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                    }
+            }
         return res
                 .status(200)
                 .send({
                     status:true, 
-                    data:response.data,
-                    order:createOrder
+                    order: createOrder,
+                    history: historyShop,
+                    shop: findShop
                 })
     }catch(err){
         return res
@@ -124,10 +185,10 @@ createPDFOrder = async(req, res)=>{
         const id = req.decoded.userid
         const role = req.decoded.role
         const shop = req.body.shop_number
-        const cod = req.body.cod
+        const cod_amount = req.body.cod
         const data = req.body
         const weight = data.parcel.weight / 1000
-        console.log(data)
+        // console.log(data)
         const formData = {
             serviceType:"KD_CREATE_WAYBILL_ORDER_PDF_NOTIFY",
             bizData:{
@@ -172,13 +233,13 @@ createPDFOrder = async(req, res)=>{
             partnerID: PARTNER_ID
         }
         // console.log(formData)
-        if(cod != 0){
-            formData.bizData.items.item[0].itemValue = cod
-            formData.bizData.itemsValue = cod
+        if(cod_amount != 0){
+            formData.bizData.items.item[0].itemValue = cod_amount
+            formData.bizData.itemsValue = cod_amount
             formData.bizData.bankCardOwner = "2489444705"
             formData.bizData.bankCode = "004"
             formData.bizData.bankCardNo = "5211478224"
-            console.log(cod)
+            console.log(cod_amount)
         }
         const newData = await doSign(formData, charset, keys)
         console.log(newData)
@@ -209,6 +270,9 @@ createPDFOrder = async(req, res)=>{
                 ID:id,
                 shop_number:shop,
                 role:role,
+                status:'booking',
+                cod_amount:cod_amount,
+                price: price,
                 type:'PDF',
                 ...response.data
             })
@@ -218,13 +282,64 @@ createPDFOrder = async(req, res)=>{
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
         
-        return res
-                .status(200)
-                .send({
-                    status:true, 
-                    data:response.data,
-                    order:createOrder
-                })
+            let historyShop
+            let findShop
+            if(cod_amount == 0){
+                    findShop = await shopPartner.findOneAndUpdate(
+                        {shop_number:shop},
+                        { $inc: { credit: -price } },
+                        {new:true})
+                        if(!findShop){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                        }
+                    console.log(findShop.credit)
+                        
+                    const plus = findShop.credit + price
+                    const history = {
+                            ID: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: createOrder.txLogisticId,
+                            amount: price,
+                            before: plus,
+                            after: findShop.credit,
+                            type: 'BEST(ICE)',
+                            remark: "ขนส่งสินค้า(BESTตรง)"
+                        }
+                    // console.log(history)
+                    historyShop = await historyWalletShop.create(history)
+                        if(!historyShop){
+                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                        }
+            }else{
+                    const findShopTwo = await shopPartner.findOne({shop_number:shop})
+                    const historytwo = {
+                        ID: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: createOrder.txLogisticId,
+                        amount: price,
+                        before: findShopTwo.credit,
+                        after: "COD",
+                        type: 'BEST(ICE)',
+                        remark: "ขนส่งสินค้า(BESTตรง)"
+                    }
+                    // console.log(history)
+                    historyShop = await historyWalletShop.create(historytwo)
+                        if(!historyShop){
+                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                        }
+            }
+            return res
+                    .status(200)
+                    .send({
+                        status:true, 
+                        order: createOrder,
+                        history: historyShop,
+                        shop: findShop
+                    })
     }catch(err){
         return res
                 .status(500)
@@ -311,11 +426,15 @@ statusOrder = async (req, res)=>{
 
 cancelOrder = async (req, res)=>{
     try{
+        const id = req.decoded.userid
+        const role = req.decoded.role
+        const txLogisticId = req.body.txLogisticId
+        const reason = req.body.reason
         const formData = {
             serviceType:"KD_CANCEL_ORDER_NOTIFY",
             bizData:{
-               txLogistic: req.body.txLogistic,
-               reason: req.body.reason
+                txLogisticId: txLogisticId,
+                reason: reason
             },
             partnerID: PARTNER_ID
         }
@@ -332,9 +451,92 @@ cancelOrder = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
             }
-        return res
-                .status(200)
-                .send({status:true, data:response.data})
+        // console.log(response.data.result)
+        if(response.data.result != true){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถทำการยกเลิกออเดอร์นี้ได้"})
+        }else{
+                const findPno = await bestOrder.findOneAndUpdate(
+                    {txLogisticId:txLogisticId},
+                    {
+                        status:"cancel",
+                        remark: reason
+                    },
+                    {new:true})
+                    if(!findPno){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข LogisticId(BEST) หรืออัพเดทข้อมูลได้"})
+                    }
+                
+                if(findPno.cod_amount == 0){
+                        const findShop = await shopPartner.findOneAndUpdate(
+                            {shop_number:findPno.shop_number},
+                            { $inc: { credit: +findPno.price } },
+                            {new:true})
+                            if(!findShop){
+                                return res
+                                        .status(400)
+                                        .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+                            }
+                        let diff = findShop.credit - findPno.price
+                        let history = {
+                                ID: id,
+                                role: role,
+                                shop_number: findPno.shop_number,
+                                orderid: txLogisticId,
+                                amount: findPno.price,
+                                before: diff,
+                                after: findShop.credit,
+                                type: 'BEST(ICE)',
+                                remark: "ยกเลิกขนส่งสินค้า(BESTตรง)"
+                        }
+                        
+                        const historyShop = await historyWalletShop.create(history)
+                            if(!historyShop){
+                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                            }
+   
+                    return res
+                            .status(200)
+                            .send({
+                                status:true, 
+                                flash: findPno, 
+                                // shop: findShop,
+                                history: historyShop
+                            })
+                }else{
+                        const findShopCOD = await historyWalletShop.findOne({orderid:txLogisticId})
+                        if(!findShopCOD){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข LogisticId ได้"})
+                        }
+                        let history = {
+                                ID: id,
+                                role: role,
+                                shop_number: findPno.shop_number,
+                                orderid: txLogisticId,
+                                amount: findPno.price,
+                                before: findShopCOD.before,
+                                after: 'COD',
+                                type: 'BEST(ICE)',
+                                remark: "ยกเลิกขนส่งสินค้าแบบ COD(BESTตรง)"
+                        }
+                        const historyShop = await historyWalletShop.create(history)
+                            if(!historyShop){
+                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                            }
+                    return res
+                            .status(200)
+                            .send({
+                                status:true, 
+                                flash: findPno, 
+                                history: historyShop
+                            })
+                }
+        }
     }catch(err){
         return res
                 .status(500)
@@ -351,7 +553,7 @@ priceList = async (req, res)=>{
         const weight = formData.parcel.weight
         let codReq = req.body.cod
         let percentCod 
-        const result  = await priceWeight.find({weight: {$gte: weight}})
+        const result  = await priceWeightBest.find({weight: {$gte: weight}})
             .sort({weight:1})
             .limit(1)
             .exec()
@@ -362,9 +564,10 @@ priceList = async (req, res)=>{
                         .send({status: false, message:"น้ำหนักของคุณมากเกินไป"})
             }
             if(codReq == true){
-                const findCod = await codExpress.findOne({express:"J&T"})
+                const findCod = await codExpress.findOne({express:"BEST"})
                 percentCod = findCod.percent
             }
+        
         const cod = percentCod
         const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
             if(!findForCost){
@@ -415,7 +618,7 @@ priceList = async (req, res)=>{
                         status: status,
                         price: Number(price.toFixed()),
                     };
-                    if (cod != 0) {
+                    if (cod !== undefined) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                     }
@@ -467,7 +670,7 @@ priceList = async (req, res)=>{
                         status: status,
                     };
                     console.log(v)
-                    if (cod != 0) {
+                    if (cod !== undefined) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                     }
@@ -502,4 +705,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder }
+module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList }

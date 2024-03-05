@@ -6,6 +6,7 @@ const jtOrderSchema = new Schema({
     ID: {type:String, required: false},
     shop_number: {type:String, default:"", required: false},
     role: {type:String, required: false},
+    status: {type:String, required: false},
     cod_amount: {type:Number, default:0, required: false},
     price: {type:Number, required: false},
     success: {type:String, required: false},

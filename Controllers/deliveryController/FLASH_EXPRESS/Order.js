@@ -170,7 +170,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 before: findShopTwo.credit,
                 after: "COD",
                 type: 'FLE(ICE)',
-                remark: "ขนส่งสินค้า(FLASHตรง)"
+                remark: "ขนส่งสินค้าแบบ COD(FLASHตรง)"
             }
             // console.log(history)
             historyShop2 = await historyWalletShop.create(historytwo)
@@ -445,7 +445,7 @@ cancelOrder = async (req, res)=>{ //ตรวจสอบข้อมูลพ�
         if(response.data.code !== 1){
             return res
                     .status(400)
-                    .send({status:false, message:response.data.message})
+                    .send({status:false, message:"ไม่สามารถทำการยกเลิกออเดอร์นี้ได้"})
         }else{
             const findPno = await flashOrder.findOneAndUpdate(
                 {'response.pno':pno},
@@ -454,43 +454,73 @@ cancelOrder = async (req, res)=>{ //ตรวจสอบข้อมูลพ�
                 if(!findPno){
                     return res
                             .status(400)
-                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno หรืออัพเดทข้อมูลได้"})
+                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno(FLASH) หรืออัพเดทข้อมูลได้"})
                 }
-            const findShop = await shopPartner.findOneAndUpdate(
-                {shop_number:findPno.shop_number},
-                { $inc: { credit: +findPno.price } },
-                {new:true})
-                if(!findShop){
-                    return res
-                            .status(400)
-                            .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+            if(findPno.codAmount == 0){
+                const findShop = await shopPartner.findOneAndUpdate(
+                    {shop_number:findPno.shop_number},
+                    { $inc: { credit: +findPno.price } },
+                    {new:true})
+                    if(!findShop){
+                        return res
+                                .status(400)
+                                .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+                    }
+                let diff = findShop.credit - findPno.price
+                let history = {
+                        ID: id,
+                        role: role,
+                        shop_number: findPno.shop_number,
+                        orderid: pno,
+                        amount: findPno.price,
+                        before: diff,
+                        after: findShop.credit,
+                        type: 'FLE(ICE)',
+                        remark: "ยกเลิกขนส่งสินค้า(FLASHตรง)"
                 }
-            let diff = findShop.credit - findPno.price
-            let history = {
-                    ID: id,
-                    role: role,
-                    shop_number: findPno.shop_number,
-                    orderid: pno,
-                    amount: findPno.price,
-                    before: diff,
-                    after: findShop.credit,
-                    type: 'FLE(ICE)',
-                    remark: "ยกเลิกขนส่งสินค้า(FLASHตรง)"
+                const historyShop = await historyWalletShop.create(history)
+                    if(!historyShop){
+                        console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                    }
+                return res
+                        .status(200)
+                        .send({
+                            status:true, 
+                            flash: findPno, 
+                            // shop: findShop,
+                            history: historyShop
+                        })
+            }else{
+                const findShopCOD = await historyWalletShop.findOne({orderid:pno})
+                    if(!findShopCOD){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno ได้"})
+                    }
+                let history = {
+                        ID: id,
+                        role: role,
+                        shop_number: findPno.shop_number,
+                        orderid: pno,
+                        amount: findPno.price,
+                        before: findShopCOD.before,
+                        after: 'COD',
+                        type: 'FLE(ICE)',
+                        remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASHตรง)"
+                }
+                const historyShop = await historyWalletShop.create(history)
+                    if(!historyShop){
+                        console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                    }
+                return res
+                        .status(200)
+                        .send({
+                            status:true, 
+                            flash: findPno, 
+                            history: historyShop
+                        })
             }
-            const historyShop = await historyWalletShop.create(history)
-                if(!historyShop){
-                    console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                }
-            return res
-                    .status(200)
-                    .send({
-                        status:true, 
-                        flash: findPno, 
-                        shop: findShop,
-                        history: historyShop
-                    })
-        }
-        
+        }    
     }catch(err){
         console.log(err)
         return res

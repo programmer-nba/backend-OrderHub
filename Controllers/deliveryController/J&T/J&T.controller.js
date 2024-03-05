@@ -9,6 +9,7 @@ const { costPlus } = require("../../../Models/costPlus");
 const { PercentCourier } = require("../../../Models/Delivery/ship_pop/percent");
 const { codExpress } = require("../../../Models/COD/cod.model");
 const { historyWalletShop } = require("../../../Models/shop/shop_history");
+const { historyWallet } = require("../../../Models/topUp/history_topup");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -86,7 +87,7 @@ createOrder = async (req, res)=>{
             }else if(response.data.responseitems[0].reason == "B0101"){
                 return res
                         .status(404)
-                        .send({status:false, message:"กรุณาใส่หมายเลขโทรศัพท์ให้ถูกต้อง"})
+                        .send({status:false, message:"กรุณาใส่หมายเลขโทรศัพท์ให้ถูกต้อง(10 หลัก)"})
             }
         const new_data = response.data.responseitems[0]
         const createOrder = await jntOrder.create(
@@ -94,6 +95,7 @@ createOrder = async (req, res)=>{
                 ID:id,
                 shop_number:shop,
                 role:role,
+                status:'booking',
                 cod_amount:cod_amount,
                 price: price,
                 ...new_data
@@ -145,7 +147,7 @@ createOrder = async (req, res)=>{
                 before: findShopTwo.credit,
                 after: "COD",
                 type: 'J&T',
-                remark: "ขนส่งสินค้า(J&Tตรง)"
+                remark: "ขนส่งสินค้าแบบ COD(J&Tตรง)"
             }
             // console.log(history)
             historyShop = await historyWalletShop.create(historytwo)
@@ -209,6 +211,8 @@ trackingOrder = async (req, res)=>{
 
 cancelOrder = async (req, res)=>{
     try{
+        const id = req.decoded.userid
+        const role = req.decoded.role
         const txlogisticid = req.body.txlogisticid
         const formData = {
             "logistics_interface":{
@@ -234,9 +238,85 @@ cancelOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถใช้ได้"})
             }
-        return res
-                .status(200)
-                .send({status:true, data: response.data})
+        if(response.data.responseitems[0].reason == 'S12'){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถทำการยกเลิกออเดอร์นี้ได้"})
+        }else{
+                const findPno = await jntOrder.findOneAndUpdate(
+                    {txlogisticid:txlogisticid},
+                    {status:"cancel"},
+                    {new:true})
+                    if(!findPno){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Logisticid(J&T) หรืออัพเดทข้อมูลได้"})
+                    }
+                if(findPno.cod_amount == 0){
+                    const findShop = await shopPartner.findOneAndUpdate(
+                        {shop_number:findPno.shop_number},
+                        { $inc: { credit: +findPno.price } },
+                        {new:true})
+                        if(!findShop){
+                            return res
+                                    .status(400)
+                                    .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+                        }
+                    let diff = findShop.credit - findPno.price
+                    let history = {
+                            ID: id,
+                            role: role,
+                            shop_number: findPno.shop_number,
+                            orderid: txlogisticid,
+                            amount: findPno.price,
+                            before: diff,
+                            after: findShop.credit,
+                            type: 'FLE(ICE)',
+                            remark: "ยกเลิกขนส่งสินค้า(FLASHตรง)"
+                    }
+                    const historyShop = await historyWalletShop.create(history)
+                        if(!historyShop){
+                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                        }
+                    return res
+                            .status(200)
+                            .send({
+                                status:true, 
+                                flash: findPno, 
+                                // shop: findShop,
+                                history: historyShop
+                            })
+                }else{
+                    const findShopCOD = await historyWalletShop.findOne({orderid:txlogisticid})
+                        if(!findShopCOD){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno ได้"})
+                        }
+                    let history = {
+                            ID: id,
+                            role: role,
+                            shop_number: findPno.shop_number,
+                            orderid: txlogisticid,
+                            amount: findPno.price,
+                            before: findShopCOD.before,
+                            after: 'COD',
+                            type: 'FLE(ICE)',
+                            remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASHตรง)"
+                    }
+                    const historyShop = await historyWalletShop.create(history)
+                        if(!historyShop){
+                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                        }
+                    return res
+                            .status(200)
+                            .send({
+                                status:true, 
+                                flash: findPno, 
+                                history: historyShop
+                            })
+                }
+            }
     }catch(err){
         return res
                 .status(500)

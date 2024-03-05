@@ -314,6 +314,7 @@ booking = async(req, res)=>{
                 "fail": "http://shippop.com/?fail"
             },
             data: data,
+            force_confirm: 1
         };
         
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/booking/`,value,
