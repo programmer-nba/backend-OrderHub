@@ -21,7 +21,7 @@ const BookingParcelSchema = new mongoose.Schema({
     cost_hub : {type: Number, required : true},
     cost : {type: Number ,required : true},
     discount: {type: Number, required : true},
-    order_status : {type: String, default: "wait", required: true},
+    order_status : {type: String, default: "booking", required: true},
     package_detail : {type : Object, default: null, required: false}, // กรณีมีการเรียกเก็บเพิ่มเติม
     package_detail_status : {type: Boolean, default: false, required: false}, //สถานะการหักเงินของรpartner กรณีมีการหักส่วนต่าง
 },{timestamps:true})

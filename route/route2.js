@@ -44,15 +44,15 @@ router.route('/orderhub/flash/getPartner/:id').get( authAdmin.checkToken, flash.
 
 //Flash express
 router.route('/orderhub/flash/create').post( auth.checkToken, flash.createOrder )
-router.route('/orderhub/flash/status').get( flash.statusOrder )
-router.route('/orderhub/flash/getware').get( flash.getWareHouse )
-router.route('/orderhub/flash/print180').get( flash.print100x180 )
-router.route('/orderhub/flash/print75').get( flash.print100x75 )
-router.route('/orderhub/flash/POD').get( flash.statusPOD )
-router.route('/orderhub/flash/statusPack').get( flash.statusOrderPack )
+router.route('/orderhub/flash/status').get( auth.checkToken, flash.statusOrder )
+router.route('/orderhub/flash/getware').get( auth.checkToken, flash.getWareHouse )
+router.route('/orderhub/flash/print180').get( auth.checkToken,flash.print100x180 )
+router.route('/orderhub/flash/print75').get( auth.checkToken, flash.print100x75 )
+router.route('/orderhub/flash/POD').get( auth.checkToken, flash.statusPOD )
+router.route('/orderhub/flash/statusPack').get( auth.checkToken, flash.statusOrderPack )
 router.route('/orderhub/flash/cancel').delete( auth.checkToken, flash.cancelOrder )
-router.route('/orderhub/flash/notify').post( flash.notifyFlash )
-router.route('/orderhub/flash/notification').get( flash.nontification )
+router.route('/orderhub/flash/notify').post( auth.checkToken, flash.notifyFlash )
+router.route('/orderhub/flash/notification').get( auth.checkToken, flash.nontification )
 router.route('/orderhub/flash/estimate').post( auth.checkToken, flash.estimateRate )
 router.route('/orderhub/flash/getme').get( auth.checkToken, flash.getMeBooking )
 
@@ -82,12 +82,12 @@ router.route('/orderhub/shippop/getPartner/:id').get( authAdmin.checkToken, ship
 //shippop
 router.route('/orderhub/shippop/pricelist').post( auth.checkToken, ship.priceList )
 router.route('/orderhub/shippop/booking').post( auth.checkToken, ship.booking )
-router.route('/orderhub/shippop/cancel/:id').delete( auth.checkToken, ship.cancelOrder )
-router.route('/orderhub/shippop/tracking/:id').get( ship.tracking )
+router.route('/orderhub/shippop/cancel/:tracking_code').delete( auth.checkToken, ship.cancelOrder )
+router.route('/orderhub/shippop/tracking/:id').get( auth.checkToken, ship.tracking )
 router.route('/orderhub/shippop/confirm/:purchase_id').post( auth.checkToken, ship.confirmOrder )
-router.route('/orderhub/shippop/callpick/:courier_tracking_code').post( ship.callPickup )
-router.route('/orderhub/shippop/tracking_purchase/:purchase_id').get( ship.trackingPurchase )
-router.route('/orderhub/shippop/lebelHtml').post( ship.labelHtml )
+router.route('/orderhub/shippop/callpick/:courier_tracking_code').post( auth.checkToken, ship.callPickup )
+router.route('/orderhub/shippop/tracking_purchase/:purchase_id').get( auth.checkToken, ship.trackingPurchase )
+router.route('/orderhub/shippop/lebelHtml').post( auth.checkToken, ship.labelHtml )
 router.route('/orderhub/shippop/getme').get( auth.checkToken, ship.getMeBooking )
 
 //percent
@@ -113,10 +113,10 @@ router.route('/orderhub/historyShop/getOne/:shop_number').get( historyShop.getOn
 const genKey = require('../Controllers/deliveryController/J&T/generate.signJ&T')
 const JT = require('../Controllers/deliveryController/J&T/J&T.controller')
 router.route('/orderhub/JT/create').post( auth.checkToken, JT.createOrder )
-router.route('/orderhub/JT/tracking').get( JT.trackingOrder )
+router.route('/orderhub/JT/tracking').get( auth.checkToken,JT.trackingOrder )
 router.route('/orderhub/JT/cancel').delete( auth.checkToken, JT.cancelOrder )
-router.route('/orderhub/JT/label').post( JT.label )
-router.route('/orderhub/JT/price').post( JT.priceList )
+router.route('/orderhub/JT/label').post( auth.checkToken, JT.label )
+router.route('/orderhub/JT/price').post( auth.checkToken, JT.priceList )
 router.route('/orderhub/JT/getme').get( auth.checkToken, JT.getMeBooking )
 
 //J&T Admin
@@ -147,12 +147,18 @@ router.route('/orderhub/best/status').get( auth.checkToken, best.statusOrder )
 router.route('/orderhub/best/status/push').post( auth.checkToken, best.statusOrderPush )
 router.route('/orderhub/best/cancel').delete( auth.checkToken, best.cancelOrder )
 router.route('/orderhub/best/priceList').post( auth.checkToken, best.priceList )
+router.route('/orderhub/best/getme').get( auth.checkToken, best.getMeBooking )
 //กำหนดราคา/น้ำหนัก best express
 const bestWeight = require('../Controllers/deliveryController/BEST_EXPRESS/priceWeightBest')
 router.route('/orderhub/weightBest/post').post( bestWeight.createWeight )
 router.route('/orderhub/weightBest/edit/:id').put( bestWeight.editWeight )
 router.route('/orderhub/weightBest/getAll').get( bestWeight.getAll )
 router.route('/orderhub/weightBest/del/:id').delete( bestWeight.delend )
+//best Admin
+router.route('/orderhub/best/getAll').get( authAdmin.checkToken, best.getAll )
+router.route('/orderhub/best/getOne/:txLogisticId').get( authAdmin.checkToken, best.getById )
+router.route('/orderhub/best/del/:txLogisticId').delete( authAdmin.checkToken, best.delend )
+router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.getPartnerBooking )
 
 
 module.exports = router;

@@ -21,7 +21,7 @@ priceList = async (req, res)=>{
         }
         const cod = percentCod
         console.log(cod)
-        if(req.decoded.role === 'shop_member'){
+        if(req.decoded.role == 'shop_member'){
             if(req.decoded.shop_number != shop){
                 console.log(req.decoded.shop_number, shop)
                 return res
@@ -29,23 +29,6 @@ priceList = async (req, res)=>{
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
             }
         }
-        // else if (req.decoded.role === 'partner'){
-        //     const idPartner = req.decoded.userid
-            
-        //     const findShop = await Partner.findOne(
-        //         {
-        //             _id:idPartner,
-        //             shop_partner:{
-        //                 $elemMatch: { shop_number: shop }
-        //             }
-        //         })
-            
-        //     if(!findShop){
-        //         return res
-        //                 .status(400)
-        //                 .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
-        //     }
-        // }
         
         const findForCost = await shopPartner.findOne({shop_number:shop})
         if(!findForCost){
@@ -255,7 +238,9 @@ booking = async(req, res)=>{
         const price = req.body.price
         const costHub = req.body.cost_hub
         const cost = req.body.cost
+        const shop = req.body.shop_id
         const id = req.decoded.userid
+        const cod_amount = req.body.cod_amount
         const shop_id = req.body.shop_id
         const data = [{...req.body}] //, courier_code:courierCode
         const findShop = await shopPartner.findOne({shop_number:shop_id})
@@ -348,12 +333,65 @@ booking = async(req, res)=>{
                 console.log("ไม่สามารถสร้างข้อมูล booking ได้")
             }
         
+        let historyShop
+        let findShopForCredit
+        if(cod_amount == 0){
+                    findShopForCredit = await shopPartner.findOneAndUpdate(
+                        {shop_number:shop},
+                        { $inc: { credit: -price } },
+                        {new:true})
+                        if(!findShopForCredit){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                        }
+                    console.log(findShopForCredit.credit)
+                        
+                    const plus = findShopForCredit.credit + price
+                    const history = {
+                            ID: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: booking_parcel.tracking_code,
+                            amount: price,
+                            before: plus,
+                            after: findShopForCredit.credit,
+                            type: booking_parcel.courier_code,
+                            remark: "ขนส่งสินค้า(SHIPPOP)"
+                        }
+                    
+                    // console.log(history)
+                    historyShop = await historyWalletShop.create(history)
+                        if(!historyShop){
+                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                        }
+        }else{
+                    const findShopTwo = await shopPartner.findOne({shop_number:shop})
+                    const historytwo = {
+                        ID: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: booking_parcel.tracking_code,
+                        amount: price,
+                        before: findShopTwo.credit,
+                        after: "COD",
+                        type: booking_parcel.courier_code,
+                        remark: "ขนส่งสินค้าแบบ COD(SHIPPOP)"
+                    }
+                    // console.log(history)
+                    historyShop = await historyWalletShop.create(historytwo)
+                        if(!historyShop){
+                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                        }
+        }
         return res
                 .status(200)
-                .send({status: true,
-                    res:resp.data,
-                    booking:booking_parcel, 
-                });
+                .send({
+                    status:true, 
+                    order: booking_parcel,
+                    history: historyShop,
+                    shop: findShopForCredit
+                })
     }catch(err){
         console.log(err)
         return res
@@ -365,95 +403,112 @@ booking = async(req, res)=>{
 cancelOrder = async(req, res)=>{
     try{
         const id = req.decoded.userid
-        const tracking_code = req.params.id
+        const role = req.decoded.role
+        const tracking_code = req.params.tracking_code
         const valueCheck = {
             api_key: process.env.SHIPPOP_API_KEY,
             tracking_code: tracking_code,
         };
         const findStatus = await BookingParcel.findOne({ tracking_code: tracking_code });
-        if (!findStatus) {
-            return res
-                    .status(400)
-                    .send({ status: false, message: "ไม่มีหมายเลขที่ท่านกรอก" });
-            }
-        let updatedStatus = null
-        if (findStatus.order_status === 'cancel'){
-            return res
-                    .status(404)
-                    .send({status: false, message:"หมายเลขสินค้านี้ถูก cancel ไปแล้ว"})
-        } else if (findStatus.order_status !== 'booking') {
-            // ทำการอัปเดต order_status เป็น 'cancel'
-            updatedStatus = await BookingParcel.findOneAndUpdate(
-                { tracking_code: tracking_code },
-                { $set: { order_status: 'cancel' } },
-                { new: true }
-            );
-            if (!updatedStatus) {
-                // ไม่สามารถอัปเดต order_status ได้
+            if (!findStatus) {
                 return res
                         .status(400)
-                        .send({ status: false, message: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" });
+                        .send({ status: false, message: "ไม่มีหมายเลขที่ท่านกรอก" });
+            }else if(findStatus.order_status == 'cancel'){
+                return res
+                        .status(404)
+                        .send({status: false, message:"หมายเลขสินค้านี้ถูก cancel ไปแล้ว"})
             }
-        } else {
-            return res
-                    .status(400)
-                    .send({status: false, message:"ไม่สามารถยกเลิกสินค้าได้"})
-        }
 
         const respStatus = await axios.post(`${process.env.SHIPPOP_URL}/cancel/`,valueCheck,
-            {
-              headers: {"Accept-Encoding": "gzip,deflate,compress",
-                        "Content-Type": "application/json"},
-            }
-          )
-        if(respStatus.data.code !== 1){
-            return res
-                    .status(400)
-                    .send({
-                        data:respStatus.data
-                    })
-        }
-        // //คืนเงินให้ SHOP
-        // const findShop = await shopPartner.findOne({shop_number:findStatus.shop_id})
-        // if(!findShop){
-        //     return res
-        //             .status(400)
-        //             .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
-        // }
-        // let diffRefund = findStatus.price + findShop.credit
-        // const refund = await shopPartner.findOneAndUpdate(
-        //     {shop_number:findShop.shop_number},
-        //     {credit: diffRefund},
-        //     {new:true})
-        // if(!refund){
-        //     return res  
-        //             .status(400)
-        //             .send({status:false, message:"ไม่สามารถแก้ไข credit shop ได้"})
-        // }
-        // //บันทึกประวัติการเงินของ SHOP
-        //     const history = {
-        //             partnerID: id,
-        //             shop_number: findShop.shop_number,
-        //             orderid: findStatus.purchase_id,
-        //             amount: findStatus.price,
-        //             before: findShop.credit,
-        //             after: diffRefund,
-        //             type: findStatus.courier_code,
-        //             remark: "ยกเลิกการส่งสินค้า(คืนเงิน)"
-        //     }
-        // const historyShop = await historyWalletShop.create(history)
-        // if(!historyShop){
-        //     console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-        // }
-            return res
-                    .status(200)
-                    .send({
-                        status:true, 
-                        cancel:updatedStatus, 
-                        //refund:refund, 
-                        res:respStatus.data,
-                        // history:historyShop
-                    })
+                    {
+                        headers: {"Accept-Encoding": "gzip,deflate,compress",
+                                "Content-Type": "application/json"},
+                    }
+                )
+        if(respStatus.data.status !== true){
+                return res
+                        .status(400)
+                        .send({
+                            status: false, 
+                            message:"ไม่สามารถทำการยกเลิกสินค้าได้"
+                        })
+        }else{
+                const findPno = await BookingParcel.findOneAndUpdate(
+                        { tracking_code: tracking_code },
+                        { $set: { order_status: 'cancel' } },
+                        { new: true }
+                    );
+                    if(!findPno){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข tracking_code หรืออัพเดทข้อมูลได้"})
+                    }
+                if(findPno.cod_amount == 0){
+                        const findShop = await shopPartner.findOneAndUpdate(
+                            {shop_number:findPno.shop_id},
+                            { $inc: { credit: +findPno.price } },
+                            {new:true})
+                            if(!findShop){
+                                return res
+                                        .status(400)
+                                        .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+                            }
+                        let diff = findShop.credit - findPno.price
+                        let history = {
+                                ID: id,
+                                role: role,
+                                shop_number: findPno.shop_id,
+                                orderid: tracking_code,
+                                amount: findPno.price,
+                                before: diff,
+                                after: findShop.credit,
+                                type: findPno.courier_code,
+                                remark: "ยกเลิกขนส่งสินค้า(SHIPPOP)"
+                        }
+                        const historyShop = await historyWalletShop.create(history)
+                            if(!historyShop){
+                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                            }
+                        return res
+                                .status(200)
+                                .send({
+                                    status:true, 
+                                    order: findPno, 
+                                    // shop: findShop,
+                                    history: historyShop
+                                })
+                }else{
+                        const findShopCOD = await historyWalletShop.findOne({orderid:tracking_code})
+                            if(!findShopCOD){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข tracking_code ได้"})
+                            }
+                        let history = {
+                                ID: id,
+                                role: role,
+                                shop_number: findPno.shop_id,
+                                orderid: tracking_code,
+                                amount: findPno.price,
+                                before: findShopCOD.before,
+                                after: 'COD',
+                                type: findPno.courier_code,
+                                remark: "ยกเลิกขนส่งสินค้าแบบ COD(SHIPPOP)"
+                        }
+                        const historyShop = await historyWalletShop.create(history)
+                            if(!historyShop){
+                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                            }
+                        return res
+                                .status(200)
+                                .send({
+                                    status:true, 
+                                    order: findPno, 
+                                    history: historyShop
+                                })
+                }
+        }    
     }catch(err){
         console.log(err)
         return res
@@ -636,7 +691,7 @@ callPickup = async (req, res)=>{ //ใช้ไม่ได้
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/calltopickup/`,valueCheck,
             {
-            headers: {"Content-Type": "application/json"},
+                headers: {"Content-Type": "application/json"},
             }
         )
         if(resp){

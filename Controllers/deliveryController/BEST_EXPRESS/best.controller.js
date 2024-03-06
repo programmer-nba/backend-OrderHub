@@ -78,7 +78,7 @@ createOrder = async(req, res)=>{
         if(cod_amount != 0){
             formData.bizData.items.item[0].itemValue = cod_amount
             formData.bizData.itemsValue = cod_amount
-            formData.bizData.bankCardOwner = "2489444705"
+            formData.bizData.bankCardOwner = "ICE"
             formData.bizData.bankCode = "004"
             formData.bizData.bankCardNo = "5211478224"
             console.log(cod_amount)
@@ -95,7 +95,7 @@ createOrder = async(req, res)=>{
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
-            }
+            } 
         const createOrder = await bestOrder.create(
             {
                 ID:id,
@@ -686,6 +686,105 @@ priceList = async (req, res)=>{
     }
 }
 
+getAll = async (req, res)=>{
+    try{
+        const findAll = await bestOrder.find()
+        if(!findAll){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถค้นหาได้"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findAll})
+
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getById = async(req, res)=>{
+    try{
+        const txLogisticId = req.params.txLogisticId
+        const findTC = await bestOrder.findOne({txLogisticId:txLogisticId})
+            if(!findTC){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีหมายเลข txLogisticId ที่ท่านต้องการหา"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findTC})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+delend = async (req, res)=>{
+    try{
+        const txLogisticId = req.params.txLogisticId
+        const delTC = await bestOrder.findOneAndDelete({txLogisticId:txLogisticId})
+            if(!delTC){
+                return res
+                        .status(400)
+                        .send({status:false, message:"รายการนี้ถูกลบไปแล้ว"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:delTC})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getMeBooking = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        console.log(id)
+        const findMe = await bestOrder.find({ID:id})
+        if(!findMe){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getPartnerBooking = async (req, res)=>{
+    try{
+        const id = req.params.id
+        const findMe = await bestOrder.find({ID:id})
+        if(!findMe){
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 100000)
@@ -705,4 +804,6 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList }
+module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList, getAll,
+                    getById, delend, getMeBooking, getPartnerBooking
+                 }
