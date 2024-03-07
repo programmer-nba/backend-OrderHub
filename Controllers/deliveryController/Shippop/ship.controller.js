@@ -8,6 +8,8 @@ const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { historyWallet } = require('../../../Models/topUp/history_topup');
 const { costPlus } = require('../../../Models/costPlus');
 const { codExpress } = require('../../../Models/COD/cod.model');
+const { profitPartner } = require('../../../Models/profit/profit.partner');
+const { profitIce } = require('../../../Models/profit/profit.ice');
 
 priceList = async (req, res)=>{
     try{
@@ -128,6 +130,7 @@ priceList = async (req, res)=>{
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
                         status: status,
+                        priceOne: 0,
                         price: Number(price.toFixed()),
                     };
 
@@ -174,6 +177,7 @@ priceList = async (req, res)=>{
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(obj[ob].price);
                         let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
                         let price = (cost + (cost * p.percent_shop) / 100) + cost_plus
                         let priceInteger = Math.ceil(price)
             
@@ -196,6 +200,7 @@ priceList = async (req, res)=>{
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
                             status: status,
+                            priceOne: Number(priceOne.toFixed()),
                             price: Number(priceInteger.toFixed()),
                         };
 
@@ -236,6 +241,7 @@ booking = async(req, res)=>{
     try{
         const role = req.decoded.role
         const price = req.body.price
+        const priceOne = req.body.priceOne
         const costHub = req.body.cost_hub
         const cost = req.body.cost
         const shop = req.body.shop_id
@@ -325,6 +331,7 @@ booking = async(req, res)=>{
                 cost_hub: costHub,
                 cost: cost,
                 parcel:parcel,
+                priceOne: priceOne,
                 price: Number(price.toFixed()),
           };
          new_data.push(v);
@@ -332,7 +339,16 @@ booking = async(req, res)=>{
             if(!booking_parcel){
                 console.log("ไม่สามารถสร้างข้อมูล booking ได้")
             }
-        
+        let profitsPartner
+            if(priceOne == 0){
+                profitsPartner = price - cost
+            }else{
+                profitsPartner = price - priceOne
+            }
+        let profitsICE = cost - costHub //SHIPPOP ราคาต้นทุน(costHub) ที่ให้มาไม่มีทศนิยมอย่างแน่นอน ดังนั้นไม่จำเป็นต้องปัดเศษ หรือ ใส่ทศนิยม
+        let profit_partner
+        let profit_ice
+        let profit_iceCOD
         let historyShop
         let findShopForCredit
         if(cod_amount == 0){
@@ -365,7 +381,42 @@ booking = async(req, res)=>{
                         if(!historyShop){
                             console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                         }
+                    const pf = {
+                            shop_owner: findShopForCredit.partnerID,
+                            Orderer: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: booking_parcel.tracking_code,
+                            profit: profitsPartner,
+                            express: booking_parcel.courier_code,
+                            type: 'โอนเงิน',
+                    }
+                    profit_partner = await profitPartner.create(pf)
+                        if(!profit_partner){
+                            return  res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                        }
+                    const pfICE = {
+                            Orderer: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: booking_parcel.tracking_code,
+                            profit: profitsICE,
+                            express: booking_parcel.courier_code,
+                            type: 'เปอร์เซ็นจากต้นทุน',
+                    }
+                    profit_ice = await profitIce.create(pfICE)
+                        if(!profit_ice){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                        }
         }else{
+                let profitsICECOD = ((cod_amount - booking_parcel.cod_charge) - booking_parcel.cod_vat) - price
+                let roundedValue = profitsICECOD.toFixed(2) //แปลงให้เป็น ทศนิยม 2 ตำแหน่ง(แต่จะได้เป็น String)
+                let numericValue = parseFloat(roundedValue) //เปลี่ยน String ให้เป็นตัวเลข
+                // console.log(numericValue)
                     const findShopTwo = await shopPartner.findOne({shop_number:shop})
                     const historytwo = {
                         ID: id,
@@ -383,6 +434,52 @@ booking = async(req, res)=>{
                         if(!historyShop){
                             console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                         }
+                    const pf = {
+                            shop_owner: findShopTwo.partnerID,
+                            Orderer: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: booking_parcel.tracking_code,
+                            profit: profitsPartner,
+                            express: booking_parcel.courier_code,
+                            type: 'โอนเงิน',
+                    }
+                    profit_partner = await profitPartner.create(pf)
+                        if(!profit_partner){
+                            return  res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                        }
+                    const pfICE = {
+                            Orderer: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: booking_parcel.tracking_code,
+                            profit: profitsICE,
+                            express: booking_parcel.courier_code,
+                            type: 'เปอร์เซ็นจากต้นทุน',
+                    }
+                    profit_ice = await profitIce.create(pfICE)
+                        if(!profit_ice){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                        }
+                    const pfIceCOD = {
+                            Orderer: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: booking_parcel.tracking_code,
+                            profit: numericValue,
+                            express: booking_parcel.courier_code,
+                            type: 'COD',
+                    }
+                    profit_iceCOD = await profitIce.create(pfIceCOD)
+                        if(!profit_iceCOD){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                        }
         }
         return res
                 .status(200)
@@ -390,7 +487,10 @@ booking = async(req, res)=>{
                     status:true, 
                     order: booking_parcel,
                     history: historyShop,
-                    shop: findShopForCredit
+                    // shop: findShopForCredit
+                    profitP: profit_partner,
+                    profitIce: profit_ice,
+                    profitIceCOD: profit_iceCOD
                 })
     }catch(err){
         console.log(err)
@@ -470,13 +570,27 @@ cancelOrder = async(req, res)=>{
                             if(!historyShop){
                                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                             }
+                        const delProfitPartner = await profitPartner.findOneAndDelete({orderid:tracking_code})
+                            if(!delProfitPartner){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
+                            }
+                        const delProfitIce = await profitIce.findOneAndDelete({orderid:tracking_code})
+                            if(!delProfitIce){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
+                            }
                         return res
                                 .status(200)
                                 .send({
                                     status:true, 
                                     order: findPno, 
                                     // shop: findShop,
-                                    history: historyShop
+                                    history: historyShop,
+                                    delPartner: delProfitPartner,
+                                    delIce: delProfitIce
                                 })
                 }else{
                         const findShopCOD = await historyWalletShop.findOne({orderid:tracking_code})
@@ -500,12 +614,30 @@ cancelOrder = async(req, res)=>{
                             if(!historyShop){
                                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                             }
+                        const delProfitPartner = await profitPartner.findOneAndDelete({orderid:tracking_code})
+                            if(!delProfitPartner){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
+                            }
+                        const delProfitIce = await profitIce.deleteMany(
+                                {
+                                    orderid:tracking_code
+                                }
+                            )
+                            if(!delProfitIce){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
+                            }
                         return res
                                 .status(200)
                                 .send({
                                     status:true, 
                                     order: findPno, 
-                                    history: historyShop
+                                    history: historyShop,
+                                    delPartner: delProfitPartner,
+                                    delIce: delProfitIce
                                 })
                 }
         }    

@@ -10,6 +10,8 @@ const { PercentCourier } = require('../../../Models/Delivery/ship_pop/percent');
 const { flashOrder } = require('../../../Models/Delivery/flash_express/create_order');
 const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { codExpress } = require('../../../Models/COD/cod.model');
+const { profitIce } = require('../../../Models/profit/profit.ice');
+const { profitPartner } = require('../../../Models/profit/profit.partner');
 
  //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
@@ -25,12 +27,15 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const id = req.decoded.userid
         const role = req.decoded.role
         const mchId = process.env.MCH_ID
+        const cost = req.body.cost
+        const cost_hub = req.body.cost_hub
+        const priceOne = req.body.priceOne
         const codForPrice = req.body.codForPrice
-        const priceOrder = req.body.price
+        const price = req.body.price
         const shop = req.body.shop_number
         let cod_amount = Math.ceil(codForPrice)*100 //ทำ cod_amount เป็นหน่วย สตางค์ และปัดเศษขึ้น เพื่อให้ยิง flash ได้(flash ไม่รับ COD AMOUNT เป็น ทศนิยม)
         let cod_integer = cod_amount / 100 //ทำ cod_amount เป็นหน่วย บาท เพื่อบันทึกลง database(จะได้ดูง่าย)
-
+        // console.log(cod_integer, codForPrice)
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
@@ -99,18 +104,32 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
               ...response.data.data
             },
             ID: id,
-            shop_number: req.body.shop_number,
-            role: req.decoded.role,
-            cost_hub: req.body.cost_hub,
-            cost: req.body.cost,
-            priceOne: req.body.priceOne,
-            price: req.body.price,
+            shop_number: shop,
+            role: role,
+            cost_hub: cost_hub,
+            cost: cost,
+            priceOne: priceOne,
+            price: price,
             codAmount: codForPrice
           };
+
+        let profitsPartner
+          if(priceOne == 0){
+              profitsPartner = price - cost
+          }else{
+              profitsPartner = price - priceOne
+          }
+
+        let profitsICE = cost - cost_hub
+        profitsICE = parseFloat(profitsICE.toFixed(2)); //FLASH ราคาต้นทุน(costHub) ที่ให้มามีทศนิยม ดังนั้นจึงจำเป็นต้อง ใส่ทศนิยม
+
+        let profit_partner
+        let profit_ice
+        let profit_iceCOD
         if(codForPrice == 0){
             const findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -priceOrder } },
+                { $inc: { credit: -price } },
                 {new:true})
                 if(!findShop){
                     return res
@@ -124,7 +143,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
                 }
-            const plus = findShop.credit + priceOrder
+            const plus = findShop.credit + price
             const history = {
                     ID: id,
                     role: role,
@@ -140,19 +159,54 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 if(!historyShop){
                     console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                 }
-            
+
+            const pf = {
+                    shop_owner: findShop.partnerID,
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: create.response.pno,
+                    profit: profitsPartner,
+                    express: 'FLE(ICE)',
+                    type: 'โอนเงิน',
+            }
+            profit_partner = await profitPartner.create(pf)
+                if(!profit_partner){
+                    return  res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                }
+            const pfICE = {
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: create.response.pno,
+                    profit: profitsICE,
+                    express: 'FLE(ICE)',
+                    type: 'เปอร์เซ็นจากต้นทุน',
+            }
+            profit_ice = await profitIce.create(pfICE)
+                if(!profit_ice){
+                    return res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                }
             return res
                     .status(200)
                     .send({
                         status:true, message:"เชื่อมต่อสำเร็จ", 
                         data: create,
-                        shop: findShop,
-                        history: historyShop
+                        // shop: findShop,
+                        history: historyShop,
+                        profitP: profit_partner,
+                        profitIce: profit_ice,
                     })
 
         }else if(codForPrice != 0){
             new_data.codAmount = cod_integer;
             console.log(cod_integer)
+
+            let profitsICECOD = cod_integer - price
 
             const create = await flashOrder.create(new_data)
                 if(!create){
@@ -178,12 +232,61 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                 }
 
+            const pf = {
+                    shop_owner: findShopTwo.partnerID,
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: create.response.pno,
+                    profit: profitsPartner,
+                    express: 'FLE(ICE)',
+                    type: 'โอนเงิน',
+            }
+            profit_partner = await profitPartner.create(pf)
+                if(!profit_partner){
+                    return  res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                }
+            const pfICE = {
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: create.response.pno,
+                    profit: profitsICE,
+                    express: 'FLE(ICE)',
+                    type: 'เปอร์เซ็นจากต้นทุน',
+            }
+            profit_ice = await profitIce.create(pfICE)
+                if(!profit_ice){
+                    return res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                }
+            const pfIceCOD = {
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: create.response.pno,
+                    profit: profitsICECOD,
+                    express: 'FLE(ICE)',
+                    type: 'COD',
+            }
+            profit_iceCOD = await profitIce.create(pfIceCOD)
+                if(!profit_iceCOD){
+                    return res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                }
             return res
                 .status(200)
                 .send({
                     status:true, message:"เชื่อมต่อสำเร็จ", 
                     data: create,
-                    history: historyShop2
+                    history: historyShop2,
+                    profitPartner: profit_partner,
+                    profitIce: profit_ice,
+                    profitIceCOD: profit_iceCOD
                 })
         }
 
@@ -421,7 +524,7 @@ statusOrderPack = async (req, res)=>{ //ตรวจสอบข้อมูล�
     }
 }
 
-cancelOrder = async (req, res)=>{ //ตรวจสอบข้อมูลพัสดุแบบชุด
+cancelOrder = async (req, res)=>{ //cancel order
     try{
         const role = req.decoded.role
         const id = req.decoded.userid
@@ -482,13 +585,29 @@ cancelOrder = async (req, res)=>{ //ตรวจสอบข้อมูลพ�
                     if(!historyShop){
                         console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                     }
+
+                const delProfitPartner = await profitPartner.findOneAndDelete({orderid:pno})
+                    if(!delProfitPartner){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
+                    }
+
+                const delProfitIce = await profitIce.findOneAndDelete({orderid:pno})
+                    if(!delProfitIce){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
+                    }
                 return res
                         .status(200)
                         .send({
                             status:true, 
-                            flash: findPno, 
+                            order: findPno, 
                             // shop: findShop,
-                            history: historyShop
+                            history: historyShop,
+                            delPartner: delProfitPartner,
+                            delIce: delProfitIce
                         })
             }else{
                 const findShopCOD = await historyWalletShop.findOne({orderid:pno})
@@ -512,12 +631,30 @@ cancelOrder = async (req, res)=>{ //ตรวจสอบข้อมูลพ�
                     if(!historyShop){
                         console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                     }
+                const delProfitPartner = await profitPartner.findOneAndDelete({orderid:pno})
+                    if(!delProfitPartner){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
+                    }
+                const delProfitIce = await profitIce.deleteMany(
+                        {
+                            orderid:pno
+                        }
+                    )
+                    if(!delProfitIce){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
+                    }
                 return res
                         .status(200)
                         .send({
                             status:true, 
                             flash: findPno, 
-                            history: historyShop
+                            history: historyShop,
+                            delPartner: delProfitPartner,
+                            delIce: delProfitIce
                         })
             }
         }    
@@ -651,26 +788,26 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         //     }
         // }
         const formData = {
-            mchId: mchId,
-            nonceStr: nonceStr,
-            srcName: req.body.from.name,
-            srcAdress: req.body.from.address,
-            srcProvinceName: req.body.from.province,
-            srcCityName: req.body.from.state, //อำเภอ
-            srcDistrictName: req.body.from.district, //ตำบล
-            srcPostalCode: req.body.from.postcode,
-            srcPhone: req.body.from.tel,
-            dstName: req.body.to.name,
-            dstAdress: req.body.to.address,
-            dstProvinceName: req.body.to.province,
-            dstCityName: req.body.to.state,
-            dstDistrictName: req.body.to.district,
-            dstPostalCode: req.body.to.postcode,
-            dstPhone: req.body.to.tel,
-            weight: req.body.parcel.weight,
-            width: req.body.parcel.width,
-            length: req.body.parcel.length,
-            height: req.body.parcel.height,
+                mchId: mchId,
+                nonceStr: nonceStr,
+                srcName: req.body.from.name,
+                srcAdress: req.body.from.address,
+                srcProvinceName: req.body.from.province,
+                srcCityName: req.body.from.state, //อำเภอ
+                srcDistrictName: req.body.from.district, //ตำบล
+                srcPostalCode: req.body.from.postcode,
+                srcPhone: req.body.from.tel,
+                dstName: req.body.to.name,
+                dstAdress: req.body.to.address,
+                dstProvinceName: req.body.to.province,
+                dstCityName: req.body.to.state,
+                dstDistrictName: req.body.to.district,
+                dstPostalCode: req.body.to.postcode,
+                dstPhone: req.body.to.tel,
+                weight: req.body.parcel.weight,
+                width: req.body.parcel.width,
+                length: req.body.parcel.length,
+                height: req.body.parcel.height,
                 // mchId: mchId,
                 // nonceStr: nonceStr,
                 // srcName: "Mahunnop",
@@ -740,7 +877,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         }
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(estimatedPriceInBaht);
-                        let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                         let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
                         let priceInteger = Math.ceil(price)
                         let status = null;
@@ -763,6 +900,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
                             status: status,
+                            priceOne: 0,
                             price: Number(price.toFixed()),
                         };
                         if (cod !== undefined) {
@@ -791,7 +929,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(estimatedPriceInBaht);
-                    let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
                     let price = Math.ceil((cost + (cost * p.percent_shop) / 100) + cost_plus)
                     let priceInteger = Math.ceil(price)

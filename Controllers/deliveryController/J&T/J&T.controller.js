@@ -24,6 +24,7 @@ createOrder = async (req, res)=>{
         const data = req.body
         const cod_amount = req.body.cod_amount
         const price = req.body.price
+        const priceOne = req.body.priceOne
         const shop = req.body.shop_number
         const txlogisticid = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+txlogisticid);
@@ -38,7 +39,7 @@ createOrder = async (req, res)=>{
                 "sender":{
                     "name": data.from.name,
                     "postcode": data.from.postcode,
-                    "mobile": data.from.tel,
+                    "phone": data.from.tel,
                     "city": data.from.province,
                     "area": data.from.state,
                     "address": data.from.address + " ตำบล " + data.from.district
@@ -46,7 +47,7 @@ createOrder = async (req, res)=>{
                 "receiver":{
                     "name": data.to.name,
                     "postcode": data.to.postcode,
-                    "mobile": data.to.tel,
+                    "phone": data.to.tel,
                     "city": data.to.province,
                     "area": data.to.state,
                     "address": data.to.address + " ตำบล " + data.to.district
@@ -55,10 +56,10 @@ createOrder = async (req, res)=>{
                 "sendstarttime": dayTime,
                 "sendendtime": dayTime,
                 "paytype": "1",
-                "weight": req.body.weight,
-                "length": req.body.length,
-                "width": req.body.width,
-                "height": req.body.height,
+                "weight": data.parcel.weight,
+                "length": data.parcel.length,
+                "width": data.parcel.width,
+                "height": data.parcel.height,
                 "isinsured": "0",
             },
             "msg_type": "ORDERCREATE",
@@ -105,6 +106,16 @@ createOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
+        let profitsPartner
+            if(priceOne == 0){
+                profitsPartner = price - cost
+            }else{
+                profitsPartner = price - priceOne
+            }
+        let profitsICE = cost - cost_hub
+        let profit_partner
+        let profit_ice
+        let profit_iceCOD
         let historyShop
         let findShop
         if(cod_amount == 0){
@@ -406,7 +417,7 @@ priceList = async (req, res)=>{
                 }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = result[0].price;
-                    let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
                     let priceInteger = Math.ceil(price)
                     let status = null;
@@ -428,6 +439,7 @@ priceList = async (req, res)=>{
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
                         status: status,
+                        priceOne: 0,
                         price: Number(price.toFixed()),
                     };
                     if (cod != 0) {
@@ -456,7 +468,7 @@ priceList = async (req, res)=>{
                 }
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub = result[0].price;
-                let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                 let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
                 let price = Math.ceil((cost + (cost * p.percent_shop) / 100) + cost_plus)
                 let priceInteger = Math.ceil(price)
