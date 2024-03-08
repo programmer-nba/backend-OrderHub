@@ -121,7 +121,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
           }
 
         let profitsICE = cost - cost_hub
-        profitsICE = parseFloat(profitsICE.toFixed(2)); //FLASH ราคาต้นทุน(costHub) ที่ให้มามีทศนิยม ดังนั้นจึงจำเป็นต้อง ใส่ทศนิยม
+        profitsICE = parseFloat(profitsICE.toFixed(2)); //FLASH ราคาต้นทุน(cost_hub) ที่ FLASH ให้มามีทศนิยม ดังนั้นจึงจำเป็นต้อง ใส่ทศนิยม
 
         let profit_partner
         let profit_ice

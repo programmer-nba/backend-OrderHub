@@ -18,50 +18,50 @@ const storage = multer.diskStorage({
 createPartner = async (req, res) => {
   try {
     const {error} = Validate(req.body); //ตรวจสอบความถูกต้องของข้อมูลที่เข้ามา
-    if (error)
-        return res
-                .status(403)
-                .send({ status: false, message: error.details[0].message });
+        if (error)
+            return res
+                    .status(403)
+                    .send({ status: false, message: error.details[0].message });
     const blacklist = await Blacklist.findOne({
       iden_number: req.body.iden_number
     })
-    if (blacklist){
-        return res
-                .status(401)
-                .send({status: false, message:"หมายเลขบัตรประชาชนนี้ติด Blacklist"})
-    }
+        if (blacklist){
+            return res
+                    .status(401)
+                    .send({status: false, message:"หมายเลขบัตรประชาชนนี้ติด Blacklist"})
+        }
     const duplicate = await Partner.findOne({ //ตรวจสอบบัตรประชาชนพนักงานว่ามีซ้ำกันหรือไม่
       iden_number: req.body.iden_number
     });
-    if (duplicate){
-        return res
-                .status(401)
-                .send({ status: false, message: "มีเลขบัตรประชาชนนี้แล้ว" });
-    }
+        if (duplicate){
+            return res
+                    .status(401)
+                    .send({ status: false, message: "มีเลขบัตรประชาชนนี้แล้ว" });
+        }
     const duplicateID = await Partner.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
-    if(duplicateID){
-        return res
-                .status(401)
-                .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
-    }
+        if(duplicateID){
+            return res
+                    .status(401)
+                    .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
+        }
     const findAdmin = await Admin.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
-    if(findAdmin){
-        return res
-                .status(401)
-                .send({ status: false,message: "มีผู้ใช้ User ID นี้แล้ว" });
-      }
+        if(findAdmin){
+            return res
+                    .status(401)
+                    .send({ status: false,message: "มีผู้ใช้ User ID นี้แล้ว" });
+          }
     const findMemberShop = await memberShop.findOne({ //ตรวจสอบ userID ของพนักงาน shop ว่ามีซ้ำกันหรือไม่
       username: req.body.username
     })
-    if(findMemberShop){
-        return res
-                .status(401)
-                .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
-    }
+        if(findMemberShop){
+            return res
+                    .status(401)
+                    .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
+        }
     //สมัครกับคุณไอซ์โดยตรงไม่ต้องระบุ upline_number
     if(!req.body.upline_number){
         const employee = await Partner.create(req.body); //เพิ่มพนักงานเข้าระบบ

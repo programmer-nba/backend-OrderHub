@@ -10,6 +10,8 @@ const { shopPartner } = require('../../../Models/shop/shop_partner');
 const { Partner } = require('../../../Models/partner');
 const { costPlus } = require('../../../Models/costPlus');
 const { historyWalletShop } = require('../../../Models/shop/shop_history');
+const { profitIce } = require('../../../Models/profit/profit.ice');
+const { profitPartner } = require('../../../Models/profit/profit.partner');
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -28,6 +30,9 @@ createOrder = async(req, res)=>{
         const id = req.decoded.userid
         const role = req.decoded.role
         const shop = req.body.shop_number
+        const cost = req.body.cost
+        const cost_hub = req.body.cost_hub
+        const priceOne = req.body.priceOne
         const cod_amount = req.body.cod_amount
         const price = req.body.price
         const data = req.body
@@ -113,6 +118,16 @@ createOrder = async(req, res)=>{
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
         // console.log(createOrder)
+        let profitsPartner
+            if(priceOne == 0){
+                profitsPartner = price - cost
+            }else{
+                profitsPartner = price - priceOne
+            }
+        let profitsICE = cost - cost_hub
+        let profit_partner
+        let profit_ice
+        let profit_iceCOD
         let historyShop
         let findShop
         if(cod_amount == 0){
@@ -137,15 +152,48 @@ createOrder = async(req, res)=>{
                         before: plus,
                         after: findShop.credit,
                         type: 'BEST(ICE)',
-                        remark: "ขนส่งสินค้า(BESTตรง)"
+                        remark: "ขนส่งสินค้า(BEST)"
                     }
                 // console.log(history)
                 historyShop = await historyWalletShop.create(history)
                     if(!historyShop){
                         console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                     }
+                const pf = {
+                        shop_owner: findShop.partnerID,
+                        Orderer: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: createOrder.txLogisticId,
+                        profit: profitsPartner,
+                        express: 'BEST(ICE)',
+                        type: 'โอนเงิน',
+                }
+                profit_partner = await profitPartner.create(pf)
+                    if(!profit_partner){
+                        return  res
+                                .status(400)
+                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                    }
+                
+                const pfICE = {
+                        Orderer: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: createOrder.txLogisticId,
+                        profit: profitsICE,
+                        express: 'J&T',
+                        type: 'เปอร์เซ็นจากต้นทุน',
+                }
+                profit_ice = await profitIce.create(pfICE)
+                    if(!profit_ice){
+                        return res
+                                .status(400)
+                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                    }
         }else{
                 const findShopTwo = await shopPartner.findOne({shop_number:shop})
+                let profitsICECOD = cod_amount - price
                 const historytwo = {
                     ID: id,
                     role: role,
@@ -155,21 +203,71 @@ createOrder = async(req, res)=>{
                     before: findShopTwo.credit,
                     after: "COD",
                     type: 'BEST(ICE)',
-                    remark: "ขนส่งสินค้าแบบ COD(BESTตรง)"
+                    remark: "ขนส่งสินค้าแบบ COD(BEST)"
                 }
                 // console.log(history)
                 historyShop = await historyWalletShop.create(historytwo)
                     if(!historyShop){
                         console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                     }
-            }
+                const pf = {
+                        shop_owner: findShopTwo.partnerID,
+                        Orderer: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: createOrder.txLogisticId,
+                        profit: profitsPartner,
+                        express: 'BEST(ICE)',
+                        type: 'COD',
+                }
+                profit_partner = await profitPartner.create(pf)
+                    if(!profit_partner){
+                        return  res
+                                .status(400)
+                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                    }
+                const pfICE = {
+                        Orderer: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: createOrder.txLogisticId,
+                        profit: profitsICE,
+                        express: 'BEST(ICE)',
+                        type: 'เปอร์เซ็นจากต้นทุน',
+                }
+                profit_ice = await profitIce.create(pfICE)
+                    if(!profit_ice){
+                        return res
+                                .status(400)
+                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                    }
+                const pfIceCOD = {
+                        Orderer: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: createOrder.txLogisticId,
+                        profit: profitsICECOD,
+                        express: 'BEST(ICE)',
+                        type: 'COD',
+                }
+                
+                profit_iceCOD = await profitIce.create(pfIceCOD)
+                    if(!profit_iceCOD){
+                        return res
+                                .status(400)
+                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                    }
+        }
         return res
                 .status(200)
                 .send({
                     status:true, 
                     order: createOrder,
                     history: historyShop,
-                    shop: findShop
+                    // shop: findShop
+                    profitPartner: profit_partner,
+                    profitIce: profit_ice,
+                    profitIceCOD: profit_iceCOD
                 })
     }catch(err){
         return res
@@ -438,6 +536,16 @@ cancelOrder = async (req, res)=>{
             },
             partnerID: PARTNER_ID
         }
+        const findCancel = await bestOrder.findOne({txLogisticId:txLogisticId})
+            if(!findCancel){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId ได้"})
+            }else if(findCancel.status == 'cancel'){
+                return res
+                        .status(200)
+                        .send({status:true, message:"ออเดอร์นี้ถูก Cancel ไปแล้ว"})
+            }
         const newData = await doSign(formData, charset, keys)
             console.log(newData)
         const response = await axios.post(BEST_URL,newData,{
@@ -451,7 +559,7 @@ cancelOrder = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
             }
-        // console.log(response.data.result)
+        // console.log(response.data)
         if(response.data.result != true){
                 return res
                         .status(400)
@@ -490,21 +598,36 @@ cancelOrder = async (req, res)=>{
                                 before: diff,
                                 after: findShop.credit,
                                 type: 'BEST(ICE)',
-                                remark: "ยกเลิกขนส่งสินค้า(BESTตรง)"
+                                remark: "ยกเลิกขนส่งสินค้า(BEST)"
                         }
                         
                         const historyShop = await historyWalletShop.create(history)
                             if(!historyShop){
                                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                             }
-   
+
+                        const delProfitPartner = await profitPartner.findOneAndDelete({orderid:txLogisticId})
+                            if(!delProfitPartner){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ได้"})
+                            }
+        
+                        const delProfitIce = await profitIce.findOneAndDelete({orderid:txLogisticId})
+                            if(!delProfitIce){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ของคุณไอซ์ได้"})
+                            }
                     return res
                             .status(200)
                             .send({
                                 status:true, 
-                                flash: findPno, 
+                                order: findPno, 
                                 // shop: findShop,
-                                history: historyShop
+                                history: historyShop,
+                                delPartner: delProfitPartner,
+                                delIce: delProfitIce
                             })
                 }else{
                         const findShopCOD = await historyWalletShop.findOne({orderid:txLogisticId})
@@ -522,18 +645,37 @@ cancelOrder = async (req, res)=>{
                                 before: findShopCOD.before,
                                 after: 'COD',
                                 type: 'BEST(ICE)',
-                                remark: "ยกเลิกขนส่งสินค้าแบบ COD(BESTตรง)"
+                                remark: "ยกเลิกขนส่งสินค้าแบบ COD(BEST)"
                         }
                         const historyShop = await historyWalletShop.create(history)
                             if(!historyShop){
                                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                             }
+                            
+                        const delProfitPartner = await profitPartner.findOneAndDelete({orderid:txLogisticId}) //ทำการลบประวัติผลกำไรของ Partner
+                            if(!delProfitPartner){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ได้"})
+                            }
+                        const delProfitIce = await profitIce.deleteMany( //ทำการลบประวัติผลกำไรของ คุณไอซ์
+                                {
+                                    orderid:txLogisticId
+                                }
+                            )
+                            if(!delProfitIce){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ของคุณไอซ์ได้"})
+                            }
                     return res
                             .status(200)
                             .send({
                                 status:true, 
-                                flash: findPno, 
-                                history: historyShop
+                                order: findPno, 
+                                history: historyShop,
+                                delPartner: delProfitPartner,
+                                delIce: delProfitIce
                             })
                 }
         }
@@ -594,7 +736,7 @@ priceList = async (req, res)=>{
                 }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = result[0].price;
-                    let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
                     let priceInteger = Math.ceil(price)
                     let status = null;
@@ -615,8 +757,9 @@ priceList = async (req, res)=>{
                         cost_hub: cost_hub,
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
-                        status: status,
+                        priceOne : 0,
                         price: Number(price.toFixed()),
+                        status: status,
                     };
                     if (cod !== undefined) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
@@ -644,7 +787,7 @@ priceList = async (req, res)=>{
                 }
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub = result[0].price;
-                let cost = cost_hub + (cost_hub * p.percent_orderHUB) / 100; // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                 let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
                 let price = Math.ceil((cost + (cost * p.percent_shop) / 100) + cost_plus)
                 let priceInteger = Math.ceil(price)

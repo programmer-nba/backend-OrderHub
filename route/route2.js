@@ -160,5 +160,15 @@ router.route('/orderhub/best/getOne/:txLogisticId').get( authAdmin.checkToken, b
 router.route('/orderhub/best/del/:txLogisticId').delete( authAdmin.checkToken, best.delend )
 router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.getPartnerBooking )
 
+//profit partner
+const profitPN = require('../Controllers/profit/profit_partner')
+router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
+
+//profit admin(ICE)
+const profitAM = require('../Controllers/profit/profit_ice')
+router.route('/orderhub/profitPartner/getAll').get( authAdmin.checkToken, profitPN.getAll )//เรียกดูกำไร Partner ทุกคน
+router.route('/orderhub/profitAdmin/getSumAdmin').get( authAdmin.checkToken, profitAM.getSumAdmin )
+router.route('/orderhub/profitAdmin/getSumCOD').get( authAdmin.checkToken, profitAM.getSumCod )
+router.route('/orderhub/profitAdmin/getSumCost').get( authAdmin.checkToken, profitAM.getSumCost )
 
 module.exports = router;
