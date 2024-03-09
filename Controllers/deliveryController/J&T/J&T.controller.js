@@ -539,7 +539,7 @@ priceList = async (req, res)=>{
         
         const upline = findPartner.upline.head_line
 
-        let new_data
+        let new_data = []
         if(upline === 'ICE'){
             let v = null;
             let p = percent.find((c) => c.courier_code === 'J&T');
@@ -577,7 +577,7 @@ priceList = async (req, res)=>{
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                     }
-                    new_data = v;
+                    new_data.push(v);
         }else{
             const costFind = await costPlus.findOne(
                 {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
@@ -629,7 +629,7 @@ priceList = async (req, res)=>{
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                     }
-                    new_data = v;
+                    new_data.push(v);
         }
         
         return res
