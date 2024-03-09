@@ -1,4 +1,4 @@
-const { bankCode } = require("../../Models/bank/bank");
+const { bankCode } = require("../../Models/bank/bank.flashDropdown");
 
 getAll = async (req, res)=>{
     try{
