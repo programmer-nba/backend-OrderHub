@@ -7,6 +7,7 @@ const memberSchema = new Schema({
     username:{type:String, require: true},
     password:{type:String, require: true},
     member_number:{type:Number, require: false},
+    id_ownerShop: {type:String, require: false},
     shop_number: {type:Number, require: true},
     shop_name:{type:String, require: false},
     antecedent:{type:String, require: false},

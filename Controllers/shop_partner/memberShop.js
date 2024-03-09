@@ -35,6 +35,7 @@ create = async (req, res)=>{
         if(findShop){
             const data = {
                 ...req.body,
+                id_ownerShop:findShop.partnerID,
                 shop_name:findShop.shop_name
             }
             const create = await memberShop.create(data)

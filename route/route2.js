@@ -171,4 +171,20 @@ router.route('/orderhub/profitAdmin/getSumAdmin').get( authAdmin.checkToken, pro
 router.route('/orderhub/profitAdmin/getSumCOD').get( authAdmin.checkToken, profitAM.getSumCod )
 router.route('/orderhub/profitAdmin/getSumCost').get( authAdmin.checkToken, profitAM.getSumCost )
 
+//bank account 
+const bank = require('../Controllers/bank/bank.partner')
+router.route('/orderhub/bank/get/all').get( authAdmin.checkToken, bank.getAll )
+router.route('/orderhub/bank/create').post( authAdmin.checkToken, bank.createBank )
+router.route('/orderhub/bank/getAka/:aka').get( authAdmin.checkToken, bank.getByAKA )
+router.route('/orderhub/bank/del/:id').delete( authAdmin.checkToken, bank.delendByAKA )
+router.route('/orderhub/bank/edit/:id').put( authAdmin.checkToken, bank.updateBank )
+
+//bank best dropdown
+const bankBestDropDown = require('../Controllers/bank/bank.best.dropdown')
+router.route('/orderhub/bankBest/get/all').get( auth.checkToken, bankBestDropDown.getAll )
+router.route('/orderhub/bankBest/create').post( auth.checkToken, bankBestDropDown.createBank )
+router.route('/orderhub/bankBest/getAka/:aka').get( auth.checkToken, bankBestDropDown.getByAKA )
+router.route('/orderhub/bankBest/del/:id').delete( auth.checkToken, bankBestDropDown.delendByAKA )
+router.route('/orderhub/bankBest/edit/:id').put( auth.checkToken, bankBestDropDown.updateBank )
+
 module.exports = router;

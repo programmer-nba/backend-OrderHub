@@ -112,6 +112,7 @@ async function checkShopMember(req, res){
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
                             userid: memberShop._id,
+                            id_ownerShop: memberShop.id_ownerShop,
                             number: memberShop.member_number,
                             username: memberShop.username,
                             shop_number: memberShop.shop_number,
@@ -124,6 +125,7 @@ async function checkShopMember(req, res){
                                     message:"เข้าสู่ระบบสำเร็จ",
                                     token: token,
                                     id: memberShop._id,
+                                    id_ownerShop: memberShop.id_ownerShop,
                                     memberNumber: memberShop.member_number,
                                     username: memberShop.username,
                                     shop_number: memberShop.shop_number,
