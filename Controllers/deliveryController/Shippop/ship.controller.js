@@ -86,7 +86,7 @@ priceList = async (req, res)=>{
             {
                 headers: {"Accept-Encoding": "gzip,deflate,compress"},
             }
-        );
+        )
         if (!resp.data.status) {
             return res
                     .status(400)
