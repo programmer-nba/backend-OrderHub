@@ -17,7 +17,7 @@ priceList = async (req, res)=>{
         const shop = req.body.shop_number
         let reqCod = req.body.cod
         let percentCod
-        if(reqCod == true){
+        if(reqCod > 0){
             const findCod = await codExpress.findOne({express:"SHIPPOP"})
             percentCod = findCod.percent
         }
@@ -31,7 +31,7 @@ priceList = async (req, res)=>{
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
             }
         }
-        
+
         const findForCost = await shopPartner.findOne({shop_number:shop})
         if(!findForCost){
             return res
@@ -49,34 +49,34 @@ priceList = async (req, res)=>{
 
         let data = [];
             data.push({
-            "from": {
-                "name": req.body.from.name,
-                "address": req.body.from.address,
-                "district": req.body.from.district,
-                "state": req.body.from.state,
-                "province": req.body.from.province,
-                "postcode": req.body.from.postcode,
-                "tel": req.body.from.tel
-            },
-            "to": {
-                "name": req.body.to.name,
-                "address": req.body.to.address,
-                "district": req.body.to.district,
-                "state": req.body.to.state,
-                "province": req.body.to.province,
-                "postcode": req.body.to.postcode,
-                "tel": req.body.to.tel
-            },
-            "parcel": {
-                // "name": "สินค้าชิ้นที่ 1",
-                "weight": req.body.parcel.weight,
-                "width": req.body.parcel.width,
-                "length": req.body.parcel.length,
-                "height": req.body.parcel.height
-            },
-         //DHL FLE
-            "showall": 1,
-            "shop_number": req.body.shop_number//524854
+                "from": {
+                    "name": req.body.from.name,
+                    "address": req.body.from.address,
+                    "district": req.body.from.district,
+                    "state": req.body.from.state,
+                    "province": req.body.from.province,
+                    "postcode": req.body.from.postcode,
+                    "tel": req.body.from.tel
+                },
+                "to": {
+                    "name": req.body.to.name,
+                    "address": req.body.to.address,
+                    "district": req.body.to.district,
+                    "state": req.body.to.state,
+                    "province": req.body.to.province,
+                    "postcode": req.body.to.postcode,
+                    "tel": req.body.to.tel
+                },
+                "parcel": {
+                    // "name": "สินค้าชิ้นที่ 1",
+                    "weight": req.body.parcel.weight,
+                    "width": req.body.parcel.width,
+                    "length": req.body.parcel.length,
+                    "height": req.body.parcel.height
+                },
+            //DHL FLE
+                "showall": 1,
+                "shop_number": req.body.shop_number//524854
         });
         const value = {
             api_key: process.env.SHIPPOP_API_KEY,
@@ -109,7 +109,7 @@ priceList = async (req, res)=>{
                     let cost_hub = Number(obj[ob].price);
                     let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
-                    let priceInteger = Math.ceil(price)
+                    let priceInteger = reqCod
                     let status = null;
                     let cod_amount = 0
                     
@@ -128,7 +128,10 @@ priceList = async (req, res)=>{
                         ...obj[ob],
                         cost_hub: cost_hub,
                         cost: cost,
+                        cod_partner: 0,
                         cod_amount: Number(cod_amount.toFixed()),
+                        profit: 0,
+                        fee: 0,
                         status: status,
                         priceOne: 0,
                         price: Number(price.toFixed()),
@@ -137,11 +140,12 @@ priceList = async (req, res)=>{
                     if (cod !== undefined) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-
-                        if(price >= 100){
+                        v.cod_partner = reqCod
+                        v.fee = cod_price - reqCod
+                        v.profit = reqCod - price
+                        if(reqCod > price){
                             new_data.push(v);
                         }
-
                     }else{
                         new_data.push(v);
                     }
@@ -178,8 +182,8 @@ priceList = async (req, res)=>{
                         let cost_hub = Number(obj[ob].price);
                         let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                         let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
-                        let price = (cost + (cost * p.percent_shop) / 100) + cost_plus
-                        let priceInteger = Math.ceil(price)
+                        let price = priceOne + cost_plus
+                        let priceInteger = reqCod
             
                         let cod_amount = 0
                         let status = null;
@@ -198,20 +202,24 @@ priceList = async (req, res)=>{
                             ...obj[ob],
                             cost_hub: cost_hub,
                             cost: cost,
+                            cod_partner: 0,
                             cod_amount: Number(cod_amount.toFixed()),
+                            profit: 0,
+                            fee: 0,
                             status: status,
                             priceOne: Number(priceOne.toFixed()),
-                            price: Number(priceInteger.toFixed()),
+                            price: Number(price.toFixed()),
                         };
 
                         if (cod !== undefined) {
                             let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                             v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-
-                            if(price >= 100){
+                            v.cod_partner = reqCod
+                            v.fee = cod_price - reqCod
+                            v.profit = reqCod - price
+                            if(reqCod > price){
                                 new_data.push(v);
                             }
-                            
                         }else{
                             new_data.push(v);
                         }

@@ -7,13 +7,15 @@ const bankRecordSchema = new Schema({
         {
             name: {type:String, required: false},
             aka: {type:String, required: false},
-            card_number: {type:String, required: false}
+            card_number: {type:String, required: false},
+            picture: {type:String, required: false}
         }
     ],
     best:[
         {
             shop: {type:String, required:false},
             name: {type:String, required: false},
+            code: {type:String, required: false},
             aka: {type:String, required: false},
             card_number: {type:String, required: false}
         }

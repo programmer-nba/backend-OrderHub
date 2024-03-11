@@ -171,8 +171,8 @@ router.route('/orderhub/profitAdmin/getSumAdmin').get( authAdmin.checkToken, pro
 router.route('/orderhub/profitAdmin/getSumCOD').get( authAdmin.checkToken, profitAM.getSumCod )
 router.route('/orderhub/profitAdmin/getSumCost').get( authAdmin.checkToken, profitAM.getSumCost )
 
-//bank account 
-const bank = require('../Controllers/bank/bank.partner')
+//bank flashPay dropdown
+const bank = require('../Controllers/bank/bank.flashP.dropdown')
 router.route('/orderhub/bank/get/all').get( authAdmin.checkToken, bank.getAll )
 router.route('/orderhub/bank/create').post( authAdmin.checkToken, bank.createBank )
 router.route('/orderhub/bank/getAka/:aka').get( authAdmin.checkToken, bank.getByAKA )
@@ -186,5 +186,14 @@ router.route('/orderhub/bankBest/create').post( auth.checkToken, bankBestDropDow
 router.route('/orderhub/bankBest/getAka/:aka').get( auth.checkToken, bankBestDropDown.getByAKA )
 router.route('/orderhub/bankBest/del/:id').delete( auth.checkToken, bankBestDropDown.delendByAKA )
 router.route('/orderhub/bankBest/edit/:id').put( auth.checkToken, bankBestDropDown.updateBank )
+
+//bank record
+const bankRecord = require('../Controllers/bank/bank.record')
+router.route('/orderhub/bankRecord/best/get/all').get( auth.checkToken, bankRecord.getAll )
+router.route('/orderhub/bankRecord/best/create').post( auth.checkToken, bankRecord.createBank )
+router.route('/orderhub/bankRecord/best/getId/:id').get( auth.checkToken, bankRecord.getPartnerByID )
+router.route('/orderhub/bankRecord/best/del/:id').delete( auth.checkToken, bankRecord.delendByID )
+router.route('/orderhub/bankRecord/best/edit/:id').put( auth.checkToken, bankRecord.updateBank )
+
 
 module.exports = router;
