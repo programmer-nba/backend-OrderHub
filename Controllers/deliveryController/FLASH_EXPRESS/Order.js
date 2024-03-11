@@ -770,23 +770,6 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
             }
         }
-        // else if (req.decoded.role === 'partner'){
-        //     const idPartner = req.decoded.userid
-            
-        //     const findShop = await Partner.findOne(
-        //         {
-        //             _id:idPartner,
-        //             shop_partner:{
-        //                 $elemMatch: { shop_number: shop }
-        //             }
-        //         })
-            
-        //     if(!findShop){
-        //         return res
-        //                 .status(400)
-        //                 .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านเป็นเจ้าของ/สร้างร้านค้าของท่าน"})
-        //     }
-        // }
         const formData = {
                 mchId: mchId,
                 nonceStr: nonceStr,

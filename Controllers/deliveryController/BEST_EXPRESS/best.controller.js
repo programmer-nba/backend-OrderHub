@@ -283,7 +283,11 @@ createPDFOrder = async(req, res)=>{
         const id = req.decoded.userid
         const role = req.decoded.role
         const shop = req.body.shop_number
-        const cod_amount = req.body.cod
+        const cost = req.body.cost
+        const cost_hub = req.body.cost_hub
+        const priceOne = req.body.priceOne
+        const cod_amount = req.body.cod_amount
+        const price = req.body.price
         const data = req.body
         const weight = data.parcel.weight / 1000
         // console.log(data)
@@ -347,6 +351,7 @@ createPDFOrder = async(req, res)=>{
                 'Accept-Encoding': 'gzip, deflate, br'
             },
         })
+        // console.log(response.data)
             if(!response){
                 return res
                         .status(400)
@@ -359,10 +364,10 @@ createPDFOrder = async(req, res)=>{
         const binaryData = Buffer.from(base64Data, 'base64');
 
         // สร้างไฟล์ PDF
-        // fs.writeFileSync(`D:\PDF/${txLogistic}.pdf`, binaryData, 'binary', (err) => {
-        //     if (err) throw err;
-        //         console.log('สร้าง PDF ไม่สำเร็จ');
-        //     });
+        fs.writeFileSync(`D:\PDF/${txLogistic}.pdf`, binaryData, 'binary', (err) => {
+            if (err) throw err;
+                console.log('สร้าง PDF ไม่สำเร็จ');
+            });
         const createOrder = await bestOrder.create(
             {
                 ID:id,
@@ -379,65 +384,158 @@ createPDFOrder = async(req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
-        
-            let historyShop
-            let findShop
-            if(cod_amount == 0){
-                    findShop = await shopPartner.findOneAndUpdate(
-                        {shop_number:shop},
-                        { $inc: { credit: -price } },
-                        {new:true})
-                        if(!findShop){
-                            return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
-                        }
-                    console.log(findShop.credit)
-                        
-                    const plus = findShop.credit + price
-                    const history = {
-                            ID: id,
-                            role: role,
-                            shop_number: shop,
-                            orderid: createOrder.txLogisticId,
-                            amount: price,
-                            before: plus,
-                            after: findShop.credit,
-                            type: 'BEST(ICE)',
-                            remark: "ขนส่งสินค้า(BESTตรง)"
-                        }
-                    // console.log(history)
-                    historyShop = await historyWalletShop.create(history)
-                        if(!historyShop){
-                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                        }
-            }else{
-                    const findShopTwo = await shopPartner.findOne({shop_number:shop})
-                    const historytwo = {
-                        ID: id,
-                        role: role,
-                        shop_number: shop,
-                        orderid: createOrder.txLogisticId,
-                        amount: price,
-                        before: findShopTwo.credit,
-                        after: "COD",
-                        type: 'BEST(ICE)',
-                        remark: "ขนส่งสินค้า(BESTตรง)"
-                    }
-                    // console.log(history)
-                    historyShop = await historyWalletShop.create(historytwo)
-                        if(!historyShop){
-                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                        }
+            // console.log(createOrder)
+    let profitsPartner
+        if(priceOne == 0){
+            profitsPartner = price - cost
+        }else{
+            profitsPartner = price - priceOne
+        }
+    let profitsICE = cost - cost_hub
+    let profit_partner
+    let profit_ice
+    let profit_iceCOD
+    let historyShop
+    let findShop
+    if(cod_amount == 0){
+            findShop = await shopPartner.findOneAndUpdate(
+                {shop_number:shop},
+                { $inc: { credit: -price } },
+                {new:true})
+                if(!findShop){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                }
+            console.log(findShop.credit)
+                
+            const plus = findShop.credit + price
+            const history = {
+                    ID: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: createOrder.txLogisticId,
+                    amount: price,
+                    before: plus,
+                    after: findShop.credit,
+                    type: 'BEST(ICE)',
+                    remark: "ขนส่งสินค้า(BEST)"
+                }
+            // console.log(history)
+            historyShop = await historyWalletShop.create(history)
+                if(!historyShop){
+                    console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                }
+            const pf = {
+                    shop_owner: findShop.partnerID,
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: createOrder.txLogisticId,
+                    profit: profitsPartner,
+                    express: 'BEST(ICE)',
+                    type: 'โอนเงิน',
             }
-            return res
-                    .status(200)
-                    .send({
-                        status:true, 
-                        order: createOrder,
-                        history: historyShop,
-                        shop: findShop
-                    })
+            profit_partner = await profitPartner.create(pf)
+                if(!profit_partner){
+                    return  res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                }
+            
+            const pfICE = {
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: createOrder.txLogisticId,
+                    profit: profitsICE,
+                    express: 'J&T',
+                    type: 'เปอร์เซ็นจากต้นทุน',
+            }
+            profit_ice = await profitIce.create(pfICE)
+                if(!profit_ice){
+                    return res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                }
+    }else{
+            const findShopTwo = await shopPartner.findOne({shop_number:shop})
+            let profitsICECOD = cod_amount - price
+            const historytwo = {
+                ID: id,
+                role: role,
+                shop_number: shop,
+                orderid: createOrder.txLogisticId,
+                amount: price,
+                before: findShopTwo.credit,
+                after: "COD",
+                type: 'BEST(ICE)',
+                remark: "ขนส่งสินค้าแบบ COD(BEST)"
+            }
+            // console.log(history)
+            historyShop = await historyWalletShop.create(historytwo)
+                if(!historyShop){
+                    console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                }
+            const pf = {
+                    shop_owner: findShopTwo.partnerID,
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: createOrder.txLogisticId,
+                    profit: profitsPartner,
+                    express: 'BEST(ICE)',
+                    type: 'COD',
+            }
+            profit_partner = await profitPartner.create(pf)
+                if(!profit_partner){
+                    return  res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                }
+            const pfICE = {
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: createOrder.txLogisticId,
+                    profit: profitsICE,
+                    express: 'BEST(ICE)',
+                    type: 'เปอร์เซ็นจากต้นทุน',
+            }
+            profit_ice = await profitIce.create(pfICE)
+                if(!profit_ice){
+                    return res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                }
+            const pfIceCOD = {
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: createOrder.txLogisticId,
+                    profit: profitsICECOD,
+                    express: 'BEST(ICE)',
+                    type: 'COD',
+            }
+            
+            profit_iceCOD = await profitIce.create(pfIceCOD)
+                if(!profit_iceCOD){
+                    return res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                }
+    }
+    return res
+            .status(200)
+            .send({
+                status:true, 
+                order: createOrder,
+                history: historyShop,
+                // shop: findShop
+                profitPartner: profit_partner,
+                profitIce: profit_ice,
+                profitIceCOD: profit_iceCOD
+            })
     }catch(err){
         return res
                 .status(500)

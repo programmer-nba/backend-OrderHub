@@ -23,19 +23,17 @@ createBank = async (req, res)=>{
     try{
         const aka = req.body.aka
         const name = req.body.name
-        const findDuplicate = await bankRecord.findOne(
-            {
-                aka:aka
-            }
-        )
-            if(findDuplicate){
-                return res
-                        .status(400)
-                        .send({status:false, message:"มีธนาคารนี้ในระบบแล้ว"})
-            }
+        const shop = req.body.shop
+        const card_number = req.body.card_number
         const create = await bankRecord.create({
-            aka:aka,
-            name:name
+            $push:{
+                best:{
+                    shop:shop,
+                    aka:aka,
+                    name:name,
+                    card_number
+                }
+            }
         })
             if(!create){
                 return res
