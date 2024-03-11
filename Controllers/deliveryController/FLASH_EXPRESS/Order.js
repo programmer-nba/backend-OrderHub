@@ -845,12 +845,26 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 'Accept': 'application/json',
             },
         })
-        if(response.data.code !== 1){
+        let eFlash = []
+        for (const key in response.data.data) { //ดึงข้อมูลเกี่ยวกับ Error เกี่ยวกับน้ำหนักที่ Responce มาเห็บไว้ใน Array eFlash
+            if (response.data.data.hasOwnProperty(key)) {
+                // นำค่าข้างใน Array มาแสดง
+                const values = response.data.data[key];
+                eFlash = eFlash.concat(values)
+                // console.log(`Key: ${key}, Values: ${values.join(', ')}`);
+            }
+        }
+        const combinedString = eFlash.join(', ');
+        // console.log(combinedString);
+        if(response.data.code == 1002){ //Error เกี่ยวกับการใส่ข้อมูล ผู้รับ ผู้ส่ง ไม่ครบจึงเกิด "การเซ็นลายมือล้มเหลว"
             return res
                     .status(400)
-                    .send({status:false, message:response.data.data})
+                    .send({status:false, message:"กรุณากรอกข้อมูล ผู้รับ/ผู้ส่ง ให้ถูกต้อง"})
+        }else if(response.data.code == 1000){ //Error เกี่ยวกับน้ำหนักที่มากเกินไป
+            return res
+                    .status(400)
+                    .send({status:false, message:combinedString})
         }
-    
         const estimatedPrice = parseFloat(response.data.data.estimatePrice)
         const estimatedPriceInBaht = estimatedPrice / 100; //เปลี่ยนจาก สตางค์เป็นบาท
 

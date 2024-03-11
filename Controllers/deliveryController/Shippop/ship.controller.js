@@ -787,7 +787,6 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
         const valueCheck = {
             api_key: process.env.SHIPPOP_API_KEY,
             purchase_id: req.body.purchase_id,
-            logo: "https://drive.google.com/thumbnail?id=1iUqsVT-_XklVpTkYS1fSCVpCIsCj8GGv",
             type:"html",
             size: req.body.size
         };
