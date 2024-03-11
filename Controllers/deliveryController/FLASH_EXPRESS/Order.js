@@ -848,7 +848,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         if(response.data.code !== 1){
             return res
                     .status(400)
-                    .send({status:false, data:response.data})
+                    .send({status:false, message:response.data.data})
         }
     
         const estimatedPrice = parseFloat(response.data.data.estimatePrice)
