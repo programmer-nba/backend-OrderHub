@@ -22,7 +22,7 @@ getAll = async (req, res)=>{
 getSumForMe = async (req, res)=>{
     try{
         const id = req.decoded.userid
-        const findMe = await profitPartner.find({shop_owner:id, status:"พร้อมถอน"})
+        const findMe = await profitPartner.find({wallet_owner:id, status:"พร้อมถอน"})
             if(!findMe){
                 return res
                         .status(404)

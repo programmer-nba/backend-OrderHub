@@ -28,9 +28,10 @@ createOrder = async (req, res)=>{
         const price = req.body.price
         const cost = req.body.cost
         const cost_hub = req.body.cost_hub
+        const cod_partner = req.body.cod_partner
         const priceOne = req.body.priceOne
         const shop = req.body.shop_number
-        const weight = data.parcel.weight / 1000
+        const weight = data.parcel.weight 
         const txlogisticid = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+txlogisticid);
         const fromData = {
@@ -75,7 +76,7 @@ createOrder = async (req, res)=>{
             console.log(cod_amount)
         }
         const newData = await generateJT(fromData)
-            console.log(newData)
+            // console.log(newData)
         const response = await axios.post(`${apiUrl}/order/create`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -111,14 +112,27 @@ createOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
+        //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
-            if(priceOne == 0){
+            if(priceOne == 0 && cod_amount == 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ไม่ได้ต้องการส่งแบบ cod
                 profitsPartner = price - cost
-            }else{
+                // console.log(profitsPartner)
+            }else if( priceOne == 0 && cod_amount > 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ต้องการส่งแบบ cod
+                profitsPartner = cod_partner - price
+                // console.log(profitsPartner)
+            }else if ( priceOne != 0 && cod_amount == 0){ //กรณี Partner มี upline และ ไม่ได้ต้องการส่งแบบ cod
                 profitsPartner = price - priceOne
+                console.log(profitsPartner)
+            }else if ( priceOne != 0 && cod_amount > 0){ //กรณี Partner มี upline และ ต้องการส่งแบบ cod
+                profitsPartner = cod_partner - price
+            }
+        let profitsPartnerOne 
+            if(priceOne != 0){
+                profitsPartnerOne = priceOne - cost
             }
         let profitsICE = cost - cost_hub
         let profit_partner
+        let profit_partnerOne
         let profit_ice
         let profit_iceCOD
         let historyShop
@@ -154,7 +168,7 @@ createOrder = async (req, res)=>{
                 }
 
             const pf = {
-                    shop_owner: findShop.partnerID,
+                    wallet_owner: findShop.partnerID,
                     Orderer: id,
                     role: role,
                     shop_number: shop,
@@ -185,9 +199,31 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
                 }
+
+            if(priceOne != 0){
+                    const findUpline = await Partner.findOne({_id:findShop.partnerID})
+                    const headLine = findUpline.upline.head_line
+
+                    const pfPartnerOne = {
+                                wallet_owner: headLine,
+                                Orderer: id,
+                                role: role,
+                                shop_number: shop,
+                                orderid: new_data.txlogisticid,
+                                profit: profitsPartnerOne,
+                                express: 'J&T',
+                                type: 'Partner downline',
+                            }
+                    profit_partnerOne = await profitPartner.create(pfPartnerOne)
+                        if(!profit_partnerOne){
+                            return  res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
+                        }
+                    }
         }else{
             const findShopTwo = await shopPartner.findOne({shop_number:shop})
-            let profitsICECOD = cod_amount - price
+            let profitsICECOD = cod_amount - cod_partner
             const historytwo = {
                     ID: id,
                     role: role,
@@ -206,7 +242,7 @@ createOrder = async (req, res)=>{
                 }
 
             const pf = {
-                    shop_owner: findShopTwo.partnerID,
+                    wallet_owner: findShopTwo.partnerID,
                     Orderer: id,
                     role: role,
                     shop_number: shop,
@@ -251,6 +287,27 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                 }
+            if(priceOne != 0){
+                    const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
+                    const headLine = findUpline.upline.head_line
+
+                    const pfPartnerOne = {
+                            wallet_owner: headLine,
+                            Orderer: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: new_data.txlogisticid,
+                            profit: profitsPartnerOne,
+                            express: 'J&T',
+                            type: 'Partner downline',
+                        }
+                    profit_partnerOne = await profitPartner.create(pfPartnerOne)
+                        if(!profit_partnerOne){
+                            return  res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
+                        }
+                }
         }
         
         return res
@@ -260,7 +317,8 @@ createOrder = async (req, res)=>{
                     order: createOrder,
                     history: historyShop,
                     // shop: findShop,
-                    profitPartner: profit_partner,
+                    profitP: profit_partner,
+                    profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
                     profitIceCOD: profit_iceCOD
                 })
@@ -387,7 +445,7 @@ cancelOrder = async (req, res)=>{
                         if(!historyShop){
                             console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                         }
-                    const delProfitPartner = await profitPartner.findOneAndDelete({orderid:txlogisticid})
+                    const delProfitPartner = await profitPartner.deleteMany({orderid:txlogisticid})
                         if(!delProfitPartner){
                             return res
                                     .status(404)
@@ -432,7 +490,7 @@ cancelOrder = async (req, res)=>{
                         if(!historyShop){
                             console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                         }
-                    const delProfitPartner = await profitPartner.findOneAndDelete({orderid:txlogisticid}) //ทำการลบประวัติผลกำไรของ Partner
+                    const delProfitPartner = await profitPartner.deleteMany({orderid:txlogisticid}) //ทำการลบประวัติผลกำไรของ Partner
                         if(!delProfitPartner){
                             return res
                                     .status(404)
@@ -505,8 +563,8 @@ priceList = async (req, res)=>{
         const percent = await PercentCourier.find();
         const formData = req.body
         const shop = formData.shop_number
-        const weight = formData.parcel.weight
-        let codReq = req.body.cod
+        const weight = formData.parcel.weight * 1000
+        let reqCod = req.body.cod
         let percentCod 
         const result  = await priceWeight.find({weight: {$gte: weight}})
             .sort({weight:1})
@@ -518,7 +576,7 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status: false, message:"น้ำหนักของคุณมากเกินไป"})
             }
-            if(codReq == true){
+            if(reqCod > 0){
                 const findCod = await codExpress.findOne({express:"J&T"})
                 percentCod = findCod.percent
             }
@@ -548,9 +606,9 @@ priceList = async (req, res)=>{
                 }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = result[0].price;
-                    let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
-                    let priceInteger = Math.ceil(price)
+                    let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = Math.ceil(cost + p.percent_shop);
+                    let priceInteger = reqCod
                     let status = null;
                     let cod_amount = 0
 
@@ -568,16 +626,27 @@ priceList = async (req, res)=>{
                         express: "J&T",
                         cost_hub: cost_hub,
                         cost: cost,
+                        cod_partner: 0,
                         cod_amount: Number(cod_amount.toFixed()),
+                        profit: 0,
+                        fee: 0,
                         priceOne: 0,
                         price: Number(price.toFixed()),
                         status: status,
                     };
-                    if (cod != undefined) {
+                    if (cod !== undefined) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                        v.cod_partner = reqCod
+                        v.fee = cod_price - reqCod
+                        v.profit = reqCod - price
+                        if(reqCod > price){
+                            new_data.push(v);
+                        }
+                    }else{
+                        v.profit = price - cost
+                        new_data.push(v);
                     }
-                    new_data.push(v);
         }else{
             const costFind = await costPlus.findOne(
                 {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
@@ -599,10 +668,10 @@ priceList = async (req, res)=>{
                 }
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub = result[0].price;
-                let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
-                let price = Math.ceil((cost + (cost * p.percent_shop) / 100) + cost_plus)
-                let priceInteger = Math.ceil(price)
+                let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                let priceOne = Math.ceil(cost + p.percent_shop)
+                let price = priceOne + cost_plus
+                let priceInteger = reqCod
                 let cod_amount = 0
                 let status = null;
                     try {
@@ -619,17 +688,28 @@ priceList = async (req, res)=>{
                         express: "J&T",
                         cost_hub: cost_hub, //ต้นทุนที่ทางคุณไอซ์ กำหนด
                         cost: cost, //คุณไอซ์เก็บ 5%
+                        cod_partner: 0,
                         cod_amount: Number(cod_amount.toFixed()),
+                        profit: 0,
+                        fee: 0,
                         priceOne: Number(priceOne.toFixed()),
                         price: Number(price.toFixed()), //พาร์ทเนอร์โดนเก็บเพิ่ม 10%
                         status: status,
                     };
                     // console.log(v)
-                    if (cod != undefined) {
+                    if (cod !== undefined) {
                         let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
                         v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                        v.cod_partner = reqCod
+                        v.fee = cod_price - reqCod
+                        v.profit = reqCod - price
+                        if(reqCod > price){
+                            new_data.push(v);
+                        }
+                    }else{
+                        v.profit = price - priceOne
+                        new_data.push(v);
                     }
-                    new_data.push(v);
         }
         
         return res

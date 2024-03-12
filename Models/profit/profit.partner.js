@@ -3,7 +3,7 @@ const Schema = mongoose.Schema
 const dayjs = require("dayjs")
 
 const profitPartnerSchema = new Schema({
-    shop_owner: {type:String, require: false},
+    wallet_owner: {type:String, require: false},
     Orderer:{type:String, require: false},
     role:{type:String, require: false},
     shop_number:{type:String, require: false},

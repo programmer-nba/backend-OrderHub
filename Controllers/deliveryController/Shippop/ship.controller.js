@@ -15,6 +15,7 @@ priceList = async (req, res)=>{
     try{
         const percent = await PercentCourier.find();
         const shop = req.body.shop_number
+        const weight = req.body.parcel.weight * 1000
         let reqCod = req.body.cod
         let percentCod
         if(reqCod > 0){
@@ -69,7 +70,7 @@ priceList = async (req, res)=>{
                 },
                 "parcel": {
                     // "name": "สินค้าชิ้นที่ 1",
-                    "weight": req.body.parcel.weight,
+                    "weight": weight,
                     "width": req.body.parcel.width,
                     "length": req.body.parcel.length,
                     "height": req.body.parcel.height
@@ -107,8 +108,8 @@ priceList = async (req, res)=>{
                     }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(obj[ob].price);
-                    let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
+                    let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = Math.ceil(cost + p.percent_shop);
                     let priceInteger = reqCod
                     let status = null;
                     let cod_amount = 0
@@ -147,6 +148,7 @@ priceList = async (req, res)=>{
                             new_data.push(v);
                         }
                     }else{
+                        v.profit = price - cost
                         new_data.push(v);
                     }
                     // console.log(new_data);
@@ -180,8 +182,8 @@ priceList = async (req, res)=>{
                         }
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(obj[ob].price);
-                        let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                        let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
+                        let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let priceOne = Math.ceil(cost + p.percent_shop)
                         let price = priceOne + cost_plus
                         let priceInteger = reqCod
             
@@ -221,6 +223,7 @@ priceList = async (req, res)=>{
                                 new_data.push(v);
                             }
                         }else{
+                            v.profit = price - priceOne
                             new_data.push(v);
                         }
                         // console.log(new_data);
@@ -248,15 +251,20 @@ priceList = async (req, res)=>{
 booking = async(req, res)=>{
     try{
         const role = req.decoded.role
+        const formData = req.body
         const price = req.body.price
         const priceOne = req.body.priceOne
         const costHub = req.body.cost_hub
         const cost = req.body.cost
+        const cod_partner = req.body.cod_partner
         const shop = req.body.shop_id
+        const weight = req.body.parcel.weight * 1000
         const id = req.decoded.userid
         const cod_amount = req.body.cod_amount
         const shop_id = req.body.shop_id
-        const data = [{...req.body}] //, courier_code:courierCode
+        formData.parcel.weight = weight
+        const data = [{...formData}] //, courier_code:courierCode
+        console.log(data)
         const findShop = await shopPartner.findOne({shop_number:shop_id})
         if(!findShop){
             return res
@@ -347,14 +355,27 @@ booking = async(req, res)=>{
             if(!booking_parcel){
                 console.log("ไม่สามารถสร้างข้อมูล booking ได้")
             }
+        //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
-            if(priceOne == 0){
+            if(priceOne == 0 && cod_amount == 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ไม่ได้ต้องการส่งแบบ cod
                 profitsPartner = price - cost
-            }else{
+                // console.log(profitsPartner)
+            }else if( priceOne == 0 && cod_amount > 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ต้องการส่งแบบ cod
+                profitsPartner = cod_partner - price
+                // console.log(profitsPartner)
+            }else if ( priceOne != 0 && cod_amount == 0){ //กรณี Partner มี upline และ ไม่ได้ต้องการส่งแบบ cod
                 profitsPartner = price - priceOne
+                console.log(profitsPartner)
+            }else if ( priceOne != 0 && cod_amount > 0){ //กรณี Partner มี upline และ ต้องการส่งแบบ cod
+                profitsPartner = cod_partner - price
+            }
+        let profitsPartnerOne 
+            if(priceOne != 0){
+                profitsPartnerOne = priceOne - cost
             }
         let profitsICE = cost - costHub //SHIPPOP ราคาต้นทุน(costHub) ที่ให้มาไม่มีทศนิยมอย่างแน่นอน ดังนั้นไม่จำเป็นต้องปัดเศษ หรือ ใส่ทศนิยม
         let profit_partner
+        let profit_partnerOne
         let profit_ice
         let profit_iceCOD
         let historyShop
@@ -390,7 +411,7 @@ booking = async(req, res)=>{
                             console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                         }
                     const pf = {
-                            shop_owner: findShopForCredit.partnerID,
+                            wallet_owner: findShopForCredit.partnerID,
                             Orderer: id,
                             role: role,
                             shop_number: shop,
@@ -420,8 +441,29 @@ booking = async(req, res)=>{
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
                         }
+                    if(priceOne != 0){
+                        const findUpline = await Partner.findOne({_id:findShopForCredit.partnerID})
+                        const headLine = findUpline.upline.head_line
+    
+                        const pfPartnerOne = {
+                                    wallet_owner: headLine,
+                                    Orderer: id,
+                                    role: role,
+                                    shop_number: shop,
+                                    orderid: booking_parcel.tracking_code,
+                                    profit: profitsPartnerOne,
+                                    express: booking_parcel.courier_code,
+                                    type: 'Partner downline',
+                                }
+                        profit_partnerOne = await profitPartner.create(pfPartnerOne)
+                            if(!profit_partnerOne){
+                                return  res
+                                        .status(400)
+                                        .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
+                            }
+                        }
         }else{
-                let profitsICECOD = ((cod_amount - booking_parcel.cod_charge) - booking_parcel.cod_vat) - price
+                let profitsICECOD = (cod_amount - booking_parcel.cod_charge) - cod_partner
                 let roundedValue = profitsICECOD.toFixed(2) //แปลงให้เป็น ทศนิยม 2 ตำแหน่ง(แต่จะได้เป็น String)
                 let numericValue = parseFloat(roundedValue) //เปลี่ยน String ให้เป็นตัวเลข
                 // console.log(numericValue)
@@ -443,14 +485,14 @@ booking = async(req, res)=>{
                             console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                         }
                     const pf = {
-                            shop_owner: findShopTwo.partnerID,
+                            wallet_owner: findShopTwo.partnerID,
                             Orderer: id,
                             role: role,
                             shop_number: shop,
                             orderid: booking_parcel.tracking_code,
                             profit: profitsPartner,
                             express: booking_parcel.courier_code,
-                            type: 'โอนเงิน',
+                            type: 'COD',
                     }
                     profit_partner = await profitPartner.create(pf)
                         if(!profit_partner){
@@ -458,6 +500,7 @@ booking = async(req, res)=>{
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                         }
+                    
                     const pfICE = {
                             Orderer: id,
                             role: role,
@@ -488,6 +531,27 @@ booking = async(req, res)=>{
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                         }
+                    if(priceOne != 0){
+                        const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
+                        const headLine = findUpline.upline.head_line
+
+                        const pfPartnerOne = {
+                                wallet_owner: headLine,
+                                Orderer: id,
+                                role: role,
+                                shop_number: shop,
+                                orderid: booking_parcel.tracking_code,
+                                profit: profitsPartnerOne,
+                                express: booking_parcel.courier_code,
+                                type: 'Partner downline',
+                            }
+                        profit_partnerOne = await profitPartner.create(pfPartnerOne)
+                            if(!profit_partnerOne){
+                                return  res
+                                        .status(400)
+                                        .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
+                            }
+                    }
         }
         return res
                 .status(200)
@@ -497,6 +561,7 @@ booking = async(req, res)=>{
                     history: historyShop,
                     // shop: findShopForCredit
                     profitP: profit_partner,
+                    profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
                     profitIceCOD: profit_iceCOD
                 })
@@ -578,7 +643,7 @@ cancelOrder = async(req, res)=>{
                             if(!historyShop){
                                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                             }
-                        const delProfitPartner = await profitPartner.findOneAndDelete({orderid:tracking_code})
+                        const delProfitPartner = await profitPartner.deleteMany({orderid:tracking_code})
                             if(!delProfitPartner){
                                 return res
                                         .status(404)
@@ -622,7 +687,7 @@ cancelOrder = async(req, res)=>{
                             if(!historyShop){
                                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                             }
-                        const delProfitPartner = await profitPartner.findOneAndDelete({orderid:tracking_code})
+                        const delProfitPartner = await profitPartner.deleteMany({orderid:tracking_code})
                             if(!delProfitPartner){
                                 return res
                                         .status(404)

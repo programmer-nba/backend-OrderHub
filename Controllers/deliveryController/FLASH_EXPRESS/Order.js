@@ -28,9 +28,11 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const role = req.decoded.role
         const mchId = process.env.MCH_ID
         const cost = req.body.cost
+        const weight = req.body.weight * 1000
         const cost_hub = req.body.cost_hub
         const priceOne = req.body.priceOne
         const codForPrice = req.body.codForPrice
+        const cod_partner = req.body.cod_partner
         const price = req.body.price
         const shop = req.body.shop_number
         let cod_amount = Math.ceil(codForPrice)*100 //ทำ cod_amount เป็นหน่วย สตางค์ และปัดเศษขึ้น เพื่อให้ยิง flash ได้(flash ไม่รับ COD AMOUNT เป็น ทศนิยม)
@@ -41,6 +43,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             nonceStr: nonceStr,
             outTradeNo: `${nonceStr}`,
             codEnabled: 0,
+            weight: weight,
             ...req.body
             // เพิ่ม key-value pairs ตามต้องการ
           };
@@ -113,16 +116,27 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             codAmount: codForPrice
           };
 
+        //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
-          if(priceOne == 0){
-              profitsPartner = price - cost
-          }else{
-              profitsPartner = price - priceOne
-          }
+            if(priceOne == 0 && cod_amount == 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ไม่ได้ต้องการส่งแบบ cod
+                profitsPartner = price - cost
+                // console.log(profitsPartner)
+            }else if( priceOne == 0 && cod_amount > 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ต้องการส่งแบบ cod
+                profitsPartner = cod_partner - price
+                // console.log(profitsPartner)
+            }else if ( priceOne != 0 && cod_amount == 0){ //กรณี Partner มี upline และ ไม่ได้ต้องการส่งแบบ cod
+                profitsPartner = price - priceOne
+            }else if ( priceOne != 0 && cod_amount > 0){ //กรณี Partner มี upline และ ต้องการส่งแบบ cod
+                profitsPartner = cod_partner - price
+            }
+        let profitsPartnerOne 
+            if(priceOne != 0){
+                profitsPartnerOne = priceOne - cost
+            }
 
         let profitsICE = cost - cost_hub
         profitsICE = parseFloat(profitsICE.toFixed(2)); //FLASH ราคาต้นทุน(cost_hub) ที่ FLASH ให้มามีทศนิยม ดังนั้นจึงจำเป็นต้อง ใส่ทศนิยม
-
+        let profit_partnerOne
         let profit_partner
         let profit_ice
         let profit_iceCOD
@@ -161,7 +175,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
 
             const pf = {
-                    shop_owner: findShop.partnerID,
+                    wallet_owner: findShop.partnerID,
                     Orderer: id,
                     role: role,
                     shop_number: shop,
@@ -191,6 +205,27 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
                 }
+            if(priceOne != 0){
+                const findUpline = await Partner.findOne({_id:findShop.partnerID})
+                const headLine = findUpline.upline.head_line
+
+                const pfPartnerOne = {
+                                wallet_owner: headLine,
+                                Orderer: id,
+                                role: role,
+                                shop_number: shop,
+                                orderid: create.response.pno,
+                                profit: profitsPartnerOne,
+                                express: 'FLE(ICE)',
+                                type: 'Partner downline',
+                        }
+                profit_partnerOne = await profitPartner.create(pfPartnerOne)
+                        if(!profit_partnerOne){
+                            return  res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
+                        }
+                    }
             return res
                     .status(200)
                     .send({
@@ -199,6 +234,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         // shop: findShop,
                         history: historyShop,
                         profitP: profit_partner,
+                        profitPartnerOne: profit_partnerOne,
                         profitIce: profit_ice,
                     })
 
@@ -206,7 +242,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             new_data.codAmount = cod_integer;
             console.log(cod_integer)
 
-            let profitsICECOD = cod_integer - price
+            let profitsICECOD = cod_integer - cod_partner
 
             const create = await flashOrder.create(new_data)
                 if(!create){
@@ -224,23 +260,23 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 before: findShopTwo.credit,
                 after: "COD",
                 type: 'FLE(ICE)',
-                remark: "ขนส่งสินค้าแบบ COD(FLASHตรง)"
+                remark: "ขนส่งสินค้าแบบ COD(FLASH)"
             }
             // console.log(history)
-            historyShop2 = await historyWalletShop.create(historytwo)
+            const historyShop2 = await historyWalletShop.create(historytwo)
                 if(!historyShop2){
                     console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                 }
 
             const pf = {
-                    shop_owner: findShopTwo.partnerID,
+                    wallet_owner: findShopTwo.partnerID,
                     Orderer: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
                     profit: profitsPartner,
                     express: 'FLE(ICE)',
-                    type: 'โอนเงิน',
+                    type: 'COD',
             }
             profit_partner = await profitPartner.create(pf)
                 if(!profit_partner){
@@ -278,6 +314,27 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                 }
+            if(priceOne != 0){
+                    const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
+                    const headLine = findUpline.upline.head_line
+
+                    const pfPartnerOne = {
+                            wallet_owner: headLine,
+                            Orderer: id,
+                            role: role,
+                            shop_number: shop,
+                            orderid: create.response.pno,
+                            profit: profitsPartnerOne,
+                            express: 'FLE(ICE)',
+                            type: 'Partner downline',
+                        }
+                    profit_partnerOne = await profitPartner.create(pfPartnerOne)
+                        if(!profit_partnerOne){
+                            return  res
+                                    .status(400)
+                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
+                        }
+                }
             return res
                 .status(200)
                 .send({
@@ -285,6 +342,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     data: create,
                     history: historyShop2,
                     profitPartner: profit_partner,
+                    profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
                     profitIceCOD: profit_iceCOD
                 })
@@ -536,6 +594,18 @@ cancelOrder = async (req, res)=>{ //cancel order
             nonceStr: nonceStr,
             // เพิ่ม key-value pairs ตามต้องการ
           };
+
+        const findStatus = await flashOrder.findOne({'response.pno':pno});
+          if (!findStatus) {
+              return res
+                      .status(400)
+                      .send({ status: false, message: "ไม่มีหมายเลขที่ท่านกรอก" });
+          }else if(findStatus.status == 'cancel'){
+              return res
+                      .status(404)
+                      .send({status: false, message:"หมายเลขสินค้านี้ถูก cancel ไปแล้ว"})
+          }
+
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
         // console.log(formDataOnly)  
@@ -579,14 +649,14 @@ cancelOrder = async (req, res)=>{ //cancel order
                         before: diff,
                         after: findShop.credit,
                         type: 'FLE(ICE)',
-                        remark: "ยกเลิกขนส่งสินค้า(FLASHตรง)"
+                        remark: "ยกเลิกขนส่งสินค้า(FLASH)"
                 }
                 const historyShop = await historyWalletShop.create(history)
                     if(!historyShop){
                         console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                     }
 
-                const delProfitPartner = await profitPartner.findOneAndDelete({orderid:pno})
+                const delProfitPartner = await profitPartner.deleteMany({orderid:pno})
                     if(!delProfitPartner){
                         return res
                                 .status(404)
@@ -625,13 +695,13 @@ cancelOrder = async (req, res)=>{ //cancel order
                         before: findShopCOD.before,
                         after: 'COD',
                         type: 'FLE(ICE)',
-                        remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASHตรง)"
+                        remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASH)"
                 }
                 const historyShop = await historyWalletShop.create(history)
                     if(!historyShop){
                         console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
                     }
-                const delProfitPartner = await profitPartner.findOneAndDelete({orderid:pno})
+                const delProfitPartner = await profitPartner.deleteMany({orderid:pno})
                     if(!delProfitPartner){
                         return res
                                 .status(404)
@@ -755,9 +825,10 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         const apiUrl = process.env.TRAINING_URL
         const mchId = process.env.MCH_ID
         const shop = req.body.shop_number
-        let codReq = req.body.cod
+        const weight = req.body.parcel.weight * 1000
+        let reqCod = req.body.cod
         let percentCod
-        if(codReq == true){
+        if(reqCod > 0){
             const findCod = await codExpress.findOne({express:"FLASH"})
             percentCod = findCod.percent
         }
@@ -787,7 +858,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 dstDistrictName: req.body.to.district,
                 dstPostalCode: req.body.to.postcode,
                 dstPhone: req.body.to.tel,
-                weight: req.body.parcel.weight,
+                weight: weight,
                 width: req.body.parcel.width,
                 length: req.body.parcel.length,
                 height: req.body.parcel.height,
@@ -874,9 +945,9 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         }
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(estimatedPriceInBaht);
-                        let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                        let price = Math.ceil(cost + (cost * p.percent_shop) / 100);
-                        let priceInteger = Math.ceil(price)
+                        let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let price = Math.ceil(cost + p.percent_shop);
+                        let priceInteger = reqCod
                         let status = null;
                         let cod_amount = 0
 
@@ -895,16 +966,28 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             ...response.data.data,
                             cost_hub: cost_hub,
                             cost: cost,
+                            cod_partner: 0,
                             cod_amount: Number(cod_amount.toFixed()),
+                            profit: 0,
+                            fee: 0,
                             status: status,
                             priceOne: 0,
                             price: Number(price.toFixed()),
                         };
                         if (cod !== undefined) {
                             let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
+                            console.log(cod_price)
                             v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            v.cod_partner = reqCod
+                            v.fee = cod_price - reqCod
+                            v.profit = reqCod - price
+                            if(reqCod > price){
+                                new_data.push(v);
+                            }
+                        }else{
+                            v.profit = price - cost
+                            new_data.push(v);
                         }
-                        new_data.push(v);
             }else{
                 const costFind = await costPlus.findOne(
                     {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
@@ -926,10 +1009,11 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(estimatedPriceInBaht);
-                    let cost = Math.ceil(cost_hub + (cost_hub * p.percent_orderHUB) / 100); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let priceOne = Math.ceil(cost + (cost * p.percent_shop) / 100)
-                    let price = Math.ceil((cost + (cost * p.percent_shop) / 100) + cost_plus)
-                    let priceInteger = Math.ceil(price)
+                    let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let priceOne = Math.ceil(cost + p.percent_shop)
+                    let price = priceOne + cost_plus
+                    let priceInteger = reqCod
+
                     let cod_amount = 0
                     let status = null;
                     
@@ -948,16 +1032,28 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             ...response.data.data,
                             cost_hub: cost_hub, //ต้นทุนที่ทาง flash ให้คุณไอซ์
                             cost: cost, //คุณไอซ์เก็บ 5%
+                            cod_partner: 0,
                             cod_amount: Number(cod_amount.toFixed()),
+                            profit: 0,
+                            fee: 0,
                             priceOne: Number(priceOne.toFixed()),
                             price: Number(price.toFixed()), //พาร์ทเนอร์โดนเก็บเพิ่ม 10%
                             status: status,
                         };
                         if (cod !== undefined) {
                             let cod_price = Math.ceil(priceInteger + (priceInteger * cod) / 100)
-                            v.cod_amount = Number(cod_price.toFixed()); // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            console.log(priceInteger,cod, cod_price)
+                            v.cod_amount = cod_price // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            v.cod_partner = reqCod
+                            v.fee = cod_price - reqCod
+                            v.profit = reqCod - price
+                            if(reqCod > price){
+                                new_data.push(v);
+                            }
+                        }else{
+                            v.profit = price - priceOne
+                            new_data.push(v);
                         }
-                        new_data.push(v);
             }
 
         return  res
