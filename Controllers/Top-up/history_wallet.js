@@ -65,4 +65,25 @@ findIdForUser = async (req, res)=>{
     }
 }
 
-module.exports = {getAll, findId, findIdForUser}
+findShop = async (req, res)=>{
+    try{
+        const shop_number = req.params.shop_number
+        const getbyShop_number = await historyWallet.find({shop_number:shop_number})
+        if(getbyShop_number){
+            return res
+                    .status(200)
+                    .send({status:true,data: getbyShop_number})
+        }else{
+            return res
+                    .status(400)
+                    .send({status:false,message:"ไม่สามารถค้นหาได้"})
+        }
+    }catch(err){
+        console.error(err);
+        return res
+                .status(500)
+                .send({ message: "มีบางอย่างผิดพลาด" })
+    }
+}
+
+module.exports = {getAll, findId, findIdForUser, findShop}
