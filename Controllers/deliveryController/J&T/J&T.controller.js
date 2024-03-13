@@ -31,7 +31,7 @@ createOrder = async (req, res)=>{
         const cod_partner = req.body.cod_partner
         const priceOne = req.body.priceOne
         const shop = req.body.shop_number
-        const weight = data.parcel.weight 
+        const weight = data.parcel.weight //หน่วยเป็น kg อยู่แล้วไม่ต้องแก้ไข
         const txlogisticid = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+txlogisticid);
         const fromData = {
