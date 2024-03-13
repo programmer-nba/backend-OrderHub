@@ -6,18 +6,23 @@ const fs = require('fs');
 const qrcode = require('qrcode');
 const qr = require('qr-image');
 const crypto = require('crypto');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
 const { Partner } = require('../../Models/partner');
 const { historyWallet } = require('../../Models/topUp/history_topup');
 const { shopPartner } = require("../../Models/shop/shop_partner");
 
+// เพิ่มปลั๊กอินสำหรับ UTC และ timezone ใน dayjs
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
  //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
- const dayjsTimestamp = dayjs(Date.now());
+ const dayjsTimestamp = dayjs(Date.now()).tz('Asia/Bangkok');
  const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
  const dayTimePlusOneHour = dayjs(dayTime).add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
 
  const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
  const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
-
 
 QRCreate = async (req, res)=>{
     try{
