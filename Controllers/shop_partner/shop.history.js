@@ -42,4 +42,24 @@ getOne = async (req, res)=>{
     }
 }
 
-module.exports = { getAll, getOne }
+getById = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        const findShop = await historyWalletShop.find({ID:id})
+        if(!findShop){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลขร้านค้าได้"})
+        }else{
+            return res
+                    .status(200)
+                    .send({status:true, data:findShop})
+        }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+module.exports = { getAll, getOne, getById }

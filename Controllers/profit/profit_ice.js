@@ -28,13 +28,15 @@ getSumAdmin = async (req, res)=>{
                         .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ"})
             }
         const totalProfit = findMe.reduce((total, document) => total + document.profit, 0);
+        const totalProfitWithDecimal = totalProfit.toFixed(2);
+        const totalProfitAsNumber = parseFloat(totalProfitWithDecimal);
         // console.log(totalProfit)
         return res
                 .status(200)
                 .send({
                     status:true, 
-                    // data:findMe,
-                    sum: totalProfit
+                    data:findMe,
+                    sum: totalProfitAsNumber
                 })
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")

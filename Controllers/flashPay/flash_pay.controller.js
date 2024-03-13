@@ -29,8 +29,8 @@ let dayTimePlusOneHour
 // เรียกใช้ฟังก์ชัน updateRealTime() ทุก 1 วินาที
 setInterval(updateRealTime, 1000);
 
- const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
- const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
+const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
+const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
 
 QRCreate = async (req, res)=>{
     try{

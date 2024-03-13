@@ -108,6 +108,7 @@ router.route('/orderhub/flashpay/payment/vertify').post( FP.vertifyNotify )
 const historyShop = require('../Controllers/shop_partner/shop.history')
 router.route('/orderhub/historyShop/getAll').get( historyShop.getAll )
 router.route('/orderhub/historyShop/getOne/:shop_number').get( historyShop.getOne )
+router.route('/orderhub/historyShop/getId/:id').get( auth.checkToken, historyShop.getById )
 
 //J&T
 const genKey = require('../Controllers/deliveryController/J&T/generate.signJ&T')
@@ -173,11 +174,11 @@ router.route('/orderhub/profitAdmin/getSumCost').get( authAdmin.checkToken, prof
 
 //bank flashPay dropdown
 const bank = require('../Controllers/bank/bank.flashP.dropdown')
-router.route('/orderhub/bank/get/all').get( authAdmin.checkToken, bank.getAll )
-router.route('/orderhub/bank/create').post( authAdmin.checkToken, bank.createBank )
-router.route('/orderhub/bank/getAka/:aka').get( authAdmin.checkToken, bank.getByAKA )
-router.route('/orderhub/bank/del/:id').delete( authAdmin.checkToken, bank.delendByAKA )
-router.route('/orderhub/bank/edit/:id').put( authAdmin.checkToken, bank.updateBank )
+router.route('/orderhub/bankFP/get/all').get( auth.checkToken, bank.getAll )
+router.route('/orderhub/bankFP/create').post( auth.checkToken, bank.createBank )
+router.route('/orderhub/bankFP/getAka/:aka').get( auth.checkToken, bank.getByAKA )
+router.route('/orderhub/bankFP/del/:id').delete( auth.checkToken, bank.delendByAKA )
+router.route('/orderhub/bankFP/edit/:id').put( auth.checkToken, bank.updateBank )
 
 //bank best dropdown
 const bankBestDropDown = require('../Controllers/bank/bank.best.dropdown')
@@ -187,13 +188,18 @@ router.route('/orderhub/bankBest/getAka/:aka').get( auth.checkToken, bankBestDro
 router.route('/orderhub/bankBest/del/:id').delete( auth.checkToken, bankBestDropDown.delendByAKA )
 router.route('/orderhub/bankBest/edit/:id').put( auth.checkToken, bankBestDropDown.updateBank )
 
-//bank record
+//bank best record
 const bankRecord = require('../Controllers/bank/bank.record')
 router.route('/orderhub/bankRecord/best/get/all').get( auth.checkToken, bankRecord.getAll )
 router.route('/orderhub/bankRecord/best/create').post( auth.checkToken, bankRecord.createBank )
 router.route('/orderhub/bankRecord/best/getId/:id').get( auth.checkToken, bankRecord.getPartnerByID )
 router.route('/orderhub/bankRecord/best/del/:id').delete( auth.checkToken, bankRecord.delendByID )
 router.route('/orderhub/bankRecord/best/edit/:id').put( auth.checkToken, bankRecord.updateBank )
-
+//bank flashPay record
+router.route('/orderhub/bankRecord/FP/get/all').get( auth.checkToken, bankRecord.getAllFP )
+router.route('/orderhub/bankRecord/FP/create').post( auth.checkToken, bankRecord.createBankFP )
+router.route('/orderhub/bankRecord/FP/getId/:id').get( auth.checkToken, bankRecord.getPartnerByIDFP )
+router.route('/orderhub/bankRecord/FP/del/:id').delete( auth.checkToken, bankRecord.delendByIDFP )
+router.route('/orderhub/bankRecord/FP/edit/:id').put( auth.checkToken, bankRecord.updateBankFP )
 
 module.exports = router;
