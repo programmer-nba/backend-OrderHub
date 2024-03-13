@@ -26,9 +26,10 @@ createBank = async (req, res)=>{
         const name = req.body.name
         const findDuplicate = await bankBestDropDown.findOne(
             {
-                code:code,
-                aka:aka,
-                name:name
+                $or:[
+                    {code:code},
+                    {aka:aka}
+                ]
             }
         )
             if(findDuplicate){

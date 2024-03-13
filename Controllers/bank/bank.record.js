@@ -23,8 +23,9 @@ createBank = async (req, res) => {
     try {
         const aka = req.body.aka;
         const name = req.body.name;
-        const shop = req.body.shop;
+        const shop = req.body.shop_number;
         const id = req.decoded.userid;
+        const code = req.body.code
         const card_number = req.body.card_number;
 
         const findID = await bankRecord.findOne({ ID: id });
@@ -49,7 +50,8 @@ createBank = async (req, res) => {
                         shop: shop,
                         aka: aka,
                         name: name,
-                        card_number: card_number
+                        card_number: card_number,
+                        code:code
                     }
                 }
             },

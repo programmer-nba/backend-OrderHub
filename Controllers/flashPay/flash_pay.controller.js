@@ -16,10 +16,18 @@ const { shopPartner } = require("../../Models/shop/shop_partner");
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
- //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
- const dayjsTimestamp = dayjs(Date.now()).tz('Asia/Bangkok');
- const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
- const dayTimePlusOneHour = dayjs(dayTime).add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
+let dayjsTimestamp
+let dayTime
+let dayTimePlusOneHour
+
+//เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
+ function updateRealTime() {
+    dayjsTimestamp = dayjs().tz('Asia/Bangkok');
+    dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss');
+    dayTimePlusOneHour = dayjs(dayTime).add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
+}
+// เรียกใช้ฟังก์ชัน updateRealTime() ทุก 1 วินาที
+setInterval(updateRealTime, 1000);
 
  const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
  const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
@@ -163,7 +171,8 @@ paymentResults = async (req, res)=>{
                     {orderid:tradeNo},
                     {
                         before: findBefore.credit,
-                        after: wallet
+                        after: 'เติมเงินสำเร็จ',
+                        money_now: wallet
                     },
                     {new:true})
                     if(!findTradeNo){

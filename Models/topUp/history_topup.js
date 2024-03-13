@@ -13,6 +13,7 @@ const historySchema = new Schema({
     amount:{type:Number, require: false},
     before:{type:String, require: false},
     after:{type:String, require: false, default: "รอชำระเงิน"},
+    money_now:{type:String, require: false, default: ""},
     type:{type:String, require: false, default: "none"},
     image:{type:String, require: false, default: "none"},
 },{timestamps:true});
