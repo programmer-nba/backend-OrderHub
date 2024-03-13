@@ -68,7 +68,11 @@ QRCreate = async (req, res)=>{
                     'Accept-Language': 'TH',
             },
         });
-
+        // if(response.data.code == 0){
+        //     return res
+        //             .status(400)
+        //             .send({status:false, message:"ไม่สามารถ"})
+        // }
         // const qrRawData  = response.data.data.qrRawData
         // console.log(qrRawData)
         // const qrCodeFilePath = `D:\\QRCODE\\${outTradeNo}.png`

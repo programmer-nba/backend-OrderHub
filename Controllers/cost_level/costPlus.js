@@ -49,7 +49,7 @@ editCostPlus = async (req, res)=>{
         if(!fixCost){
             return res
                     .status(400)
-                    .send({status:true, message:"ไม่สามารถค้นหา/แก้ไขส่วนต่างได้"})
+                    .send({status:true, message:"ท่านไม่สามารถแก้ไขส่วนต่างได้เพราะท่านเป็นสมาชิกของ Partner ท่านอื่น"})
         }else{
             return res
                     .status(200)
