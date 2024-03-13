@@ -95,16 +95,26 @@ getPartnerByID = async (req, res)=>{
 
 delendByID = async (req, res)=>{
     try{
-        const id = req.params.id
-        const findId = await bankRecord.findOneAndDelete({ID:id})
-            if(!findId){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่พบข้อมูลธนาคารที่ท่านต้องการลบ"})
-            }
-        return res
-                .status(200)
-                .send({status:true, data:findId})
+        const id = req.decoded.userid
+        const delId = req.params.id
+        bankRecord.update(
+            { ID: id }, 
+            { 
+                $pull: { 
+                    best: { _id: delId } 
+                } 
+            }, (err, result) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send({ status: false, message: "เกิดข้อผิดพลาดในการลบข้อมูล" });
+                }
+            
+                if (result.nModified === 0) {
+                    return res.status(404).send({ status: false, message: "ไม่พบข้อมูลธนาคารที่ท่านต้องการลบ" });
+                }
+        
+            return res.status(200).send({ status: true, message: "ลบข้อมูลธนาคารเรียบร้อย" });
+        });
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res

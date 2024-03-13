@@ -69,17 +69,17 @@ QRCreate = async (req, res)=>{
             },
         });
 
-        const qrRawData  = response.data.data.qrRawData
-        console.log(qrRawData)
-        const qrCodeFilePath = `D:\\QRCODE\\${outTradeNo}.png`
-        // สร้าง QR Code จากข้อมูล
-        qrcode.toFile(`D:\QRCODE/${outTradeNo}.png`, qrRawData, { type: 'png' }, (err) => {
-            if (err) {
-                console.error('Error creating QR Code:', err);
-            } else {
-                console.log('QR Code created and saved successfully:', qrCodeFilePath);
-            }
-        });
+        // const qrRawData  = response.data.data.qrRawData
+        // console.log(qrRawData)
+        // const qrCodeFilePath = `D:\\QRCODE\\${outTradeNo}.png`
+        // // สร้าง QR Code จากข้อมูล
+        // qrcode.toFile(`D:\QRCODE/${outTradeNo}.png`, qrRawData, { type: 'png' }, (err) => {
+        //     if (err) {
+        //         console.error('Error creating QR Code:', err);
+        //     } else {
+        //         console.log('QR Code created and saved successfully:', qrCodeFilePath);
+        //     }
+        // });
         const findShop = await shopPartner.findOne({shop_number:shop})
         if(!findShop){
             return res
