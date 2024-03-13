@@ -1129,8 +1129,12 @@ delend = async (req, res)=>{
 getMeBooking = async (req, res)=>{
     try{
         const id = req.decoded.userid
-        console.log(id)
-        const findMe = await flashOrder.find({ID:id})
+        const today = new Date();
+            today.setHours(23, 59, 59, 0); // ตั้งเวลาเป็นเที่ยงคืนของวันปัจจุบัน
+        const findMe = await flashOrder.find({
+            ID:id,
+            createdAt: { $lt: today }
+          }).sort({ createdAt: -1 }); // -1 หมายถึงเรียงจากมากไปหาน้อย (ล่าสุดไปยังเก่า)
         if(!findMe){
             return res
                     .status(404)
