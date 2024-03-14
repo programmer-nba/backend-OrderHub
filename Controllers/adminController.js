@@ -404,6 +404,25 @@ cancelShop = async (req, res)=>{
   }
 }
 
+getMe = async (req, res)=>{
+  try{
+    const id = req.decoded.userid
+    const findAdmin = await Admin.findOne({_id:id})
+    if(!findAdmin){
+      return res
+              .status(404)
+              .send({status:false, message:"ไม่สามารถค้นหาข้อมูลของท่านได้"})
+    }
+    return res
+            .status(200)
+            .send({status:true, data:findAdmin})
+  }catch(err){
+    console.log("มีบางอย่างผิดพลาด")
+    return res
+            .status(400)
+            .send({status:false, message:err})
+  }
+}
 async function credit(data, creditPartner){
   let Number = data + creditPartner;
   return Number
@@ -411,5 +430,4 @@ async function credit(data, creditPartner){
 module.exports = { createAdmin, confirmContract, 
   cancelContract, confirmTopup, confirmShop,
   cancelShop, cancelTopup, findAllAdmin,
-  updateAdmin, delAdmin };
-  
+  updateAdmin, delAdmin, getMe };

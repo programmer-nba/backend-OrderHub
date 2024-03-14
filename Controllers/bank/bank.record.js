@@ -1,5 +1,12 @@
 const { bankBestDropDown } = require("../../Models/bank/bank.bestDropdown")
-const { bankRecord } = require("../../Models/bank/bank.record.best")
+const { bankRecord } = require("../../Models/bank/bank.record")
+const { uploadFileCreate, deleteFile } = require("../../functions/uploadfilecreate");
+const multer = require("multer");
+const storage = multer.diskStorage({
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + "-");
+    },
+  });
 
 //BEST
 getAll = async (req, res)=>{
@@ -199,7 +206,28 @@ createBankFP = async (req, res) => {
                     .send({ status: false, message: "ไม่สามารถสร้างข้อมูลบัญชีธนาคารได้" });
             }
         }
-
+        let upload = multer({ storage: storage })
+        const fields = [
+          {name: 'pictureIden', maxCount: 1},
+          {name: 'pictureTwo', maxCount: 1}
+        ]
+        const uploadMiddleware = upload.fields(fields);
+        uploadMiddleware(req, res, async function (err) {
+          const reqFiles = [];
+          const result = [];
+          if (!req.files) {
+            return res.status(400).send({ message: 'No files were uploaded.' });
+          }
+          const url = req.protocol + "://" + req.get("host");
+          for (const fieldName in req.files) {
+            const files = req.files[fieldName];
+            for (var i = 0; i < files.length; i++) {
+              const src = await uploadFileCreate(files[i], res, { i, reqFiles });
+              result.push(src);
+            }
+          }
+          console.log(result[0])
+        });
         // ใช้ await เพื่อรอให้การ update เสร็จสิ้นก่อนทำขั้นตอนถัดไป
         const create = await bankRecord.findOneAndUpdate(
             { ID: id },

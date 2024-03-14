@@ -1014,6 +1014,50 @@ getPartnerBooking = async (req, res)=>{
     }
 }
 
+getOrderDay = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        const findDay = await BookingParcel.aggregate([
+            {
+                $match: {
+                    ID: id // ใช้ _id หรือ field อื่นที่เกี่ยวข้องกับ userid ของผู้ใช้ตามที่ต้องการ
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: "$createdAt" },
+                        month: { $month: "$createdAt" },
+                        day: { $dayOfMonth: "$createdAt" }
+                    },
+                    documents: { $push: "$$ROOT" },
+                    count: { $sum: 1 } // เพิ่มการนับจำนวนเอกสารในแต่ละกลุ่ม
+                }
+            },
+            {
+                $sort: {
+                    "_id.year": -1,
+                    "_id.month": -1,
+                    "_id.day": -1
+                }
+            }
+        ])
+        if(!findDay){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถทำได้"})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findDay})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
                 , getAllBooking, trackingPurchase, labelHtml, getById, delend, getMeBooking, getMeBooking
-                , getPartnerBooking}
+                , getPartnerBooking, getOrderDay}

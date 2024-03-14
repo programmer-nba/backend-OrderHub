@@ -21,6 +21,7 @@ router.route('/orderhub/admin').post(admin.createAdmin)
 router.route('/orderhub/admin/findAll').get(admin.findAllAdmin)
 router.route('/orderhub/admin/update/:id').put(admin.updateAdmin)
 router.route('/orderhub/admin/del/:id').delete(admin.delAdmin)
+router.route('/orderhub/admin/getMe').get(authAdmin.checkToken, admin.getMe)
 
 //Admin Partner
 router.route('/orderhub/post').post(main.createPartner)

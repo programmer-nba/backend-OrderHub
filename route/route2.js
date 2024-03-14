@@ -89,6 +89,7 @@ router.route('/orderhub/shippop/callpick/:courier_tracking_code').post( auth.che
 router.route('/orderhub/shippop/tracking_purchase/:purchase_id').get( auth.checkToken, ship.trackingPurchase )
 router.route('/orderhub/shippop/lebelHtml').post( auth.checkToken, ship.labelHtml )
 router.route('/orderhub/shippop/getme').get( auth.checkToken, ship.getMeBooking )
+router.route('/orderhub/shippop/getArray').get( auth.checkToken, ship.getOrderDay )
 
 //percent
 router.route('/orderhub/percent/create').post( authAdmin.checkToken, percent.create )
@@ -99,7 +100,7 @@ router.route('/orderhub/percent/del/:id').delete( authAdmin.checkToken, percent.
 
 //flash_pay
 router.route('/orderhub/flashpay/qrcreate').post( auth.checkToken, FP.QRCreate )
-router.route('/orderhub/flashpay/payment/results').get( auth.checkToken, FP.paymentResults )
+router.route('/orderhub/flashpay/payment/results').post( auth.checkToken, FP.paymentResults )
 router.route('/orderhub/flashpay/payment/transaction').get( auth.checkToken, FP.transactionResult )
 router.route('/orderhub/flashpay/payment/notify').post( auth.checkToken, FP.notifyTransaction )
 router.route('/orderhub/flashpay/payment/vertify').post( FP.vertifyNotify )
