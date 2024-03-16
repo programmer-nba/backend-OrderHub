@@ -213,4 +213,5 @@ editBookbank = async (req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
 module.exports = { getAll, create, update, delend, getReceive, getSender, editBookbank, getOneSender}

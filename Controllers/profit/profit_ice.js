@@ -27,8 +27,16 @@ getSumAdmin = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ"})
             }
-        const totalProfit = findMe.reduce((total, document) => total + document.profit, 0);
+        const totalProfit = findMe.reduce((total, document) => {
+            if (document.type !== "COD(SENDER)") {
+                // console.log(total)
+                return total + document.profit;
+            } else {
+                return total;
+            }
+        }, 0);
         const totalProfitWithDecimal = totalProfit.toFixed(2);
+        console.log(totalProfit)
         const totalProfitAsNumber = parseFloat(totalProfitWithDecimal);
         // console.log(totalProfit)
         return res

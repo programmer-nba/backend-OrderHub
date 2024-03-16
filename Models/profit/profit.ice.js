@@ -18,6 +18,11 @@ const profitIceSchema = new Schema({
             return dayjs().format('YYYY-MM-DD');
         }
     },
+    bookbank: {
+            name: {type:String, required: false},
+            aka: {type:String, required: false},
+            card_number: {type:String, required: false}
+    }
 },{timestamps:true});
 
 const profitIce = mongoose.model("profit_ice", profitIceSchema);

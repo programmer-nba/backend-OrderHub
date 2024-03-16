@@ -12,6 +12,7 @@ const { historyWalletShop } = require("../../../Models/shop/shop_history");
 const { historyWallet } = require("../../../Models/topUp/history_topup");
 const { profitIce } = require("../../../Models/profit/profit.ice");
 const { profitPartner } = require("../../../Models/profit/profit.partner");
+const { dropOffs } = require("../../../Models/Delivery/dropOff");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -28,7 +29,10 @@ createOrder = async (req, res)=>{
         const price = req.body.price
         const cost = req.body.cost
         const cost_hub = req.body.cost_hub
-        const cod_partner = req.body.cod_partner
+
+        const fee_cod = req.body.fee_cod
+        const total = req.body.total
+
         const priceOne = req.body.priceOne
         const shop = req.body.shop_number
         const weight = data.parcel.weight //หน่วยเป็น kg อยู่แล้วไม่ต้องแก้ไข
@@ -75,6 +79,18 @@ createOrder = async (req, res)=>{
             fromData.logistics_interface.itemsvalue = cod_amount
             console.log(cod_amount)
         }
+         //ผู้ส่ง
+         const senderTel = data.from.tel; //ผู้ส่ง
+         console.log(senderTel)
+         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+ 
+         const updatedDocument = await dropOffs.findOne(filterSender);
+            if(!updatedDocument){
+                return res 
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
+            }
+        // console.log(updatedDocument)
         const newData = await generateJT(fromData)
             // console.log(newData)
         const response = await axios.post(`${apiUrl}/order/create`,newData,{
@@ -102,8 +118,19 @@ createOrder = async (req, res)=>{
                 ID:id,
                 shop_number:shop,
                 role:role,
+                from:{
+                    ...data.from
+                },
+                to:{
+                    ...data.to
+                },
+                parcel:{
+                    ...data.parcel
+                },
                 status:'booking',
                 cod_amount:cod_amount,
+                fee_cod: fee_cod,
+                total: total,
                 price: price,
                 ...new_data
             })
@@ -114,17 +141,10 @@ createOrder = async (req, res)=>{
             }
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
-            if(priceOne == 0 && cod_amount == 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ไม่ได้ต้องการส่งแบบ cod
+            if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                 profitsPartner = price - cost
-                // console.log(profitsPartner)
-            }else if( priceOne == 0 && cod_amount > 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ต้องการส่งแบบ cod
-                profitsPartner = cod_partner - price
-                // console.log(profitsPartner)
-            }else if ( priceOne != 0 && cod_amount == 0){ //กรณี Partner มี upline และ ไม่ได้ต้องการส่งแบบ cod
+            }else{
                 profitsPartner = price - priceOne
-                console.log(profitsPartner)
-            }else if ( priceOne != 0 && cod_amount > 0){ //กรณี Partner มี upline และ ต้องการส่งแบบ cod
-                profitsPartner = cod_partner - price
             }
         let profitsPartnerOne 
             if(priceOne != 0){
@@ -135,12 +155,13 @@ createOrder = async (req, res)=>{
         let profit_partnerOne
         let profit_ice
         let profit_iceCOD
+        let profitSender
         let historyShop
         let findShop
         if(cod_amount == 0){
             findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -price } },
+                { $inc: { credit: -total } },
                 {new:true})
                 if(!findShop){
                     return res
@@ -149,13 +170,13 @@ createOrder = async (req, res)=>{
                 }
             console.log(findShop.credit)
                 
-            const plus = findShop.credit + price
+            const plus = findShop.credit + total
             const history = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
-                    amount: price,
+                    amount: total,
                     before: plus,
                     after: findShop.credit,
                     type: 'J&T',
@@ -191,7 +212,7 @@ createOrder = async (req, res)=>{
                     orderid: new_data.txlogisticid,
                     profit: profitsICE,
                     express: 'J&T',
-                    type: 'เปอร์เซ็นจากต้นทุน',
+                    type: 'กำไรจากต้นทุน',
             }
             profit_ice = await profitIce.create(pfICE)
                 if(!profit_ice){
@@ -222,18 +243,28 @@ createOrder = async (req, res)=>{
                         }
                     }
         }else{
-            const findShopTwo = await shopPartner.findOne({shop_number:shop})
-            let profitsICECOD = cod_amount - cod_partner
+            const findShopTwo = await shopPartner.findOneAndUpdate(
+                {shop_number:shop},
+                { $inc: { credit: -total } },
+                {new:true})
+                if(!findShopTwo){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                }
+            console.log(findShopTwo.credit)
+    
+            const plus = findShopTwo.credit + total
             const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
-                    amount: price,
-                    before: findShopTwo.credit,
-                    after: "COD",
+                    amount: total,
+                    before: plus,
+                    after: findShopTwo.credit,
                     type: 'J&T',
-                    remark: "ขนส่งสินค้าแบบ COD(J&Tตรง)"
+                    remark: "ขนส่งสินค้าแบบ COD(J&T)"
             }
             // console.log(history)
             historyShop = await historyWalletShop.create(historytwo)
@@ -277,12 +308,31 @@ createOrder = async (req, res)=>{
                     role: role,
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
-                    profit: profitsICECOD,
+                    profit: fee_cod,
                     express: 'J&T',
                     type: 'COD',
             }
             profit_iceCOD = await profitIce.create(pfIceCOD)
                 if(!profit_iceCOD){
+                    return res
+                            .status(400)
+                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                }
+
+            const pfIceSender = {
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: new_data.txlogisticid,
+                    profit: cod_amount,
+                    express: 'J&T',
+                    type: 'COD(SENDER)',
+                    'bookbank.name': updatedDocument.flash_pay.name,
+                    'bookbank.card_number': updatedDocument.flash_pay.card_number,
+                    'bookbank.aka': updatedDocument.flash_pay.aka,
+            }
+            profitSender = await profitIce.create(pfIceSender)
+                if(!profitSender){
                     return res
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
@@ -320,6 +370,7 @@ createOrder = async (req, res)=>{
                     profitP: profit_partner,
                     profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
+                    profitSender: profitSender,
                     profitIceCOD: profit_iceCOD
                 })
     }catch(err){

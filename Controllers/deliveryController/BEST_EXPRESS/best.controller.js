@@ -12,6 +12,7 @@ const { costPlus } = require('../../../Models/costPlus');
 const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
+const { dropOffs } = require('../../../Models/Delivery/dropOff');
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -31,14 +32,25 @@ createOrder = async(req, res)=>{
         const role = req.decoded.role
         const shop = req.body.shop_number
         const cost = req.body.cost
-        const cod_partner = req.body.cod_partner
-        const percentCOD =req.body.percentCOD
         const cost_hub = req.body.cost_hub
+        const fee_cod = req.body.fee_cod
+        const total = req.body.total
         const priceOne = req.body.priceOne
         const cod_amount = req.body.cod_amount
         const price = req.body.price
         const data = req.body
         const weight = data.parcel.weight / 1000
+
+        //ผู้ส่ง
+        const senderTel = data.from.tel; 
+        const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+        const updatedDocument = await dropOffs.findOne(filterSender);
+            if(!updatedDocument){
+                return res 
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
+            }
+
         const formData = {
             serviceType:"KD_CREATE_WAYBILL_ORDER_NOTIFY",
             bizData:{
@@ -85,9 +97,9 @@ createOrder = async(req, res)=>{
         if(cod_amount != 0){
             formData.bizData.items.item[0].itemValue = cod_amount
             formData.bizData.itemsValue = cod_amount
-            formData.bizData.bankCardOwner = "ICE"
-            formData.bizData.bankCode = "004"
-            formData.bizData.bankCardNo = "5211478224"
+            formData.bizData.bankCardOwner = updatedDocument.best.name
+            formData.bizData.bankCode = updatedDocument.best.code
+            formData.bizData.bankCardNo = updatedDocument.best.card_number
             console.log(cod_amount)
         }
         const newData = await doSign(formData, charset, keys)
@@ -122,17 +134,10 @@ createOrder = async(req, res)=>{
         // console.log(createOrder)
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
-            if(priceOne == 0 && cod_amount == 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ไม่ได้ต้องการส่งแบบ cod
+            if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                 profitsPartner = price - cost
-                // console.log(profitsPartner)
-            }else if( priceOne == 0 && cod_amount > 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ต้องการส่งแบบ cod
-                profitsPartner = cod_partner - price
-                // console.log(profitsPartner)
-            }else if ( priceOne != 0 && cod_amount == 0){ //กรณี Partner มี upline และ ไม่ได้ต้องการส่งแบบ cod
+            }else{
                 profitsPartner = price - priceOne
-                console.log(profitsPartner)
-            }else if ( priceOne != 0 && cod_amount > 0){ //กรณี Partner มี upline และ ต้องการส่งแบบ cod
-                profitsPartner = cod_partner - price
             }
         let profitsPartnerOne 
             if(priceOne != 0){
@@ -145,6 +150,7 @@ createOrder = async(req, res)=>{
         let profit_iceCOD
         let historyShop
         let findShop
+        
         if(cod_amount == 0){
                 findShop = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
@@ -228,16 +234,26 @@ createOrder = async(req, res)=>{
                             }
                         }
         }else{
-                const findShopTwo = await shopPartner.findOne({shop_number:shop})
-                let profitsICECOD = cod_amount - cod_partner
+            const findShopTwo = await shopPartner.findOneAndUpdate(
+                {shop_number:shop},
+                { $inc: { credit: -total } },
+                {new:true})
+                if(!findShopTwo){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                }
+            console.log(findShopTwo.credit)
+    
+            const plus = findShopTwo.credit + total
                 const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: createOrder.txLogisticId,
-                    amount: price,
-                    before: findShopTwo.credit,
-                    after: "COD",
+                    amount: total,
+                    before: plus,
+                    after: findShopTwo.credit,
                     type: 'BEST(ICE)',
                     remark: "ขนส่งสินค้าแบบ COD(BEST)"
                 }
@@ -282,7 +298,7 @@ createOrder = async(req, res)=>{
                         role: role,
                         shop_number: shop,
                         orderid: createOrder.txLogisticId,
-                        profit: profitsICECOD,
+                        profit: fee_cod,
                         express: 'BEST(ICE)',
                         type: 'COD',
                 }
@@ -293,6 +309,7 @@ createOrder = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                     }
+
                 if(priceOne != 0){
                         const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
                         const headLine = findUpline.upline.head_line
@@ -342,14 +359,26 @@ createPDFOrder = async(req, res)=>{
         const role = req.decoded.role
         const shop = req.body.shop_number
         const cost = req.body.cost
-        const cod_partner = req.body.cod_partner
         const cost_hub = req.body.cost_hub
+        const fee_cod = req.body.fee_cod
+        const total = req.body.total
         const priceOne = req.body.priceOne
         const cod_amount = req.body.cod_amount
         const price = req.body.price
         const data = req.body
         const weight = data.parcel.weight / 1000
-        // console.log(data)
+
+        //ผู้ส่ง
+        const senderTel = data.from.tel; 
+        const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+        const updatedDocument = await dropOffs.findOne(filterSender);
+            if(!updatedDocument){
+                return res 
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
+            }
+        
+        console.log(updatedDocument)
         const formData = {
             serviceType:"KD_CREATE_WAYBILL_ORDER_PDF_NOTIFY",
             bizData:{
@@ -393,17 +422,18 @@ createPDFOrder = async(req, res)=>{
             },
             partnerID: PARTNER_ID
         }
+
         // console.log(formData)
         if(cod_amount != 0){
             formData.bizData.items.item[0].itemValue = cod_amount
             formData.bizData.itemsValue = cod_amount
-            formData.bizData.bankCardOwner = "2489444705"
-            formData.bizData.bankCode = "004"
-            formData.bizData.bankCardNo = "5211478224"
+            formData.bizData.bankCardOwner = updatedDocument.best.name
+            formData.bizData.bankCode = updatedDocument.best.code
+            formData.bizData.bankCardNo = updatedDocument.best.card_number
             console.log(cod_amount)
         }
         const newData = await doSign(formData, charset, keys)
-        console.log(newData)
+        // console.log(newData)
         const response = await axios.post(BEST_URL,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -415,9 +445,14 @@ createPDFOrder = async(req, res)=>{
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
+            }else if(!response.data.result){
+                return res
+                        .status(400)
+                        .send({status:false, message:"หมายเลขบัญชีของท่านไม่ถูกต้อง"})
             }
         // ข้อมูล Base64 ที่ต้องการ decode
         const base64Data = response.data.pdfStream;
+        //console.log(base64Data)
 
         // Decode Base64
         const binaryData = Buffer.from(base64Data, 'base64');
@@ -432,10 +467,21 @@ createPDFOrder = async(req, res)=>{
                 ID:id,
                 shop_number:shop,
                 role:role,
+                from: {
+                    ...data.from
+                },
+                to: {
+                    ...data.to
+                },
+                parcel: {
+                    ...data.parcel
+                },
                 status:'booking',
                 cod_amount:cod_amount,
                 price: price,
                 type:'PDF',
+                fee_cod: fee_cod,
+                total: total,
                 ...response.data
             })
             if(!createOrder){
@@ -446,17 +492,10 @@ createPDFOrder = async(req, res)=>{
             // console.log(createOrder)
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
-            if(priceOne == 0 && cod_amount == 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ไม่ได้ต้องการส่งแบบ cod
+            if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                 profitsPartner = price - cost
-                // console.log(profitsPartner)
-            }else if( priceOne == 0 && cod_amount > 0){ //กรณี Partner สมัครกับคุณไอซ์โดยตรง(ไม่มี upline) และ ต้องการส่งแบบ cod
-                profitsPartner = cod_partner - price
-                // console.log(profitsPartner)
-            }else if ( priceOne != 0 && cod_amount == 0){ //กรณี Partner มี upline และ ไม่ได้ต้องการส่งแบบ cod
+            }else{
                 profitsPartner = price - priceOne
-                console.log(profitsPartner)
-            }else if ( priceOne != 0 && cod_amount > 0){ //กรณี Partner มี upline และ ต้องการส่งแบบ cod
-                profitsPartner = cod_partner - price
             }
         let profitsPartnerOne 
             if(priceOne != 0){
@@ -522,7 +561,7 @@ createPDFOrder = async(req, res)=>{
                         orderid: createOrder.txLogisticId,
                         profit: profitsICE,
                         express: 'J&T',
-                        type: 'เปอร์เซ็นจากต้นทุน',
+                        type: 'กำไรจากต้นทุน',
                 }
                 profit_ice = await profitIce.create(pfICE)
                     if(!profit_ice){
@@ -552,16 +591,26 @@ createPDFOrder = async(req, res)=>{
                             }
                         }
         }else{
-                const findShopTwo = await shopPartner.findOne({shop_number:shop})
-                let profitsICECOD = cod_amount - cod_partner
+            const findShopTwo = await shopPartner.findOneAndUpdate(
+                {shop_number:shop},
+                { $inc: { credit: -total } },
+                {new:true})
+                if(!findShopTwo){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                }
+            console.log(findShopTwo.credit)
+    
+            const plus = findShopTwo.credit + total
                 const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: createOrder.txLogisticId,
-                    amount: price,
-                    before: findShopTwo.credit,
-                    after: "COD",
+                    amount: total,
+                    before: plus,
+                    after: findShopTwo.credit,
                     type: 'BEST(ICE)',
                     remark: "ขนส่งสินค้าแบบ COD(BEST)"
                 }
@@ -593,7 +642,7 @@ createPDFOrder = async(req, res)=>{
                         orderid: createOrder.txLogisticId,
                         profit: profitsICE,
                         express: 'BEST(ICE)',
-                        type: 'เปอร์เซ็นจากต้นทุน',
+                        type: 'กำไรจากต้นทุน',
                 }
                 profit_ice = await profitIce.create(pfICE)
                     if(!profit_ice){
@@ -606,7 +655,7 @@ createPDFOrder = async(req, res)=>{
                         role: role,
                         shop_number: shop,
                         orderid: createOrder.txLogisticId,
-                        profit: profitsICECOD,
+                        profit: fee_cod,
                         express: 'BEST(ICE)',
                         type: 'COD',
                 }

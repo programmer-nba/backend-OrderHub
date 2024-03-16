@@ -15,7 +15,9 @@ priceList = async (req, res)=>{
     try{
         const percent = await PercentCourier.find();
         const shop = req.body.shop_number
+        const id = req.decoded.userid
         const weight = req.body.parcel.weight * 1000
+        const formData = req.body
         let reqCod = req.body.cod
         let percentCod
         if(reqCod > 0){
@@ -32,7 +34,48 @@ priceList = async (req, res)=>{
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
             }
         }
+        //ผู้ส่ง
+        const sender = formData.from; 
+        const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+        
+            const data_sender = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
+                ...sender,
+                ID: id,
+                status: 'ผู้ส่ง',
+                shop_id: shop,
+                postcode: String(sender.postcode),
+            };
 
+        const optionsSender = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
+        
+        const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
+            if (resultSender.upsertedCount > 0) {
+                console.log('สร้างข้อมูลผู้ส่งคนใหม่');
+            } else {
+                console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+            }
+
+        //ผู้รับ
+        const recipient = formData.to; // ผู้รับ
+        const filter = { ID: id, tel: recipient.tel, status: 'ผู้รับ' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+
+            const update = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
+                ...recipient,
+                ID: id,
+                status: 'ผู้รับ',
+                shop_id: shop,
+                postcode: String(recipient.postcode),
+            };
+
+        const options = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
+        
+        const result = await dropOffs.updateOne(filter, update, options);
+            if (result.upsertedCount > 0) {
+                console.log('สร้างข้อมูลผู้รับคนใหม่');
+            } else {
+                console.log('อัปเดตข้อมูลผู้รับเรียบร้อย');
+            }
+        
         const findForCost = await shopPartner.findOne({shop_number:shop})
         if(!findForCost){
             return res
@@ -261,7 +304,10 @@ booking = async(req, res)=>{
         const costHub = req.body.cost_hub
         const cost = req.body.cost
         const shop = req.body.shop_id
+
         const fee_cod = req.body.fee_cod
+        const total = req.body.total
+
         const weight = req.body.parcel.weight * 1000
         const id = req.decoded.userid
         const cod_amount = req.body.cod_amount
@@ -278,50 +324,12 @@ booking = async(req, res)=>{
         //ผู้ส่ง
         const sender = data[0].from; //ผู้ส่ง
         const filterSender = { shop_id: shop_id , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
-        
-            const data_sender = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
-                ...sender,
-                ID: id,
-                status: 'ผู้ส่ง',
-                shop_id: shop_id,
-                postcode: String(sender.postcode),
-            };
 
-        const optionsSender = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
-        
-        const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
-            if (resultSender.upsertedCount > 0) {
-                console.log('สร้างข้อมูลผู้ส่งคนใหม่');
-            } else {
-                console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
-            }
-        
         const updatedDocument = await dropOffs.findOne(filterSender);
             if(!updatedDocument){
                 return res 
                         .status(404)
                         .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
-            }
-
-        //ผู้รับ
-        const recipient = data[0].to; // ผู้รับ
-        const filter = { ID: id, tel: recipient.tel, status: 'ผู้รับ' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
-
-            const update = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
-                ...recipient,
-                ID: id,
-                status: 'ผู้รับ',
-                shop_id: shop_id,
-                postcode: String(recipient.postcode),
-            };
-
-        const options = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
-        
-        const result = await dropOffs.updateOne(filter, update, options);
-            if (result.upsertedCount > 0) {
-                console.log('สร้างข้อมูลผู้รับคนใหม่');
-            } else {
-                console.log('อัปเดตข้อมูลผู้รับเรียบร้อย');
             }
         
         const value = {
@@ -388,7 +396,7 @@ booking = async(req, res)=>{
         if(cod_amount == 0){
                     findShopForCredit = await shopPartner.findOneAndUpdate(
                         {shop_number:shop},
-                        { $inc: { credit: -price } },
+                        { $inc: { credit: -total } },
                         {new:true})
                         if(!findShopForCredit){
                             return res
@@ -397,13 +405,13 @@ booking = async(req, res)=>{
                         }
                     console.log(findShopForCredit.credit)
                         
-                    const plus = findShopForCredit.credit + price
+                    const plus = findShopForCredit.credit + total
                     const history = {
                             ID: id,
                             role: role,
                             shop_number: shop,
                             orderid: booking_parcel.tracking_code,
-                            amount: price,
+                            amount: total,
                             before: plus,
                             after: findShopForCredit.credit,
                             type: booking_parcel.courier_code,
@@ -438,7 +446,7 @@ booking = async(req, res)=>{
                             orderid: booking_parcel.tracking_code,
                             profit: profitsICE,
                             express: booking_parcel.courier_code,
-                            type: 'เปอร์เซ็นจากต้นทุน',
+                            type: 'กำไรจากต้นทุน',
                     }
                     profit_ice = await profitIce.create(pfICE)
                         if(!profit_ice){
@@ -470,7 +478,7 @@ booking = async(req, res)=>{
         }else{ 
                 const findShopTwo = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
-                    { $inc: { credit: -price } },
+                    { $inc: { credit: -total } },
                     {new:true})
                     if(!findShopTwo){
                         return res
@@ -479,13 +487,13 @@ booking = async(req, res)=>{
                     }
                 console.log(findShopTwo.credit)
                     
-                const plus = findShopTwo.credit + price
+                const plus = findShopTwo.credit + total
                     const historytwo = {
                         ID: id,
                         role: role,
                         shop_number: shop,
                         orderid: booking_parcel.tracking_code,
-                        amount: price,
+                        amount: total,
                         before: plus,
                         after: findShopTwo.credit,
                         type: booking_parcel.courier_code,
@@ -520,7 +528,7 @@ booking = async(req, res)=>{
                             orderid: booking_parcel.tracking_code,
                             profit: profitsICE,
                             express: booking_parcel.courier_code,
-                            type: 'เปอร์เซ็นจากต้นทุน',
+                            type: 'กำไรจากต้นทุน',
                     }
                     profit_ice = await profitIce.create(pfICE)
                         if(!profit_ice){
@@ -551,6 +559,9 @@ booking = async(req, res)=>{
                             profit: cod_amount,
                             express: booking_parcel.courier_code,
                             type: 'COD(SENDER)',
+                            'bookbank.name': updatedDocument.flash_pay.name,
+                            'bookbank.card_number': updatedDocument.flash_pay.card_number,
+                            'bookbank.aka': updatedDocument.flash_pay.aka,
                     }
                     profitSender = await profitIce.create(pfIceSender)
                         if(!profitSender){

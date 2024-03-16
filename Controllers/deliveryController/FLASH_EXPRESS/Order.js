@@ -12,6 +12,7 @@ const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { codExpress } = require('../../../Models/COD/cod.model');
 const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
+const { dropOffs } = require('../../../Models/Delivery/dropOff');
 
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
@@ -30,9 +31,12 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const cost = req.body.cost
         const weight = req.body.weight * 1000
         const cost_hub = req.body.cost_hub
+
+        const fee_cod = req.body.fee_cod
+        const total = req.body.total
+
         const priceOne = req.body.priceOne
         const codForPrice = req.body.codForPrice
-        const percentCOD = req.body.percentCOD
         const price = req.body.price
         const shop = req.body.shop_number
         let cod_amount = Math.ceil(codForPrice)*100 //ทำ cod_amount เป็นหน่วย สตางค์ และปัดเศษขึ้น เพื่อให้ยิง flash ได้(flash ไม่รับ COD AMOUNT เป็น ทศนิยม)
@@ -50,8 +54,20 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         if(codForPrice != 0){
             formData.codEnabled = 1
             formData.codAmount = cod_amount;
-            console.log(cod_amount)
+            // console.log(cod_amount)
         }
+
+        //ผู้ส่ง
+        const senderTel = req.body.srcPhone; //ผู้ส่ง
+        const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+
+        const updatedDocument = await dropOffs.findOne(filterSender);
+            if(!updatedDocument){
+                return res 
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
+            }
+        
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
             // console.log(formDataOnly)
@@ -113,7 +129,9 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             cost: cost,
             priceOne: priceOne,
             price: price,
-            codAmount: codForPrice
+            codAmount: codForPrice,
+            total: total,
+            fee_cod: fee_cod
           };
 
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
@@ -137,7 +155,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         if(codForPrice == 0){
             const findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -price } },
+                { $inc: { credit: -total } },
                 {new:true})
                 if(!findShop){
                     return res
@@ -151,17 +169,17 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
                 }
-            const plus = findShop.credit + price
+            const plus = findShop.credit + total
             const history = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    amount: create.price,
+                    amount: total,
                     before: plus,
                     after: findShop.credit,
                     type: 'FLE(ICE)',
-                    remark: "ขนส่งสินค้า(FLASHตรง)"
+                    remark: "ขนส่งสินค้า(FLASH)"
                 }
             const historyShop = await historyWalletShop.create(history)
                 if(!historyShop){
@@ -191,7 +209,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     orderid: create.response.pno,
                     profit: profitsICE,
                     express: 'FLE(ICE)',
-                    type: 'เปอร์เซ็นจากต้นทุน',
+                    type: 'กำไรจากต้นทุน',
             }
             profit_ice = await profitIce.create(pfICE)
                 if(!profit_ice){
@@ -236,25 +254,34 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             new_data.codAmount = cod_integer;
             console.log(cod_integer)
 
-            let profitsICECOD = (cod_integer * percentCOD)/100
-            let profitSender = cod_integer - ((cod_integer * percentCOD)/100)
             const create = await flashOrder.create(new_data)
                 if(!create){
                     return res
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
                 }
-            const findShopTwo = await shopPartner.findOne({shop_number:shop})
+            const findShopTwo = await shopPartner.findOneAndUpdate(
+                {shop_number:shop},
+                { $inc: { credit: -total } },
+                {new:true})
+                if(!findShopTwo){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
+                }
+            console.log(findShopTwo.credit)
+                    
+            const plus = findShopTwo.credit + total
             const historytwo = {
-                ID: id,
-                role: role,
-                shop_number: shop,
-                orderid: create.response.pno,
-                amount: create.price,
-                before: findShopTwo.credit,
-                after: "COD",
-                type: 'FLE(ICE)',
-                remark: "ขนส่งสินค้าแบบ COD(FLASH)"
+                    ID: id,
+                    role: role,
+                    shop_number: shop,
+                    orderid: create.response.pno,
+                    amount: total,
+                    before: plus,
+                    after: findShopTwo.credit,
+                    type: 'FLE(ICE)',
+                    remark: "ขนส่งสินค้าแบบ COD(FLASH)"
             }
             // console.log(history)
             const historyShop2 = await historyWalletShop.create(historytwo)
@@ -285,7 +312,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     orderid: create.response.pno,
                     profit: profitsICE,
                     express: 'FLE(ICE)',
-                    type: 'เปอร์เซ็นจากต้นทุน',
+                    type: 'กำไรจากต้นทุน',
             }
             profit_ice = await profitIce.create(pfICE)
                 if(!profit_ice){
@@ -298,7 +325,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    profit: profitsICECOD,
+                    profit: fee_cod,
                     express: 'FLE(ICE)',
                     type: 'COD',
             }
@@ -329,32 +356,36 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                         }
                 }
-                const pfIceSender = {
+            const pfIceSender = {
                     Orderer: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    profit: profitSender,
+                    profit: codForPrice,
                     express: 'FLE(ICE)',
                     type: 'COD(SENDER)',
+                    'bookbank.name': updatedDocument.flash_pay.name,
+                    'bookbank.card_number': updatedDocument.flash_pay.card_number,
+                    'bookbank.aka': updatedDocument.flash_pay.aka,
                 }
-                profitSender = await profitIce.create(pfIceSender)
+            const profitSender = await profitIce.create(pfIceSender)
                     if(!profitSender){
                         return res
                                 .status(400)
                                 .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
-                }
+                    }
             return res
-                .status(200)
-                .send({
+                    .status(200)
+                    .send({
                         status:true, message:"เชื่อมต่อสำเร็จ", 
                         data: create,
                         history: historyShop2,
                         profitPartner: profit_partner,
                         profitPartnerOne: profit_partnerOne,
                         profitIce: profit_ice,
+                        profitSender: profitSender,
                         profitIceCOD: profit_iceCOD
-                })
+                    })
         }
 
     }catch(err){

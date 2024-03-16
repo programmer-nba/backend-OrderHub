@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema
 const Joi = require("joi");
 var bcrypt = require("bcrypt");
-//จุดรับส่งสินค้าของ partners
+//ผู้ส่งสินค้า
 const dropoffSchema = new Schema({
     ID:{type:String, default:"", required: false},
     shop_id:{type:String,  default:"", required:false},

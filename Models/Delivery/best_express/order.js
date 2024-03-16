@@ -1,13 +1,18 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema
 
-//สร้าง Order flash-express
+//สร้าง Order best-express
 const bestOrderSchema = new Schema({
     ID: {type:String, required: false},
     shop_number: {type:String, default:"", required: false},
     role: {type:String, required: false},
+    from: {type:Object, required: false},
+    to: {type:Object, required: false},
+    parcel: {type:Object, required: false},
     cod_amount: {type:Number,default: 0, required: false},
     price: {type:Number, required: false},
+    fee_cod: {type:Number, required: false},
+    total: {type:Number, required: false},
     type: {type:String, required: false},
     status: {type:String, required: false},
     result: {type:String, required: false},
