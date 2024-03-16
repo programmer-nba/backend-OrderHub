@@ -970,21 +970,26 @@ priceList = async (req, res)=>{
                         cost_hub: cost_hub,
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
+                        fee_cod: 0,
                         profitPartner: 0,
-                        percentCOD: 0,
-                        priceOne : 0,
+                        priceOne: 0,
                         price: Number(price.toFixed()),
-                        status: status,
+                        total: 0,
+                        status: status
                     };
                     if (cod !== undefined) {
-                        v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                        v.percentCOD = percentCod
-                        v.profitPartner = price - cost
+                        let fee = (reqCod * percentCod)/100
+                        let formattedFee = parseFloat(fee.toFixed(2));
+                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            v.fee_cod = formattedFee
+                            v.total = price + formattedFee
+                            v.profitPartner = price - cost
                         if(reqCod > price){
                             new_data.push(v);
                         }
                     }else{
                         v.profitPartner = price - cost
+                        v.total = price
                         new_data.push(v);
                     }
         }else{
@@ -1026,25 +1031,30 @@ priceList = async (req, res)=>{
                     }
                     v = {
                         express: "BEST(ICE)",
-                        cost_hub: cost_hub, //ต้นทุนที่ทางคุณไอซ์ กำหนด
-                        cost: cost, //คุณไอซ์เก็บ 5%
+                        cost_hub: cost_hub,
+                        cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
+                        fee_cod: 0,
                         profitPartner: 0,
-                        percentCOD: 0,
-                        priceOne: Number(priceOne.toFixed()),
-                        price: Number(price.toFixed()), //พาร์ทเนอร์โดนเก็บเพิ่ม 10%
-                        status: status,
+                        priceOne: priceOne,
+                        price: Number(price.toFixed()),
+                        total: 0,
+                        status: status
                     };
                     console.log(v)
                     if (cod !== undefined) {
-                        v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                        v.profitPartner = price - priceOne
-                        v.percentCOD = percentCod
+                        let fee = (reqCod * percentCod)/100
+                        let formattedFee = parseFloat(fee.toFixed(2));
+                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            v.fee_cod = formattedFee
+                            v.total = price + formattedFee
+                            v.profitPartner = price - priceOne
                         if(reqCod > price){
                             new_data.push(v);
                         }
                     }else{
                         v.profitPartner = price - priceOne
+                        v.total = price
                         new_data.push(v);
                     }
         }

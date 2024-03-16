@@ -14,8 +14,19 @@ const dropoffSchema = new Schema({
     state:{type:String, required: false},
     province:{type:String, required: false},
     postcode:{type:String, required: true},
-    tel:{type:String, required: true}
-    },{timestamps: true});
+    tel:{type:String, required: true},
+    flash_pay:{
+        aka:{type:String, default:"", required: false},
+        name:{type:String, default:"", required: false},
+        card_number:{type:String, default:"", required: false},
+    },
+    best:{
+        code:{type:String, default:"", required: false},
+        aka:{type:String, default:"", required: false},
+        name:{type:String, default:"", required: false},
+        card_number:{type:String, default:"", required: false},
+    }
+},{timestamps: true});
 
 const dropOffs = mongoose.model("dropoffs", dropoffSchema);
 

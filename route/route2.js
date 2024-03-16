@@ -196,11 +196,13 @@ router.route('/orderhub/bankRecord/best/create').post( auth.checkToken, bankReco
 router.route('/orderhub/bankRecord/best/getId/:id').get( auth.checkToken, bankRecord.getPartnerByID )
 router.route('/orderhub/bankRecord/best/del/:id').delete( auth.checkToken, bankRecord.delendByID )
 router.route('/orderhub/bankRecord/best/edit/:id').put( auth.checkToken, bankRecord.updateBank )
+router.route('/orderhub/bankRecord/best/getMe').get( auth.checkToken, bankRecord.getMeBEST )
 //bank flashPay record
 router.route('/orderhub/bankRecord/FP/get/all').get( auth.checkToken, bankRecord.getAllFP )
 router.route('/orderhub/bankRecord/FP/create').post( auth.checkToken, bankRecord.createBankFP )
 router.route('/orderhub/bankRecord/FP/getId/:id').get( auth.checkToken, bankRecord.getPartnerByIDFP )
 router.route('/orderhub/bankRecord/FP/del/:id').delete( auth.checkToken, bankRecord.delendByIDFP )
 router.route('/orderhub/bankRecord/FP/edit/:id').put( auth.checkToken, bankRecord.updateBankFP )
+router.route('/orderhub/bankRecord/FP/getMe').get( auth.checkToken, bankRecord.getMeFP )
 
 module.exports = router;

@@ -116,8 +116,8 @@ delend = async (req, res)=>{
 }
 getReceive = async (req, res)=>{
     try{
-        const id = req.decoded.userid
-        const findReceive = await dropOffs.find({ID:id ,status:"ผู้รับ"})
+        const shop_id = req.params.shop_id
+        const findReceive = await dropOffs.find({shop_id:shop_id ,status:"ผู้รับ"})
                 .sort({ createdAt : -1})
         if(!findReceive){
             return res
@@ -134,11 +134,10 @@ getReceive = async (req, res)=>{
                 .send({status:false, message:err})
     }
 }
-
 getSender = async (req, res)=>{
     try{
-        const id = req.decoded.userid
-        const findSender = await dropOffs.find({ID:id ,status:"ผู้ส่ง"})
+        const shop_id = req.params.shop_id
+        const findSender = await dropOffs.find({shop_id:shop_id ,status:"ผู้ส่ง"})
                 .sort({ createdAt : -1})
         if(!findSender){
             return res
@@ -155,4 +154,63 @@ getSender = async (req, res)=>{
                 .send({status:false, message:err})
     }
 }
-module.exports = { getAll, create, update, delend, getReceive, getSender}
+getOneSender = async (req, res)=>{
+    try{
+        const id = req.params.id
+        const findOneSender = await dropOffs.findOne({_id:id ,status:"ผู้ส่ง"})
+            if(!findOneSender){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ท่านไม่มีข้อมูลผู้ส่ง กรุณากรอกข้อมูลและทำการเช็คราคาเพื่อบันทึกข้อมูลผู้รับก่อน"})
+            }
+        return res
+                .status(200)
+                .send({status:true, message:findOneSender})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+editBookbank = async (req, res)=>{
+    try{
+        const aka = req.body.aka
+        const name = req.body.name
+        const card_flash = req.body.card_flash
+        const code = req.body.code
+        const aka_best = req.body.aka_best
+        const name_best = req.body.name_best
+        const card_best = req.body.card_best
+        const id = req.params.id
+        const fixBookbank = await dropOffs.findOneAndUpdate(
+            {
+                _id:id
+            },
+            {
+                'flash_pay.aka':aka,
+                'flash_pay.name':name,
+                'flash_pay.card_number':card_flash,
+                'best.code':code,
+                'best.aka':aka_best,
+                'best.name':name_best,
+                'best.card_number':card_best,
+            },
+            {new:true}
+        )
+            if(!fixBookbank){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถแก้ไขได้"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:fixBookbank})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+module.exports = { getAll, create, update, delend, getReceive, getSender, editBookbank, getOneSender}

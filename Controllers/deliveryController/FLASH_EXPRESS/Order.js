@@ -13,7 +13,7 @@ const { codExpress } = require('../../../Models/COD/cod.model');
 const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
 
- //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
+//เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
  const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 
@@ -976,21 +976,26 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             cost_hub: cost_hub,
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
+                            fee_cod: 0,
                             profitPartner: 0,
-                            percentCOD: 0,
                             priceOne: 0,
                             price: Number(price.toFixed()),
-                            status: status,
+                            total: 0,
+                            status: status
                         };
                         if (cod !== undefined) {
+                            let fee = (reqCod * percentCod)/100
+                            let formattedFee = parseFloat(fee.toFixed(2));
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.percentCOD = percentCod
+                            v.fee_cod = formattedFee
+                            v.total = price + formattedFee
                             v.profitPartner = price - cost
                             if(reqCod > price){
                                 new_data.push(v);
                             }
                         }else{
                             v.profitPartner = price - cost
+                            v.total = price
                             new_data.push(v);
                         }
             }else{
@@ -1038,21 +1043,26 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             cost_hub: cost_hub,
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
+                            fee_cod: 0,
                             profitPartner: 0,
-                            percentCOD: 0,
-                            status: status,
                             priceOne: priceOne,
-                            price: Number(price.toFixed())
+                            price: Number(price.toFixed()),
+                            total: 0,
+                            status: status
                         };
                         if (cod !== undefined) {
-                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.profitPartner = price - priceOne
-                            v.percentCOD = percentCod
+                            let fee = (reqCod * percentCod)/100
+                            let formattedFee = parseFloat(fee.toFixed(2));
+                                v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                                v.fee_cod = formattedFee
+                                v.total = price + formattedFee
+                                v.profitPartner = price - priceOne
                             if(reqCod > price){
                                 new_data.push(v);
                             }
                         }else{
                             v.profitPartner = price - priceOne
+                            v.total = price
                             new_data.push(v);
                         }
             }
@@ -1171,6 +1181,7 @@ getPartnerBooking = async (req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
                     ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
                     estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking }

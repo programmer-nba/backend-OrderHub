@@ -130,22 +130,27 @@ priceList = async (req, res)=>{
                         cost_hub: cost_hub,
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
+                        fee_cod: 0,
                         profitPartner: 0,
-                        status: status,
-                        percentCOD: 0,
                         priceOne: 0,
                         price: Number(price.toFixed()),
+                        total: 0,
+                        status: status
                     };
 
                     if (cod !== undefined) {
+                        let fee = (reqCod * percentCod)/100
+                        let formattedFee = parseFloat(fee.toFixed(2));
                         v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                        v.percentCOD = percentCod
+                        v.fee_cod = formattedFee
+                        v.total = price + formattedFee
                         v.profitPartner = price - cost
                         if(reqCod > price){
                             new_data.push(v);
                         }
                     }else{
                         v.profitPartner = price - cost
+                        v.total = price
                         new_data.push(v);
                     }
                     // console.log(new_data);
@@ -202,22 +207,27 @@ priceList = async (req, res)=>{
                             cost_hub: cost_hub,
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
+                            fee_cod: 0,
                             profitPartner: 0,
-                            status: status,
-                            percentCOD: 0,
-                            priceOne: 0,
+                            priceOne: priceOne,
                             price: Number(price.toFixed()),
+                            total: 0,
+                            status: status
                         };
 
                         if (cod !== undefined) {
+                            let fee = (reqCod * percentCod)/100
+                            let formattedFee = parseFloat(fee.toFixed(2));
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            v.fee_cod = formattedFee
+                            v.total = price + formattedFee
                             v.profitPartner = price - priceOne
-                            v.percentCOD = percentCod
                             if(reqCod > price){
                                 new_data.push(v);
                             }
                         }else{
                             v.profitPartner = price - priceOne
+                            v.total = price
                             new_data.push(v);
                         }
                         // console.log(new_data);
@@ -250,16 +260,15 @@ booking = async(req, res)=>{
         const priceOne = req.body.priceOne
         const costHub = req.body.cost_hub
         const cost = req.body.cost
-        const cod_partner = req.body.cod_partner
         const shop = req.body.shop_id
-        const percentCOD = req.body.percentCOD
+        const fee_cod = req.body.fee_cod
         const weight = req.body.parcel.weight * 1000
         const id = req.decoded.userid
         const cod_amount = req.body.cod_amount
         const shop_id = req.body.shop_id
         formData.parcel.weight = weight
         const data = [{...formData}] //, courier_code:courierCode
-        console.log(data)
+        // console.log(data)
         const findShop = await shopPartner.findOne({shop_number:shop_id})
         if(!findShop){
             return res
@@ -285,6 +294,13 @@ booking = async(req, res)=>{
                 console.log('สร้างข้อมูลผู้ส่งคนใหม่');
             } else {
                 console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+            }
+        
+        const updatedDocument = await dropOffs.findOne(filterSender);
+            if(!updatedDocument){
+                return res 
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
             }
 
         //ผู้รับ
@@ -451,20 +467,7 @@ booking = async(req, res)=>{
                                         .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                             }
                         }
-        }else{
-                //shippop หัก 3%
-                let profitsICEOne = cod_amount - booking_parcel.cod_charge
-
-                //กำไร COD คุณไอซ์
-                let profitsICECOD = (profitsICEOne * percentCOD)/100
-                let roundedValue = profitsICECOD.toFixed(2) //แปลงให้เป็น ทศนิยม 2 ตำแหน่ง(แต่จะได้เป็น String)
-                let numericValue = parseFloat(roundedValue) //เปลี่ยน String ให้เป็นตัวเลข
-
-                //กำไรผู้ส่ง
-                let profitsSender = profitsICEOne - profitsICECOD
-                let roundedSender = profitsSender.toFixed(2) //แปลงให้เป็น ทศนิยม 2 ตำแหน่ง(แต่จะได้เป็น String)
-                let profitsSenderNumber = parseFloat(roundedSender) //เปลี่ยน String ให้เป็นตัวเลข
-                
+        }else{ 
                 const findShopTwo = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
                     { $inc: { credit: -price } },
@@ -530,7 +533,7 @@ booking = async(req, res)=>{
                             role: role,
                             shop_number: shop,
                             orderid: booking_parcel.tracking_code,
-                            profit: numericValue,
+                            profit: fee_cod,
                             express: booking_parcel.courier_code,
                             type: 'COD',
                     }
@@ -545,7 +548,7 @@ booking = async(req, res)=>{
                             role: role,
                             shop_number: shop,
                             orderid: booking_parcel.tracking_code,
-                            profit: profitsSenderNumber,
+                            profit: cod_amount,
                             express: booking_parcel.courier_code,
                             type: 'COD(SENDER)',
                     }
