@@ -470,104 +470,108 @@ cancelOrder = async (req, res)=>{
                                 .status(400)
                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Logisticid(J&T) หรืออัพเดทข้อมูลได้"})
                     }
-                if(findPno.cod_amount == 0){
-                    const findShop = await shopPartner.findOneAndUpdate(
-                        {shop_number:findPno.shop_number},
-                        { $inc: { credit: +findPno.price } },
-                        {new:true})
-                        if(!findShop){
-                            return res
-                                    .status(400)
-                                    .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
-                        }
-                    let diff = findShop.credit - findPno.price
-                    let history = {
-                            ID: id,
-                            role: role,
-                            shop_number: findPno.shop_number,
-                            orderid: txlogisticid,
-                            amount: findPno.price,
-                            before: diff,
-                            after: findShop.credit,
-                            type: 'J&T',
-                            remark: "ยกเลิกขนส่งสินค้า(J&T)"
-                    }
-                    const historyShop = await historyWalletShop.create(history)
-                        if(!historyShop){
-                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                        }
-                    const delProfitPartner = await profitPartner.deleteMany({orderid:txlogisticid})
-                        if(!delProfitPartner){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txlogisticid ได้"})
-                        }
+                return res
+                        .status(200)
+                        .send({status:false, data:findPno})
+        }
+            //     if(findPno.cod_amount == 0){
+            //         const findShop = await shopPartner.findOneAndUpdate(
+            //             {shop_number:findPno.shop_number},
+            //             { $inc: { credit: +findPno.price } },
+            //             {new:true})
+            //             if(!findShop){
+            //                 return res
+            //                         .status(400)
+            //                         .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+            //             }
+            //         let diff = findShop.credit - findPno.price
+            //         let history = {
+            //                 ID: id,
+            //                 role: role,
+            //                 shop_number: findPno.shop_number,
+            //                 orderid: txlogisticid,
+            //                 amount: findPno.price,
+            //                 before: diff,
+            //                 after: findShop.credit,
+            //                 type: 'J&T',
+            //                 remark: "ยกเลิกขนส่งสินค้า(J&T)"
+            //         }
+            //         const historyShop = await historyWalletShop.create(history)
+            //             if(!historyShop){
+            //                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+            //             }
+            //         const delProfitPartner = await profitPartner.deleteMany({orderid:txlogisticid})
+            //             if(!delProfitPartner){
+            //                 return res
+            //                         .status(404)
+            //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txlogisticid ได้"})
+            //             }
     
-                    const delProfitIce = await profitIce.findOneAndDelete({orderid:txlogisticid})
-                        if(!delProfitIce){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txlogisticid ของคุณไอซ์ได้"})
-                        }
-                    return res
-                            .status(200)
-                            .send({
-                                status:true, 
-                                order: findPno, 
-                                // shop: findShop,
-                                history: historyShop,
-                                delPartner: delProfitPartner,
-                                delIce: delProfitIce
-                            })
-                }else{
-                    const findShopCOD = await historyWalletShop.findOne({orderid:txlogisticid})
-                        if(!findShopCOD){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno ได้"})
-                        }
-                    let history = {
-                            ID: id,
-                            role: role,
-                            shop_number: findPno.shop_number,
-                            orderid: txlogisticid,
-                            amount: findPno.price,
-                            before: findShopCOD.before,
-                            after: 'COD',
-                            type: 'FLE(ICE)',
-                            remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASHตรง)"
-                    }
-                    const historyShop = await historyWalletShop.create(history) //ทำการบันทึกประวัติการสั่งซื้อของ Shop
-                        if(!historyShop){
-                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                        }
-                    const delProfitPartner = await profitPartner.deleteMany({orderid:txlogisticid}) //ทำการลบประวัติผลกำไรของ Partner
-                        if(!delProfitPartner){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
-                        }
-                    const delProfitIce = await profitIce.deleteMany( //ทำการลบประวัติผลกำไรของ คุณไอซ์
-                            {
-                                orderid:txlogisticid
-                            }
-                        )
-                        if(!delProfitIce){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
-                        }
-                    return res
-                            .status(200)
-                            .send({
-                                status:true, 
-                                order: findPno, 
-                                history: historyShop,
-                                delPartner: delProfitPartner,
-                                delIce: delProfitIce
-                            })
-                }
-            }
+            //         const delProfitIce = await profitIce.findOneAndDelete({orderid:txlogisticid})
+            //             if(!delProfitIce){
+            //                 return res
+            //                         .status(404)
+            //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txlogisticid ของคุณไอซ์ได้"})
+            //             }
+            //         return res
+            //                 .status(200)
+            //                 .send({
+            //                     status:true, 
+            //                     order: findPno, 
+            //                     // shop: findShop,
+            //                     history: historyShop,
+            //                     delPartner: delProfitPartner,
+            //                     delIce: delProfitIce
+            //                 })
+            //     }else{
+            //         const findShopCOD = await historyWalletShop.findOne({orderid:txlogisticid})
+            //             if(!findShopCOD){
+            //                 return res
+            //                         .status(404)
+            //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno ได้"})
+            //             }
+            //         let history = {
+            //                 ID: id,
+            //                 role: role,
+            //                 shop_number: findPno.shop_number,
+            //                 orderid: txlogisticid,
+            //                 amount: findPno.price,
+            //                 before: findShopCOD.before,
+            //                 after: 'COD',
+            //                 type: 'FLE(ICE)',
+            //                 remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASHตรง)"
+            //         }
+            //         const historyShop = await historyWalletShop.create(history) //ทำการบันทึกประวัติการสั่งซื้อของ Shop
+            //             if(!historyShop){
+            //                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+            //             }
+            //         const delProfitPartner = await profitPartner.deleteMany({orderid:txlogisticid}) //ทำการลบประวัติผลกำไรของ Partner
+            //             if(!delProfitPartner){
+            //                 return res
+            //                         .status(404)
+            //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
+            //             }
+            //         const delProfitIce = await profitIce.deleteMany( //ทำการลบประวัติผลกำไรของ คุณไอซ์
+            //                 {
+            //                     orderid:txlogisticid
+            //                 }
+            //             )
+            //             if(!delProfitIce){
+            //                 return res
+            //                         .status(404)
+            //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
+            //             }
+            //         return res
+            //                 .status(200)
+            //                 .send({
+            //                     status:true, 
+            //                     order: findPno, 
+            //                     history: historyShop,
+            //                     delPartner: delProfitPartner,
+            //                     delIce: delProfitIce
+            //                 })
+            //     }
+            // }
     }catch(err){
         return res
                 .status(500)

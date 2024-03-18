@@ -21,6 +21,7 @@ const BookingParcelSchema = new mongoose.Schema({
     cod_vat : {type: Number , required: false},
     cost_hub : {type: Number, required : true},
     cost : {type: Number ,required : true},
+    total: {type: Number , required: false},
     discount: {type: Number, required : true},
     order_status : {type: String, default: "booking", required: true},
     package_detail : {type : Object, default: null, required: false}, // กรณีมีการเรียกเก็บเพิ่มเติม

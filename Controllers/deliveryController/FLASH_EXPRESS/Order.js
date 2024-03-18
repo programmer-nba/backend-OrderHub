@@ -655,7 +655,7 @@ cancelOrder = async (req, res)=>{ //cancel order
                 'Accept': 'application/json',
             },
         })
-        if(response.data.code !== 1){
+        if(response.data.code != 1){
             return res
                     .status(400)
                     .send({status:false, message:"ไม่สามารถทำการยกเลิกออเดอร์นี้ได้"})
@@ -669,105 +669,109 @@ cancelOrder = async (req, res)=>{ //cancel order
                             .status(400)
                             .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno(FLASH) หรืออัพเดทข้อมูลได้"})
                 }
-            if(findPno.codAmount == 0){
-                const findShop = await shopPartner.findOneAndUpdate(
-                    {shop_number:findPno.shop_number},
-                    { $inc: { credit: +findPno.price } },
-                    {new:true})
-                    if(!findShop){
-                        return res
-                                .status(400)
-                                .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
-                    }
-                let diff = findShop.credit - findPno.price
-                let history = {
-                        ID: id,
-                        role: role,
-                        shop_number: findPno.shop_number,
-                        orderid: pno,
-                        amount: findPno.price,
-                        before: diff,
-                        after: findShop.credit,
-                        type: 'FLE(ICE)',
-                        remark: "ยกเลิกขนส่งสินค้า(FLASH)"
-                }
-                const historyShop = await historyWalletShop.create(history)
-                    if(!historyShop){
-                        console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                    }
+            return res
+                    .status(200)
+                    .send({status:false, data:findPno})
+        }
+        //     if(findPno.codAmount == 0){
+        //         const findShop = await shopPartner.findOneAndUpdate(
+        //             {shop_number:findPno.shop_number},
+        //             { $inc: { credit: +findPno.price } },
+        //             {new:true})
+        //             if(!findShop){
+        //                 return res
+        //                         .status(400)
+        //                         .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+        //             }
+        //         let diff = findShop.credit - findPno.price
+        //         let history = {
+        //                 ID: id,
+        //                 role: role,
+        //                 shop_number: findPno.shop_number,
+        //                 orderid: pno,
+        //                 amount: findPno.price,
+        //                 before: diff,
+        //                 after: findShop.credit,
+        //                 type: 'FLE(ICE)',
+        //                 remark: "ยกเลิกขนส่งสินค้า(FLASH)"
+        //         }
+        //         const historyShop = await historyWalletShop.create(history)
+        //             if(!historyShop){
+        //                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+        //             }
 
-                const delProfitPartner = await profitPartner.deleteMany({orderid:pno})
-                    if(!delProfitPartner){
-                        return res
-                                .status(404)
-                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
-                    }
+        //         const delProfitPartner = await profitPartner.deleteMany({orderid:pno})
+        //             if(!delProfitPartner){
+        //                 return res
+        //                         .status(404)
+        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
+        //             }
 
-                const delProfitIce = await profitIce.findOneAndDelete({orderid:pno})
-                    if(!delProfitIce){
-                        return res
-                                .status(404)
-                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
-                    }
-                return res
-                        .status(200)
-                        .send({
-                            status:true, 
-                            order: findPno, 
-                            // shop: findShop,
-                            history: historyShop,
-                            delPartner: delProfitPartner,
-                            delIce: delProfitIce
-                        })
-            }else{
-                const findShopCOD = await historyWalletShop.findOne({orderid:pno})
-                    if(!findShopCOD){
-                        return res
-                                .status(404)
-                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno ได้"})
-                    }
-                let history = {
-                        ID: id,
-                        role: role,
-                        shop_number: findPno.shop_number,
-                        orderid: pno,
-                        amount: findPno.price,
-                        before: findShopCOD.before,
-                        after: 'COD',
-                        type: 'FLE(ICE)',
-                        remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASH)"
-                }
-                const historyShop = await historyWalletShop.create(history)
-                    if(!historyShop){
-                        console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                    }
-                const delProfitPartner = await profitPartner.deleteMany({orderid:pno})
-                    if(!delProfitPartner){
-                        return res
-                                .status(404)
-                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
-                    }
-                const delProfitIce = await profitIce.deleteMany(
-                        {
-                            orderid:pno
-                        }
-                    )
-                    if(!delProfitIce){
-                        return res
-                                .status(404)
-                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
-                    }
-                return res
-                        .status(200)
-                        .send({
-                            status:true, 
-                            flash: findPno, 
-                            history: historyShop,
-                            delPartner: delProfitPartner,
-                            delIce: delProfitIce
-                        })
-            }
-        }    
+        //         const delProfitIce = await profitIce.findOneAndDelete({orderid:pno})
+        //             if(!delProfitIce){
+        //                 return res
+        //                         .status(404)
+        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
+        //             }
+        //         return res
+        //                 .status(200)
+        //                 .send({
+        //                     status:true, 
+        //                     order: findPno, 
+        //                     // shop: findShop,
+        //                     history: historyShop,
+        //                     delPartner: delProfitPartner,
+        //                     delIce: delProfitIce
+        //                 })
+        //     }else{
+        //         const findShopCOD = await historyWalletShop.findOne({orderid:pno})
+        //             if(!findShopCOD){
+        //                 return res
+        //                         .status(404)
+        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno ได้"})
+        //             }
+        //         let history = {
+        //                 ID: id,
+        //                 role: role,
+        //                 shop_number: findPno.shop_number,
+        //                 orderid: pno,
+        //                 amount: findPno.price,
+        //                 before: findShopCOD.before,
+        //                 after: 'COD',
+        //                 type: 'FLE(ICE)',
+        //                 remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASH)"
+        //         }
+        //         const historyShop = await historyWalletShop.create(history)
+        //             if(!historyShop){
+        //                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+        //             }
+        //         const delProfitPartner = await profitPartner.deleteMany({orderid:pno})
+        //             if(!delProfitPartner){
+        //                 return res
+        //                         .status(404)
+        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
+        //             }
+        //         const delProfitIce = await profitIce.deleteMany(
+        //                 {
+        //                     orderid:pno
+        //                 }
+        //             )
+        //             if(!delProfitIce){
+        //                 return res
+        //                         .status(404)
+        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
+        //             }
+        //         return res
+        //                 .status(200)
+        //                 .send({
+        //                     status:true, 
+        //                     flash: findPno, 
+        //                     history: historyShop,
+        //                     delPartner: delProfitPartner,
+        //                     delIce: delProfitIce
+        //                 })
+        //     }
+        // }    
     }catch(err){
         console.log(err)
         return res

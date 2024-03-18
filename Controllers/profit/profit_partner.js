@@ -45,4 +45,50 @@ getSumForMe = async (req, res)=>{
     }
 }
 
-module.exports = { getAll, getSumForMe }
+Withdrawal = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        const filter = { wallet_owner: id, status: "พร้อมถอน" };
+        const update = { $set: { status: "กำลังรออนุมัติ" } };
+
+        const result = await profitPartner.updateMany(filter, update);
+            if(!result){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหา หรีอ อัพเดทได้"})
+            }
+        return res
+                .status(200)
+                .send({status:false, data:result})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res  
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+WithdrawalReverse = async (req, res)=>{
+    try{
+        const id = req.decoded.userid
+        const filter = { wallet_owner: id, status: "กำลังรออนุมัติ" };
+        const update = { $set: { status: "พร้อมถอน" } };
+
+        const result = await profitPartner.updateMany(filter, update);
+            if(!result){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหา หรีอ อัพเดทได้"})
+            }
+        return res
+                .status(200)
+                .send({status:false, data:result})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res  
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+module.exports = { getAll, getSumForMe, Withdrawal, WithdrawalReverse }

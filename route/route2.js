@@ -90,6 +90,7 @@ router.route('/orderhub/shippop/tracking_purchase/:purchase_id').get( auth.check
 router.route('/orderhub/shippop/lebelHtml').post( auth.checkToken, ship.labelHtml )
 router.route('/orderhub/shippop/getme').get( auth.checkToken, ship.getMeBooking )
 router.route('/orderhub/shippop/getArray').get( auth.checkToken, ship.getOrderDay )
+router.route('/orderhub/shippop/getTracking/:tracking_code').get( auth.checkToken, ship.getOrderByTracking )
 
 //percent
 router.route('/orderhub/percent/create').post( authAdmin.checkToken, percent.create )
@@ -165,6 +166,9 @@ router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.ge
 //profit partner
 const profitPN = require('../Controllers/profit/profit_partner')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
+router.route('/orderhub/profitPartner/Withdrawal').get( auth.checkToken, profitPN.Withdrawal )
+router.route('/orderhub/profitPartner/WithdrawalReverse').get( auth.checkToken, profitPN.WithdrawalReverse )
+
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')

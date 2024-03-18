@@ -143,6 +143,7 @@ paymentResults = async (req, res)=>{
             time: dayTime,
             version: 1.1
         }
+        
         const newData = await generateSign_FP(fromData)
         const formDataOnly = newData.newSortData
         
@@ -155,16 +156,17 @@ paymentResults = async (req, res)=>{
         const receivedData = response.data
         const tradeNo = receivedData.data.tradeNo
         const tradeStatus = receivedData.data.tradeStatus
-        const amount = receivedData.data.paymentAmount / 100
+        const paymentStang = receivedData.data.paymentAmount / 100
+        const amount = parseFloat((paymentStang - ((paymentStang * 0.33) / 100)).toFixed(2));
             let findTradeNo
             let findShop
             if(tradeStatus == 3){
                 const currentWallet = await historyWallet.findOne({ orderid: tradeNo });
-                if(!currentWallet){
-                    return res
-                            .status(404)
-                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลข tradeNo ได้"})
-                }
+                    if(!currentWallet){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข tradeNo ได้"})
+                    }
                 const findBefore = await shopPartner.findOne({shop_number:currentWallet.shop_number})
                 let wallet = Number(findBefore.credit) + amount
                 findTradeNo = await historyWallet.findOneAndUpdate(

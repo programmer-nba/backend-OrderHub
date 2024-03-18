@@ -858,108 +858,111 @@ cancelOrder = async (req, res)=>{
                                 .status(400)
                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลข LogisticId(BEST) หรืออัพเดทข้อมูลได้"})
                     }
-                
-                if(findPno.cod_amount == 0){
-                        const findShop = await shopPartner.findOneAndUpdate(
-                            {shop_number:findPno.shop_number},
-                            { $inc: { credit: +findPno.price } },
-                            {new:true})
-                            if(!findShop){
-                                return res
-                                        .status(400)
-                                        .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
-                            }
-                        let diff = findShop.credit - findPno.price
-                        let history = {
-                                ID: id,
-                                role: role,
-                                shop_number: findPno.shop_number,
-                                orderid: txLogisticId,
-                                amount: findPno.price,
-                                before: diff,
-                                after: findShop.credit,
-                                type: 'BEST(ICE)',
-                                remark: "ยกเลิกขนส่งสินค้า(BEST)"
-                        }
-                        
-                        const historyShop = await historyWalletShop.create(history)
-                            if(!historyShop){
-                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                            }
-
-                        const delProfitPartner = await profitPartner.deleteMany({orderid:txLogisticId})
-                            if(!delProfitPartner){
-                                return res
-                                        .status(404)
-                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ได้"})
-                            }
-        
-                        const delProfitIce = await profitIce.findOneAndDelete({orderid:txLogisticId})
-                            if(!delProfitIce){
-                                return res
-                                        .status(404)
-                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ของคุณไอซ์ได้"})
-                            }
-                    return res
-                            .status(200)
-                            .send({
-                                status:true, 
-                                order: findPno, 
-                                // shop: findShop,
-                                history: historyShop,
-                                delPartner: delProfitPartner,
-                                delIce: delProfitIce
-                            })
-                }else{
-                        const findShopCOD = await historyWalletShop.findOne({orderid:txLogisticId})
-                        if(!findShopCOD){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข LogisticId ได้"})
-                        }
-                        let history = {
-                                ID: id,
-                                role: role,
-                                shop_number: findPno.shop_number,
-                                orderid: txLogisticId,
-                                amount: findPno.price,
-                                before: findShopCOD.before,
-                                after: 'COD',
-                                type: 'BEST(ICE)',
-                                remark: "ยกเลิกขนส่งสินค้าแบบ COD(BEST)"
-                        }
-                        const historyShop = await historyWalletShop.create(history)
-                            if(!historyShop){
-                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                            }
-                            
-                        const delProfitPartner = await profitPartner.deleteMany({orderid:txLogisticId}) //ทำการลบประวัติผลกำไรของ Partner
-                            if(!delProfitPartner){
-                                return res
-                                        .status(404)
-                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ได้"})
-                            }
-                        const delProfitIce = await profitIce.deleteMany( //ทำการลบประวัติผลกำไรของ คุณไอซ์
-                                {
-                                    orderid:txLogisticId
-                                }
-                            )
-                            if(!delProfitIce){
-                                return res
-                                        .status(404)
-                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ของคุณไอซ์ได้"})
-                            }
-                    return res
-                            .status(200)
-                            .send({
-                                status:true, 
-                                order: findPno, 
-                                history: historyShop,
-                                delPartner: delProfitPartner,
-                                delIce: delProfitIce
-                            })
-                }
+                return res
+                        .status(200)
+                        .send({status:false, data:findPno})
         }
+        //         if(findPno.cod_amount == 0){
+        //                 const findShop = await shopPartner.findOneAndUpdate(
+        //                     {shop_number:findPno.shop_number},
+        //                     { $inc: { credit: +findPno.price } },
+        //                     {new:true})
+        //                     if(!findShop){
+        //                         return res
+        //                                 .status(400)
+        //                                 .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+        //                     }
+        //                 let diff = findShop.credit - findPno.price
+        //                 let history = {
+        //                         ID: id,
+        //                         role: role,
+        //                         shop_number: findPno.shop_number,
+        //                         orderid: txLogisticId,
+        //                         amount: findPno.price,
+        //                         before: diff,
+        //                         after: findShop.credit,
+        //                         type: 'BEST(ICE)',
+        //                         remark: "ยกเลิกขนส่งสินค้า(BEST)"
+        //                 }
+                        
+        //                 const historyShop = await historyWalletShop.create(history)
+        //                     if(!historyShop){
+        //                         console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+        //                     }
+
+        //                 const delProfitPartner = await profitPartner.deleteMany({orderid:txLogisticId})
+        //                     if(!delProfitPartner){
+        //                         return res
+        //                                 .status(404)
+        //                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ได้"})
+        //                     }
+        
+        //                 const delProfitIce = await profitIce.findOneAndDelete({orderid:txLogisticId})
+        //                     if(!delProfitIce){
+        //                         return res
+        //                                 .status(404)
+        //                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ของคุณไอซ์ได้"})
+        //                     }
+        //             return res
+        //                     .status(200)
+        //                     .send({
+        //                         status:true, 
+        //                         order: findPno, 
+        //                         // shop: findShop,
+        //                         history: historyShop,
+        //                         delPartner: delProfitPartner,
+        //                         delIce: delProfitIce
+        //                     })
+        //         }else{
+        //                 const findShopCOD = await historyWalletShop.findOne({orderid:txLogisticId})
+        //                 if(!findShopCOD){
+        //                     return res
+        //                             .status(404)
+        //                             .send({status:false, message:"ไม่สามารถค้นหาหมายเลข LogisticId ได้"})
+        //                 }
+        //                 let history = {
+        //                         ID: id,
+        //                         role: role,
+        //                         shop_number: findPno.shop_number,
+        //                         orderid: txLogisticId,
+        //                         amount: findPno.price,
+        //                         before: findShopCOD.before,
+        //                         after: 'COD',
+        //                         type: 'BEST(ICE)',
+        //                         remark: "ยกเลิกขนส่งสินค้าแบบ COD(BEST)"
+        //                 }
+        //                 const historyShop = await historyWalletShop.create(history)
+        //                     if(!historyShop){
+        //                         console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+        //                     }
+                            
+        //                 const delProfitPartner = await profitPartner.deleteMany({orderid:txLogisticId}) //ทำการลบประวัติผลกำไรของ Partner
+        //                     if(!delProfitPartner){
+        //                         return res
+        //                                 .status(404)
+        //                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ได้"})
+        //                     }
+        //                 const delProfitIce = await profitIce.deleteMany( //ทำการลบประวัติผลกำไรของ คุณไอซ์
+        //                         {
+        //                             orderid:txLogisticId
+        //                         }
+        //                     )
+        //                     if(!delProfitIce){
+        //                         return res
+        //                                 .status(404)
+        //                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txLogisticId(BEST) ของคุณไอซ์ได้"})
+        //                     }
+        //             return res
+        //                     .status(200)
+        //                     .send({
+        //                         status:true, 
+        //                         order: findPno, 
+        //                         history: historyShop,
+        //                         delPartner: delProfitPartner,
+        //                         delIce: delProfitIce
+        //                     })
+        //         }
+        // }
     }catch(err){
         return res
                 .status(500)
