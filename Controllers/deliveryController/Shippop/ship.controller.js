@@ -54,6 +54,11 @@ priceList = async (req, res)=>{
             } else {
                 console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
             }
+        
+        const infoSender = await dropOffs.findOne(filterSender)
+            if(!infoSender){
+                console.log('ไม่มีข้อมูลผู้ส่ง')
+            }
 
         //ผู้รับ
         const recipient = formData.to; // ผู้รับ
@@ -286,6 +291,7 @@ priceList = async (req, res)=>{
                     status: true, 
                     origin_data: req.body, 
                     new: new_data,
+                    sender: infoSender
                 });
     }catch(err){
         console.log(err)
@@ -900,7 +906,8 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
             api_key: process.env.SHIPPOP_API_KEY,
             purchase_id: req.body.purchase_id,
             type:"html",
-            size: req.body.size
+            size: req.body.size,
+            logo: "https://drive.google.com/thumbnail?id=1lqCpKrHqavGXekrzXqB2X1gfRf4ewxq2"
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/v2/label/`,valueCheck,
             {
