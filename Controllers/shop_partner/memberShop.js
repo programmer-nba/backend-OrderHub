@@ -160,4 +160,24 @@ delend = async (req, res)=>{
     }
 }
 
-module.exports = { create, getAll, update, getMe, delend }
+getByID = async (req,res)=>{
+    try{
+        const getid = req.params.id
+        console.log(getid)
+        const findId = await memberShop.findById(getid)
+        if(findId){
+            return res 
+                    .status(200)
+                    .send({ status: true, data: findId})
+        }else{
+            return res
+                    .status(400)
+                    .send({ status: false, message: "ดึงข้อมูลไม่สำเร็จ"})
+        }
+    }catch(err){
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+  }
+
+module.exports = { create, getAll, update, getMe, delend, getByID }

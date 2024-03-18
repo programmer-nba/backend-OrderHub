@@ -346,8 +346,28 @@ cancelMemberShop = async (req, res)=>{
   }
 }
 
+getByID = async (req,res)=>{//การทำ GET ME โดยใช้การ decoded จาก token
+  try{
+      const getid = req.params.id
+      console.log(getid)
+      const findId = await Partner.findById(getid)
+      if(findId){
+          return res 
+                  .status(200)
+                  .send({ status: true, data: findId})
+      }else{
+          return res
+                  .status(400)
+                  .send({ status: false, message: "ดึงข้อมูลไม่สำเร็จ"})
+      }
+  }catch(err){
+      console.log(err);
+      return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+  }
+}
+
 module.exports = { createPartner, 
 getAllPartner, getPartnerByID, 
 upPartnerByID, deleteById,
 uploadPicture, approveMemberShop,
-cancelMemberShop };
+cancelMemberShop, getByID };

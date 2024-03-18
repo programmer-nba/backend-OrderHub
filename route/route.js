@@ -29,6 +29,7 @@ router.route('/orderhub/getall').get(main.getAllPartner)
 router.route('/orderhub/getid/:id').get(main.getPartnerByID)
 router.route('/orderhub/update/:id').put(main.upPartnerByID)
 router.route('/orderhub/del/:id').delete(main.deleteById)
+router.route('/orderhub/getById/:id').get(auth.checkToken, main.getByID)
 
 //Login
 router.route('/orderhub/login').post( login.loginController )

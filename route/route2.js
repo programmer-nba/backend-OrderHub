@@ -33,6 +33,7 @@ router.route('/orderhub/member/getAll').get( member_shop.getAll )
 router.route('/orderhub/member/getMe').get( auth.checkToken, member_shop.getMe )
 router.route('/orderhub/member/del/:id').delete( member_shop.delend )
 router.route('/orderhub/member/update/:id').put( member_shop.update )
+router.route('/orderhub/member/get/:id').get( auth.checkToken, member_shop.getByID )
 router.route('/orderhub/member/approve/:id').put( partner.approveMemberShop )
 router.route('/orderhub/member/cancel/:id').put( partner.cancelMemberShop )
 
@@ -168,7 +169,6 @@ const profitPN = require('../Controllers/profit/profit_partner')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
 router.route('/orderhub/profitPartner/Withdrawal').get( auth.checkToken, profitPN.Withdrawal )
 router.route('/orderhub/profitPartner/WithdrawalReverse').get( auth.checkToken, profitPN.WithdrawalReverse )
-
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')
