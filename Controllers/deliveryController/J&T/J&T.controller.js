@@ -80,7 +80,7 @@ createOrder = async (req, res)=>{
             console.log(cod_amount)
         }
          //ผู้ส่ง
-         const senderTel = data.from.tel; //ผู้ส่ง
+         const senderTel = data.from.tel;
          console.log(senderTel)
          const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
  
@@ -295,7 +295,7 @@ createOrder = async (req, res)=>{
                     orderid: new_data.txlogisticid,
                     profit: profitsICE,
                     express: 'J&T',
-                    type: 'เปอร์เซ็นจากต้นทุน',
+                    type: 'กำไรจากต้นทุน',
             }
             profit_ice = await profitIce.create(pfICE)
                 if(!profit_ice){

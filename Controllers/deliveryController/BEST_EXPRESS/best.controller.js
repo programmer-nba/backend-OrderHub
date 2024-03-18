@@ -560,7 +560,7 @@ createPDFOrder = async(req, res)=>{
                         shop_number: shop,
                         orderid: createOrder.txLogisticId,
                         profit: profitsICE,
-                        express: 'J&T',
+                        express: 'BEST(ICE)',
                         type: 'กำไรจากต้นทุน',
                 }
                 profit_ice = await profitIce.create(pfICE)
@@ -666,6 +666,24 @@ createPDFOrder = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                     }
+                const pfIceSender = {
+                        Orderer: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: createOrder.txLogisticId,
+                        profit: cod_amount,
+                        express: 'BEST(ICE)',
+                        type: 'COD(SENDER)',
+                        'bookbank.name': updatedDocument.best.name,
+                        'bookbank.card_number': updatedDocument.best.card_number,
+                        'bookbank.aka': updatedDocument.best.aka,
+                }
+                profitSender = await profitIce.create(pfIceSender)
+                    if(!profitSender){
+                        return res
+                                .status(400)
+                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                    }
                 if(priceOne != 0){
                         const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
                         const headLine = findUpline.upline.head_line
@@ -698,6 +716,7 @@ createPDFOrder = async(req, res)=>{
                     profitP: profit_partner,
                     profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
+                    profitSender: profitSender,
                     profitIceCOD: profit_iceCOD
                 })
     }catch(err){

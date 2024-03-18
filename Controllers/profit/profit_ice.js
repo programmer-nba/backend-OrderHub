@@ -81,7 +81,7 @@ getSumCod = async (req, res)=>{
 
 getSumCost = async (req, res)=>{
     try{
-        const findMe = await profitIce.find({type:"เปอร์เซ็นจากต้นทุน"})
+        const findMe = await profitIce.find({type:"กำไรจากต้นทุน"})
             if(!findMe){
                 return res
                         .status(404)
