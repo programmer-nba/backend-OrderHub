@@ -147,6 +147,10 @@ priceList = async (req, res)=>{
         if(upline === 'ICE'){
             for (const ob of Object.keys(obj)) {
                 if (obj[ob].available) {
+                    if (reqCod > 0 && obj[ob].courier_code == 'ECP') {
+                        console.log('Encountered "ECP". Skipping this iteration.');
+                        continue; // ข้ามไปยังรอบถัดไป
+                    }
                     // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
                     // ตัวอย่าง: คำนวนตัวเลข, เรียก function, หรือทำอย่างอื่น
                     let v = null;
@@ -158,7 +162,7 @@ priceList = async (req, res)=>{
                     let cost_hub = Number(obj[ob].price);
                     let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let price = Math.ceil(cost + p.percent_shop);
-                    let priceInteger = reqCod
+
                     let status = null;
                     let cod_amount = 0
                     
@@ -223,6 +227,10 @@ priceList = async (req, res)=>{
                 const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
                 for (const ob of Object.keys(obj)) {
                     if (obj[ob].available) {
+                        if (reqCod > 0 && obj[ob].courier_code == 'ECP') {
+                            console.log('Encountered "ECP". Skipping this iteration.');
+                            continue; // ข้ามไปยังรอบถัดไป
+                        }
                         // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
                         // ตัวอย่าง: คำนวนตัวเลข, เรียก function, หรือทำอย่างอื่น
                         let v = null;
