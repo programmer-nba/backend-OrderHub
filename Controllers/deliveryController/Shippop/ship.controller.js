@@ -595,7 +595,7 @@ booking = async(req, res)=>{
                 .status(200)
                 .send({
                     status:true, 
-                    order: resp.data.data[0],
+                    order: booking_parcel,
                     history: historyShop,
                     // shop: findShopForCredit
                     profitP: profit_partner,
