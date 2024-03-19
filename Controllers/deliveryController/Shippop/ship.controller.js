@@ -968,8 +968,8 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/v2/label/`,valueCheck,
             {
-            headers: {"Accept-Encoding": "gzip,deflate,compress",
-                        "Content-Type": "application/json"},
+                headers: {"Accept-Encoding": "gzip,deflate,compress",
+                            "Content-Type": "application/json"},
             }
         )
         if(resp){

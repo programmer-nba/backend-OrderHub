@@ -486,7 +486,7 @@ createPDFOrder = async(req, res)=>{
             }else if(!response.data.result){
                 return res
                         .status(400)
-                        .send({status:false, message:"กรุณากรอกบัญชีธนาคาร BEST EXPRESS"})
+                        .send({status:false, message:"กรุณากรอกเลขบัญชีให้ถูกต้อง"})
             }
         // // ข้อมูล Base64 ที่ต้องการ decode
         // const base64Data = response.data.pdfStream;

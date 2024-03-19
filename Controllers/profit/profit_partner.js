@@ -1,6 +1,7 @@
 const { Partner } = require("../../Models/partner");
 const { profitPartner } = require("../../Models/profit/profit.partner");
 const { shopPartner } = require("../../Models/shop/shop_partner");
+const mongoose = require('mongoose')
 
 getAll = async (req, res)=>{
     try{
@@ -51,33 +52,31 @@ Withdrawal = async (req, res)=>{
     try{
         const amount = req.body.amount
         const id = req.decoded.userid
-        console.log(id)
+        console.log("id:", id);
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).send({ status: false, message: "รูปแบบของ ID ไม่ถูกต้อง" });
+        }
+
+        // const objectId = mongoose.Types.ObjectId(id);
+        // console.log(objectId);
         const findPartner = await Partner.findOneAndUpdate(
-            {_id:id},
+            { _id: id },
             { $inc: { profit: -amount } },
-            {new:true})
-        // console.log(findPartner)
-            if(!findPartner){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่มีพาร์ทเนอร์ที่ท่านตามหา"})
-            }else{
-                
-                const aggregatedData = await Partner.aggregate([
-                    {
-                        $match: { _id: id } // กรอง Partner ที่ต้องการ
-                    },
-                    {
-                        $lookup: {
-                            from: 'shopPartner', // Collection ที่ต้องการเชื่อมโยง
-                            localField: 'partnerNumber', // ฟิลด์ใน Collection ปัจจุบันที่ใช้เป็น key
-                            foreignField: 'partner_number', // ฟิลด์ใน Collection ที่ต้องการเชื่อมโยง
-                            as: 'shop_partners' // ชื่อฟิลด์ที่จะเก็บข้อมูลที่ Aggregate
-                        }
-                    }
-                ]); 
-                console.log(aggregatedData);        
-            }
+            { new: true }
+        );
+
+        if (!findPartner) {
+            return res
+                .status(404)
+                .send({ status: false, message: "ไม่มีพาร์ทเนอร์ที่ท่านตามหา" });
+        } else {
+            const aggregatedData = await Partner.aggregate([
+                {
+                    $match: { _id: id } // กรอง Partner ที่ต้องการ
+                }
+            ]);
+            console.log(aggregatedData);
+        }
         return res
                 .status(200)
                 .send({
