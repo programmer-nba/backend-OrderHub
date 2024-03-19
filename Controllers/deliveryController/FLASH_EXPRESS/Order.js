@@ -122,10 +122,10 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
               returnDetailAddress: req.body.returnDetailAddress,
             },
             response: {
-              ...response.data.data
+              ...response.data.data,
+              invoice: invoice
             },
             ID: id,
-            invoice: invoice,
             shop_number: shop,
             role: role,
             cost_hub: cost_hub,
@@ -1271,7 +1271,7 @@ async function invoiceNumber() {
     data = `ODHFLE`
     let random = Math.floor(Math.random() * 10000000000)
     const combinedData = data + random;
-    const findInvoice = await flashOrder.find({invoice:combinedData})
+    const findInvoice = await flashOrder.find({'response.invoice':combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
@@ -1279,7 +1279,7 @@ async function invoiceNumber() {
         combinedData = data + random;
 
         // เช็คใหม่
-        findInvoice = await flashOrder.find({invoice: combinedData});
+        findInvoice = await flashOrder.find({'response.invoice': combinedData});
     }
 
     console.log(combinedData);

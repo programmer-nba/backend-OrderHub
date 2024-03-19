@@ -1,3 +1,4 @@
+const { Partner } = require("../../Models/partner");
 const { profitPartner } = require("../../Models/profit/profit.partner");
 
 getAll = async (req, res)=>{
@@ -47,30 +48,44 @@ getSumForMe = async (req, res)=>{
 
 Withdrawal = async (req, res)=>{
     try{
+        const amount = req.body.amount
         const id = req.decoded.userid
-        const filter = { wallet_owner: id, status: "เงินเข้า" };
-        const update = { $set: { status: "กำลังรออนุมัติ" } };
-
-        const result = await profitPartner.updateMany(filter, update);
-            if(!result){
+        const findPartner = await Partner.findOneAndUpdate(
+            {_id:id},
+            { $inc: { profit: -amount } },
+            {new:true})
+            if(!findPartner){
                 return res
                         .status(404)
-                        .send({status:false, message:"ไม่สามารถค้นหา หรีอ อัพเดทได้"})
+                        .send({status:false, message:"ไม่มีพาร์ทเนอร์ที่ท่านตามหา"})
+            }else{
+                const aggregatedData = await Partner.aggregate([
+                    {
+                        $match: { _id: id } // กรอง Partner ที่ต้องการ
+                    },
+                    {
+                        $lookup: {
+                            from: 'bank_records', // Collection ที่ต้องการเชื่อมโยง
+                            localField: '_id', // ฟิลด์ใน Collection ปัจจุบันที่ใช้เป็น key
+                            foreignField: 'ID', // ฟิลด์ใน Collection ที่ต้องการเชื่อมโยง
+                            as: 'transactions' // ชื่อฟิลด์ที่จะเก็บข้อมูลที่ Aggregate
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 1, 
+                            partnerNumber:1,
+                            firstname:1,
+                            lastname:1,
+                            // สามารถ Group หรือทำการ Aggregate ข้อมูลเพิ่มเติมตามต้องการ
+                        }
+                    }
+                ]);                
             }
-
-        const findMe = await profitPartner.find({wallet_owner:id, status:"กำลังรออนุมัติ"})
-            if(!findMe){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ"})
-            }
-        const totalProfit = findMe.reduce((total, document) => total + document.profit, 0);
         return res
                 .status(200)
                 .send({
-                    status:false, 
-                    data:result,
-                    profit: totalProfit
+                    status:true, 
                 })
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")

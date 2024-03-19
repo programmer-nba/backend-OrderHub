@@ -5,7 +5,6 @@ const Joi = require("joi");
 //สร้าง Order flash-express
 const flashOrderSchema = new Schema({
     ID: {type:String, required: false},
-    invoice : {type:String, required: false},
     shop_number: {type:String, required: false},
     role: {type:String, required: false},
     from: {type:Object, required: false },
