@@ -19,6 +19,7 @@ const BookingParcelSchema = new mongoose.Schema({
     cod_amount : {type: Number ,required : true},
     cod_charge : {type: Number , required: true},
     cod_vat : {type: Number , required: false},
+    fee_cod: {type: Number , required: false},
     cost_hub : {type: Number, required : true},
     cost : {type: Number ,required : true},
     total: {type: Number , required: false},

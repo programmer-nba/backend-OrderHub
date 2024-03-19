@@ -57,9 +57,21 @@ Withdrawal = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถค้นหา หรีอ อัพเดทได้"})
             }
+
+        const findMe = await profitPartner.find({wallet_owner:id, status:"กำลังรออนุมัติ"})
+            if(!findMe){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ"})
+            }
+        const totalProfit = findMe.reduce((total, document) => total + document.profit, 0);
         return res
                 .status(200)
-                .send({status:false, data:result})
+                .send({
+                    status:false, 
+                    data:result,
+                    profit: totalProfit
+                })
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res  

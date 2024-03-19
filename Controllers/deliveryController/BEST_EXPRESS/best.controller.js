@@ -666,24 +666,24 @@ createPDFOrder = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                     }
-                const pfIceSender = {
-                        Orderer: id,
-                        role: role,
-                        shop_number: shop,
-                        orderid: createOrder.txLogisticId,
-                        profit: cod_amount,
-                        express: 'BEST(ICE)',
-                        type: 'COD(SENDER)',
-                        'bookbank.name': updatedDocument.best.name,
-                        'bookbank.card_number': updatedDocument.best.card_number,
-                        'bookbank.aka': updatedDocument.best.aka,
-                }
-                profitSender = await profitIce.create(pfIceSender)
-                    if(!profitSender){
-                        return res
-                                .status(400)
-                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
-                    }
+                // const pfIceSender = {
+                //         Orderer: id,
+                //         role: role,
+                //         shop_number: shop,
+                //         orderid: createOrder.txLogisticId,
+                //         profit: cod_amount,
+                //         express: 'BEST(ICE)',
+                //         type: 'COD(SENDER)',
+                //         'bookbank.name': updatedDocument.best.name,
+                //         'bookbank.card_number': updatedDocument.best.card_number,
+                //         'bookbank.aka': updatedDocument.best.aka,
+                // }
+                // profitSender = await profitIce.create(pfIceSender)
+                //     if(!profitSender){
+                //         return res
+                //                 .status(400)
+                //                 .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                //     }
                 if(priceOne != 0){
                         const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
                         const headLine = findUpline.upline.head_line

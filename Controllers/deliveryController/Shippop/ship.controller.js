@@ -379,6 +379,7 @@ booking = async(req, res)=>{
                 shop_id: req.body.shop_id,
                 cost_hub: costHub,
                 cost: cost,
+                fee_cod: fee_cod,
                 total: total,
                 parcel: parcel,
                 priceOne: priceOne,
@@ -793,15 +794,15 @@ tracking = async (req, res)=>{
                         "Content-Type": "application/json"},
             }
         )
-        if(resp){
-            return res
-                    .status(200)
-                    .send({status:true, data:resp.data})
-        }else{
-            return res
-                    .status(400)
-                    .send({status:false, message:"ไม่สามารถหาหมายเลข Tracking ได้"})
-        }
+            if(!resp){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถหาหมายเลข Tracking ได้"})
+            }
+        // console.log(resp.data.order_status)
+        return res
+                .status(200)
+                .send({status:true, data:resp.data})
     }catch(err){
         console.log(err)
         return res
