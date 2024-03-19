@@ -160,6 +160,8 @@ createOrder = async (req, res)=>{
         let profitSender
         let historyShop
         let findShop
+        let profitPlus
+        let profitPlusOne
         if(cod_amount == 0){
             findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
@@ -206,7 +208,17 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                 }
-            
+
+            profitPlus = await Partner.findOneAndUpdate(
+                    {_id:findShop.partnerID},
+                    { $inc: { profit: +profitsPartner } },
+                    {new:true, projection: { profit: 1 }})
+                    if(!profitPlus){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                    }
+
             const pfICE = {
                     Orderer: id,
                     role: role,
@@ -243,6 +255,15 @@ createOrder = async (req, res)=>{
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                         }
+                    profitPlusOne = await Partner.findOneAndUpdate(
+                            {_id:headLine},
+                            { $inc: { profit: +profitsPartnerOne } },
+                            {new:true, projection: { profit: 1 }})
+                            if(!profitPlusOne){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                            }
                     }
         }else{
             const findShopTwo = await shopPartner.findOneAndUpdate(
@@ -290,6 +311,15 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                 }
+            profitPlus = await Partner.findOneAndUpdate(
+                    {_id:findShopTwo.partnerID},
+                    { $inc: { profit: +profitsPartner } },
+                    {new:true, projection: { profit: 1 }})
+                    if(!profitPlus){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                    } 
             const pfICE = {
                     Orderer: id,
                     role: role,
@@ -359,6 +389,15 @@ createOrder = async (req, res)=>{
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                         }
+                    profitPlusOne = await Partner.findOneAndUpdate(
+                            {_id:headLine},
+                            { $inc: { profit: +profitsPartnerOne } },
+                            {new:true, projection: { profit: 1 }})
+                            if(!profitPlusOne){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                            }
                 }
         }
         
@@ -373,7 +412,9 @@ createOrder = async (req, res)=>{
                     profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
                     profitSender: profitSender,
-                    profitIceCOD: profit_iceCOD
+                    profitIceCOD: profit_iceCOD,
+                    profitPlus: profitPlus,
+                    profitPlusOne: profitPlusOne
                 })
     }catch(err){
         // console.log(err)
