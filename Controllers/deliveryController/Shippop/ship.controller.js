@@ -328,7 +328,9 @@ booking = async(req, res)=>{
         const shop_id = req.body.shop_id
         formData.parcel.weight = weight
         const data = [{...formData}] //, courier_code:courierCode
-        // console.log(data)
+
+        const invoice = await invoiceNumber()
+        console.log(invoice)
         const findShop = await shopPartner.findOne({shop_number:shop_id})
         if(!findShop){
             return res
@@ -373,6 +375,7 @@ booking = async(req, res)=>{
         const new_data = []
         const v = {
                 ...Data,
+                invoice: invoice,
                 ID: id,
                 role: role,
                 purchase_id: String(resp.data.purchase_id),
@@ -409,6 +412,8 @@ booking = async(req, res)=>{
         let profitSender
         let historyShop
         let findShopForCredit
+        let profitPlus
+        let profitPlusOne
         if(cod_amount == 0){
                     findShopForCredit = await shopPartner.findOneAndUpdate(
                         {shop_number:shop},
@@ -455,6 +460,15 @@ booking = async(req, res)=>{
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                         }
+                    profitPlus = await Partner.findOneAndUpdate(
+                            {_id:findShopForCredit.partnerID},
+                            { $inc: { profit: +profitsPartner } },
+                            {new:true, projection: { profit: 1 }})
+                            if(!profitPlus){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                            }
                     const pfICE = {
                             Orderer: id,
                             role: role,
@@ -490,6 +504,15 @@ booking = async(req, res)=>{
                                         .status(400)
                                         .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                             }
+                        profitPlusOne = await Partner.findOneAndUpdate(
+                                {_id:headLine},
+                                { $inc: { profit: +profitsPartnerOne } },
+                                {new:true, projection: { profit: 1 }})
+                                if(!profitPlusOne){
+                                    return res
+                                            .status(400)
+                                            .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                                }
                         }
         }else{ 
                 const findShopTwo = await shopPartner.findOneAndUpdate(
@@ -536,7 +559,16 @@ booking = async(req, res)=>{
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                         }
-                    
+                    profitPlus = await Partner.findOneAndUpdate(
+                            {_id:findShopTwo.partnerID},
+                            { $inc: { profit: +profitsPartner } },
+                            {new:true, projection: { profit: 1 }})
+                            if(!profitPlus){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                            } 
+
                     const pfICE = {
                             Orderer: id,
                             role: role,
@@ -605,6 +637,15 @@ booking = async(req, res)=>{
                                         .status(400)
                                         .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                             }
+                        profitPlusOne = await Partner.findOneAndUpdate(
+                                {_id:headLine},
+                                { $inc: { profit: +profitsPartnerOne } },
+                                {new:true, projection: { profit: 1 }})
+                                if(!profitPlusOne){
+                                    return res
+                                            .status(400)
+                                            .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                                }
                     }
         }
         return res
@@ -618,7 +659,9 @@ booking = async(req, res)=>{
                     profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
                     profitSender: profitSender,
-                    profitIceCOD: profit_iceCOD
+                    profitIceCOD: profit_iceCOD,
+                    profitPlus: profitPlus,
+                    profitPlusOne: profitPlusOne
                 })
     }catch(err){
         console.log(err)
@@ -921,7 +964,7 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
             purchase_id: req.body.purchase_id,
             type:"html",
             size: req.body.size,
-            logo: "https://drive.google.com/thumbnail?id=1lqCpKrHqavGXekrzXqB2X1gfRf4ewxq2"
+            logo: "https://drive.google.com/thumbnail?id=1K8xaMlMEOC88hL-Mo82mNnYqjWpW-MDb"
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/v2/label/`,valueCheck,
             {
@@ -1138,6 +1181,24 @@ getOrderByTracking = async (req, res)=>{
     }
 }
 
+async function invoiceNumber() {
+    data = `ODHSP`
+    let random = Math.floor(Math.random() * 100000000000)
+    const combinedData = data + random;
+    const findInvoice = await BookingParcel.find({invoice:combinedData})
+
+    while (findInvoice && findInvoice.length > 0) {
+        // สุ่ม random ใหม่
+        random = Math.floor(Math.random() * 100000000000);
+        combinedData = data + random;
+
+        // เช็คใหม่
+        findInvoice = await BookingParcel.find({invoice: combinedData});
+    }
+
+    console.log(combinedData);
+    return combinedData;
+}
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
                 , getAllBooking, trackingPurchase, labelHtml, getById, delend, getMeBooking, getMeBooking
                 , getPartnerBooking, getOrderDay, getOrderByTracking}

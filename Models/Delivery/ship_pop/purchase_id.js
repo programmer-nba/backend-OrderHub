@@ -6,6 +6,7 @@ const BookingParcelSchema = new mongoose.Schema({
     ID: {type:String, required : false},
     role: {type:String, required : false},
     purchase_id : {type:String, required : true},
+    invoice: {type:String, required : false},
     from : {type: Object, required : true},
     to : {type: Object, required : true},
     shop_id : {type: String, required : true},

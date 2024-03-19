@@ -10,6 +10,7 @@ const partnerSchema = new Schema({
     lastname:{type:String, require: true},
     username: {type:String, require: true},
     password: {type:String, require: true},
+    profit: {type:Number, default: 0, require: false},
     iden_number: {type:String, require: true},
     tel: {type:String, require: true},
     email: {type:String, require: true},

@@ -39,8 +39,8 @@ createOrder = async(req, res)=>{
         const cod_amount = req.body.cod_amount
         const price = req.body.price
         const data = req.body
-        const weight = data.parcel.weight / 1000
-
+        const weight = data.parcel.weight 
+        
         //ผู้ส่ง
         const senderTel = data.from.tel; 
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -366,8 +366,8 @@ createPDFOrder = async(req, res)=>{
         const cod_amount = req.body.cod_amount
         const price = req.body.price
         const data = req.body
-        const weight = data.parcel.weight / 1000
-
+        const weight = data.parcel.weight
+        const invoice = await invoiceBST()
         //ผู้ส่ง
         const senderTel = data.from.tel; 
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -378,7 +378,7 @@ createPDFOrder = async(req, res)=>{
                         .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
             }
         
-        console.log(updatedDocument)
+        // console.log(updatedDocument)
         const formData = {
             serviceType:"KD_CREATE_WAYBILL_ORDER_PDF_NOTIFY",
             bizData:{
@@ -450,18 +450,18 @@ createPDFOrder = async(req, res)=>{
                         .status(400)
                         .send({status:false, message:"หมายเลขบัญชีของท่านไม่ถูกต้อง"})
             }
-        // ข้อมูล Base64 ที่ต้องการ decode
-        const base64Data = response.data.pdfStream;
-        //console.log(base64Data)
+        // // ข้อมูล Base64 ที่ต้องการ decode
+        // const base64Data = response.data.pdfStream;
+        // //console.log(base64Data)
 
-        // Decode Base64
-        const binaryData = Buffer.from(base64Data, 'base64');
+        // // Decode Base64
+        // const binaryData = Buffer.from(base64Data, 'base64');
 
-        // สร้างไฟล์ PDF
-        fs.writeFileSync(`D:\PDF/${txLogistic}.pdf`, binaryData, 'binary', (err) => {
-            if (err) throw err;
-                console.log('สร้าง PDF ไม่สำเร็จ');
-            });
+        // // สร้างไฟล์ PDF
+        // fs.writeFileSync(`D:\PDF/${txLogistic}.pdf`, binaryData, 'binary', (err) => {
+        //     if (err) throw err;
+        //         console.log('สร้าง PDF ไม่สำเร็จ');
+        //     });
         const createOrder = await bestOrder.create(
             {
                 ID:id,
@@ -476,6 +476,7 @@ createPDFOrder = async(req, res)=>{
                 parcel: {
                     ...data.parcel
                 },
+                invoice: invoice,
                 status:'booking',
                 cod_amount:cod_amount,
                 price: price,
@@ -569,6 +570,7 @@ createPDFOrder = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
                     }
+                
                 if(priceOne != 0){
                         const findUpline = await Partner.findOne({_id:findShop.partnerID})
                         const headLine = findUpline.upline.head_line
@@ -590,6 +592,7 @@ createPDFOrder = async(req, res)=>{
                                         .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                             }
                         }
+                        console.log(profit_partnerOne)
         }else{
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
@@ -716,7 +719,6 @@ createPDFOrder = async(req, res)=>{
                     profitP: profit_partner,
                     profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
-                    profitSender: profitSender,
                     profitIceCOD: profit_iceCOD
                 })
     }catch(err){
@@ -1261,6 +1263,24 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
+async function invoiceBST() {
+    data = `ODHBST`
+    let random = Math.floor(Math.random() * 10000000000)
+    const combinedData = data + random;
+    const findInvoice = await bestOrder.find({invoice:combinedData})
+
+    while (findInvoice && findInvoice.length > 0) {
+        // สุ่ม random ใหม่
+        random = Math.floor(Math.random() * 10000000000);
+        combinedData = data + random;
+
+        // เช็คใหม่
+        findInvoice = await bestOrder.find({invoice: combinedData});
+    }
+
+    console.log(combinedData);
+    return combinedData;
+}
 module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList, getAll,
                     getById, delend, getMeBooking, getPartnerBooking
                  }

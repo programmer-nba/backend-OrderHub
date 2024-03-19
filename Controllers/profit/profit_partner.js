@@ -22,7 +22,7 @@ getAll = async (req, res)=>{
 getSumForMe = async (req, res)=>{
     try{
         const id = req.decoded.userid
-        const findMe = await profitPartner.find({wallet_owner:id, status:"พร้อมถอน"})
+        const findMe = await profitPartner.find({wallet_owner:id, status:"เงินเข้า"})
             if(!findMe){
                 return res
                         .status(404)
@@ -48,7 +48,7 @@ getSumForMe = async (req, res)=>{
 Withdrawal = async (req, res)=>{
     try{
         const id = req.decoded.userid
-        const filter = { wallet_owner: id, status: "พร้อมถอน" };
+        const filter = { wallet_owner: id, status: "เงินเข้า" };
         const update = { $set: { status: "กำลังรออนุมัติ" } };
 
         const result = await profitPartner.updateMany(filter, update);
@@ -84,7 +84,7 @@ WithdrawalReverse = async (req, res)=>{
     try{
         const id = req.decoded.userid
         const filter = { wallet_owner: id, status: "กำลังรออนุมัติ" };
-        const update = { $set: { status: "พร้อมถอน" } };
+        const update = { $set: { status: "เงินเข้า" } };
 
         const result = await profitPartner.updateMany(filter, update);
             if(!result){

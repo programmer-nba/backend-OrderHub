@@ -41,6 +41,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const shop = req.body.shop_number
         let cod_amount = Math.ceil(codForPrice)*100 //ทำ cod_amount เป็นหน่วย สตางค์ และปัดเศษขึ้น เพื่อให้ยิง flash ได้(flash ไม่รับ COD AMOUNT เป็น ทศนิยม)
         let cod_integer = cod_amount / 100 //ทำ cod_amount เป็นหน่วย บาท เพื่อบันทึกลง database(จะได้ดูง่าย)
+
+        const invoice = await invoiceNumber()
         // console.log(cod_integer, codForPrice)
         const formData = {
             mchId: mchId,
@@ -123,6 +125,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
               ...response.data.data
             },
             ID: id,
+            invoice: invoice,
             shop_number: shop,
             role: role,
             cost_hub: cost_hub,
@@ -202,6 +205,15 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                 }
+            const profitPlus = await Partner.findOneAndUpdate(
+                    {_id:findShop.partnerID},
+                    { $inc: { profit: +profitsPartner } },
+                    {new:true, projection: { profit: 1 }})
+                    if(!profitPlus){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                    }
             const pfICE = {
                     Orderer: id,
                     role: role,
@@ -217,6 +229,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
                 }
+
+            let profitPlusOne
             if(priceOne != 0){
                 const findUpline = await Partner.findOne({_id:findShop.partnerID})
                 const headLine = findUpline.upline.head_line
@@ -237,7 +251,17 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                         }
-                    }
+                profitPlusOne = await Partner.findOneAndUpdate(
+                            {_id:headLine},
+                            { $inc: { profit: +profitsPartnerOne } },
+                            {new:true, projection: { profit: 1 }})
+                            if(!profitPlusOne){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                            }
+            
+            }
             return res
                     .status(200)
                     .send({
@@ -248,6 +272,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         profitP: profit_partner,
                         profitPartnerOne: profit_partnerOne,
                         profitIce: profit_ice,
+                        profitPlus: profitPlus,
+                        profitPlusOne: profitPlusOne
                     })
 
         }else if(codForPrice != 0){
@@ -305,6 +331,17 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                 }
+
+            const profitPlus = await Partner.findOneAndUpdate(
+                    {_id:findShopTwo.partnerID},
+                    { $inc: { profit: +profitsPartner } },
+                    {new:true, projection: { profit: 1 }})
+                    if(!profitPlus){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                    }
+
             const pfICE = {
                     Orderer: id,
                     role: role,
@@ -335,6 +372,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                 }
+            let profitPlusOne
             if(priceOne != 0){
                     const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
                     const headLine = findUpline.upline.head_line
@@ -355,6 +393,16 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                         }
+
+                    profitPlusOne = await Partner.findOneAndUpdate(
+                            {_id:headLine},
+                            { $inc: { profit: +profitsPartnerOne } },
+                            {new:true, projection: { profit: 1 }})
+                            if(!profitPlusOne){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                            }
                 }
             const pfIceSender = {
                     Orderer: id,
@@ -384,7 +432,9 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         profitPartnerOne: profit_partnerOne,
                         profitIce: profit_ice,
                         profitSender: profitSender,
-                        profitIceCOD: profit_iceCOD
+                        profitIceCOD: profit_iceCOD,
+                        profitPlus: profitPlus,
+                        profitPlusOne: profitPlusOne
                     })
         }
 
@@ -1217,6 +1267,24 @@ getPartnerBooking = async (req, res)=>{
     }
 }
 
+async function invoiceNumber() {
+    data = `ODHFLE`
+    let random = Math.floor(Math.random() * 10000000000)
+    const combinedData = data + random;
+    const findInvoice = await flashOrder.find({invoice:combinedData})
+
+    while (findInvoice && findInvoice.length > 0) {
+        // สุ่ม random ใหม่
+        random = Math.floor(Math.random() * 10000000000);
+        combinedData = data + random;
+
+        // เช็คใหม่
+        findInvoice = await flashOrder.find({invoice: combinedData});
+    }
+
+    console.log(combinedData);
+    return combinedData;
+}
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
                     ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
                     estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking }

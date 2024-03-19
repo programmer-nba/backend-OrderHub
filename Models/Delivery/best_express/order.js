@@ -4,6 +4,7 @@ const Schema = mongoose.Schema
 //สร้าง Order best-express
 const bestOrderSchema = new Schema({
     ID: {type:String, required: false},
+    invoice: {type:String, required: false},
     shop_number: {type:String, default:"", required: false},
     role: {type:String, required: false},
     from: {type:Object, required: false},

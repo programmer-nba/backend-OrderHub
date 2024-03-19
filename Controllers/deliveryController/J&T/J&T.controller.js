@@ -38,6 +38,7 @@ createOrder = async (req, res)=>{
         const weight = data.parcel.weight //หน่วยเป็น kg อยู่แล้วไม่ต้องแก้ไข
         const txlogisticid = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+txlogisticid);
+        const invoice = await invoiceJNT()
         const fromData = {
             "logistics_interface" :{
                 "actiontype": "add",
@@ -127,6 +128,7 @@ createOrder = async (req, res)=>{
                 parcel:{
                     ...data.parcel
                 },
+                invoice: invoice,
                 status:'booking',
                 cod_amount:cod_amount,
                 fee_cod: fee_cod,
@@ -906,6 +908,25 @@ async function invoiceNumber(date) {
     }catch(err){
         console.log(err)
     }
+}
+
+async function invoiceJNT() {
+    data = `ODHJNT`
+    let random = Math.floor(Math.random() * 10000000000)
+    const combinedData = data + random;
+    const findInvoice = await jntOrder.find({invoice:combinedData})
+
+    while (findInvoice && findInvoice.length > 0) {
+        // สุ่ม random ใหม่
+        random = Math.floor(Math.random() * 10000000000);
+        combinedData = data + random;
+
+        // เช็คใหม่
+        findInvoice = await jntOrder.find({invoice: combinedData});
+    }
+
+    console.log(combinedData);
+    return combinedData;
 }
 
 module.exports = {createOrder, trackingOrder, cancelOrder, label, priceList, getAll, getById, delend, getMeBooking, getPartnerBooking, getPartnerBooking}

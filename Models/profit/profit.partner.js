@@ -19,7 +19,7 @@ const profitPartnerSchema = new Schema({
             return dayjs().format('YYYY-MM-DD');
         }
     },
-    status:{type:String, default:"พร้อมถอน", require:false}
+    status:{type:String, default:"เงินเข้า", require:false}
 },{timestamps:true});
 
 const profitPartner = mongoose.model("profit_partner", profitPartnerSchema);

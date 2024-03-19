@@ -56,6 +56,7 @@ router.route('/orderhub/flash/notify').post( auth.checkToken, flash.notifyFlash 
 router.route('/orderhub/flash/notification').get( auth.checkToken, flash.nontification )
 router.route('/orderhub/flash/estimate').post( auth.checkToken, flash.estimateRate )
 router.route('/orderhub/flash/getme').get( auth.checkToken, flash.getMeBooking )
+router.route('/orderhub/flash/getById/:pno').get( auth.checkToken, flash.getById )
 
 //drop down ประเภทสินค้า flash express
 const typeProduct = require('../Controllers/deliveryController/FLASH_EXPRESS/type.product')
@@ -122,6 +123,7 @@ router.route('/orderhub/JT/cancel').delete( auth.checkToken, JT.cancelOrder )
 router.route('/orderhub/JT/label').post( auth.checkToken, JT.label )
 router.route('/orderhub/JT/price').post( auth.checkToken, JT.priceList )
 router.route('/orderhub/JT/getme').get( auth.checkToken, JT.getMeBooking )
+router.route('/orderhub/JT/getById/:txlogisticid').get( auth.checkToken, JT.getById )
 
 //J&T Admin
 router.route('/orderhub/JT/getAll').get( authAdmin.checkToken, JT.getAll )
@@ -152,6 +154,7 @@ router.route('/orderhub/best/status/push').post( auth.checkToken, best.statusOrd
 router.route('/orderhub/best/cancel').delete( auth.checkToken, best.cancelOrder )
 router.route('/orderhub/best/priceList').post( auth.checkToken, best.priceList )
 router.route('/orderhub/best/getme').get( auth.checkToken, best.getMeBooking )
+router.route('/orderhub/best/getById/:txLogisticId').get( auth.checkToken, best.getById )
 //กำหนดราคา/น้ำหนัก best express
 const bestWeight = require('../Controllers/deliveryController/BEST_EXPRESS/priceWeightBest')
 router.route('/orderhub/weightBest/post').post( bestWeight.createWeight )
