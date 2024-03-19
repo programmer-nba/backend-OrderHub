@@ -1,3 +1,4 @@
+const { bankRecord } = require("../../Models/bank/bank.record");
 const { Partner } = require("../../Models/partner");
 const { profitPartner } = require("../../Models/profit/profit.partner");
 const { shopPartner } = require("../../Models/shop/shop_partner");
@@ -51,36 +52,48 @@ getSumForMe = async (req, res)=>{
 Withdrawal = async (req, res)=>{
     try{
         const amount = req.body.amount
+        const idBank = req.params.id
         const id = req.decoded.userid
-        console.log("id:", id);
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).send({ status: false, message: "รูปแบบของ ID ไม่ถูกต้อง" });
-        }
-
-        // const objectId = mongoose.Types.ObjectId(id);
-        // console.log(objectId);
+        // console.log("id:", id);
         const findPartner = await Partner.findOneAndUpdate(
             { _id: id },
             { $inc: { profit: -amount } },
             { new: true }
         );
-
+        let flashPay
         if (!findPartner) {
             return res
                 .status(404)
                 .send({ status: false, message: "ไม่มีพาร์ทเนอร์ที่ท่านตามหา" });
         } else {
-            const aggregatedData = await Partner.aggregate([
-                {
-                    $match: { _id: id } // กรอง Partner ที่ต้องการ
+            const result = await bankRecord.findOne({ ID: id }); // หาเอกสารที่มี ID เท่ากับ id
+
+            if (result) {
+                flashPay = result.flash_pay.find(item => item._id.toString() === idBank); // ค้นหา flash_pay ที่มี _id เท่ากับ idBank
+                if (flashPay) {
+                    console.log(flashPay); // แสดงข้อมูลทั้งหมดใน Object ที่ตรงกับเงื่อนไข
+                } else {
+                    console.log('ไม่พบ flash_pay ที่มี _id เท่ากับ idBank');
                 }
-            ]);
-            console.log(aggregatedData);
+            } else {
+                console.log('ไม่พบเอกสารที่มี ID เท่ากับ id');
+            }
+
+            let v = {
+                partner_number: findPartner.partnerNumber,
+                // account_name:,
+                // account_number:,
+                // bank:,
+                // amount:,
+                // phone_number: ,
+                // email:,
+            }
         }
         return res
                 .status(200)
                 .send({
-                    status:true, 
+                    status:true,
+                    data: flashPay
                 })
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")

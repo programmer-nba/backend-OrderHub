@@ -196,7 +196,7 @@ getAllFP = async (req, res)=>{
             }
         return res
                 .status(200)
-                .send({status:true, data:findAll.flash_pay})
+                .send({status:true, data:findAll})
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res 

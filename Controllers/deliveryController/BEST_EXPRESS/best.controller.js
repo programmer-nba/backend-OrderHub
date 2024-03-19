@@ -422,6 +422,7 @@ createPDFOrder = async(req, res)=>{
             bizData:{
                 txLogisticId:txLogistic,
                 special:"1",
+                sendStartTime: dayTime,
                 sender:{
                     "name":data.from.name,
                     "postCode":data.from.postcode,
@@ -446,6 +447,7 @@ createPDFOrder = async(req, res)=>{
                 },
                 items:{
                     item:[{
+                            "itemName": 'ORDERHUB',
                             "itemWeight": weight,
                             "itemLength": data.parcel.width,
                             "itemWidth": data.parcel.length,
@@ -488,18 +490,19 @@ createPDFOrder = async(req, res)=>{
                         .status(400)
                         .send({status:false, message:"กรุณากรอกเลขบัญชีให้ถูกต้อง"})
             }
-        // // ข้อมูล Base64 ที่ต้องการ decode
-        // const base64Data = response.data.pdfStream;
-        // //console.log(base64Data)
+        // ข้อมูล Base64 ที่ต้องการ decode
+        const base64Data = response.data.pdfStream;
+        //console.log(base64Data)
 
-        // // Decode Base64
-        // const binaryData = Buffer.from(base64Data, 'base64');
+        // Decode Base64
+        const binaryData = Buffer.from(base64Data, 'base64');
 
-        // // สร้างไฟล์ PDF
-        // fs.writeFileSync(`D:\PDF/${txLogistic}.pdf`, binaryData, 'binary', (err) => {
-        //     if (err) throw err;
-        //         console.log('สร้าง PDF ไม่สำเร็จ');
-        //     });
+        // สร้างไฟล์ PDF
+        fs.writeFileSync(`D:\PDF/${txLogistic}.pdf`, binaryData, 'binary', (err) => {
+            if (err) throw err;
+                console.log('สร้าง PDF ไม่สำเร็จ');
+            });
+
         const createOrder = await bestOrder.create(
             {
                 ID:id,

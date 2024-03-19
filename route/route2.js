@@ -170,7 +170,7 @@ router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.ge
 //profit partner
 const profitPN = require('../Controllers/profit/profit_partner')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
-router.route('/orderhub/profitPartner/Withdrawal').get( auth.checkToken, profitPN.Withdrawal )
+router.route('/orderhub/profitPartner/Withdrawal/:id').get( auth.checkToken, profitPN.Withdrawal )
 router.route('/orderhub/profitPartner/WithdrawalReverse').get( auth.checkToken, profitPN.WithdrawalReverse )
 
 //profit admin(ICE)
