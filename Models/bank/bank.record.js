@@ -3,6 +3,7 @@ const Schema = mongoose.Schema
 
 const bankRecordSchema = new Schema({
     ID: {type:String, required:false},
+    bank_records: {type:String, required:false},
     flash_pay:[
         {
             name: {type:String, required: false},

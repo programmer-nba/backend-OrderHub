@@ -964,7 +964,7 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
             purchase_id: req.body.purchase_id,
             type:"html",
             size: req.body.size,
-            logo: "https://drive.google.com/thumbnail?id=1K8xaMlMEOC88hL-Mo82mNnYqjWpW-MDb"
+            logo: "https://drive.google.com/thumbnail?id=1-ibHHTEzCLaRisxTJa0FKa653kNpQT-L"
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/v2/label/`,valueCheck,
             {
