@@ -1,4 +1,5 @@
 const { profitIce } = require("../../Models/profit/profit.ice")
+const { profitTemplate } = require("../../Models/profit/profit.template")
 
 getAll = async (req, res)=>{
     try{
@@ -104,4 +105,23 @@ getSumCost = async (req, res)=>{
     }
 }
 
-module.exports = { getAll, getSumAdmin, getSumCod, getSumCost }
+getWithdrawal = async (req, res)=>{
+    try{
+        const getAll = await profitTemplate.find({status:"ขออนุมัติถอนเงิน"})
+            if(!getAll){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่มีข้อมูลในระบบ"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:getAll})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res  
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+module.exports = { getAll, getSumAdmin, getSumCod, getSumCost, getWithdrawal }

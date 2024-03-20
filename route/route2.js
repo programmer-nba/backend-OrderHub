@@ -171,7 +171,6 @@ router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.ge
 const profitPN = require('../Controllers/profit/profit_partner')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
 router.route('/orderhub/profitPartner/Withdrawal/:id').post( auth.checkToken, profitPN.Withdrawal )
-router.route('/orderhub/profitPartner/WithdrawalReverse').get( auth.checkToken, profitPN.WithdrawalReverse )
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')
@@ -179,6 +178,7 @@ router.route('/orderhub/profitPartner/getAll').get( authAdmin.checkToken, profit
 router.route('/orderhub/profitAdmin/getSumAdmin').get( authAdmin.checkToken, profitAM.getSumAdmin )
 router.route('/orderhub/profitAdmin/getSumCOD').get( authAdmin.checkToken, profitAM.getSumCod )
 router.route('/orderhub/profitAdmin/getSumCost').get( authAdmin.checkToken, profitAM.getSumCost )
+router.route('/orderhub/profitAdmin/get/withdrawal').get( authAdmin.checkToken, profitAM.getWithdrawal )
 
 //bank flashPay dropdown
 const bank = require('../Controllers/bank/bank.flashP.dropdown')

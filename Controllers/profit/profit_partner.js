@@ -149,29 +149,6 @@ Withdrawal = async (req, res)=>{
     }
 }
 
-WithdrawalReverse = async (req, res)=>{
-    try{
-        const id = req.decoded.userid
-        const filter = { wallet_owner: id, status: "กำลังรออนุมัติ" };
-        const update = { $set: { status: "เงินเข้า" } };
-
-        const result = await profitPartner.updateMany(filter, update);
-            if(!result){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่สามารถค้นหา หรีอ อัพเดทได้"})
-            }
-        return res
-                .status(200)
-                .send({status:false, data:result})
-    }catch(err){
-        console.log("มีบางอย่างผิดพลาด")
-        return res  
-                .status(500)
-                .send({status:false, message:err})
-    }
-}
-
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 100000)
@@ -191,4 +168,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, getSumForMe, Withdrawal, WithdrawalReverse }
+module.exports = { getAll, getSumForMe, Withdrawal }
