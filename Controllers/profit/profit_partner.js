@@ -122,7 +122,7 @@ Withdrawal = async (req, res)=>{
                             profit: amount,
                             express: "-",
                             type:'ถอนเงิน',
-                            status:'กำลังดำเนินการ'
+                            status:'รอดำเนินการ'
                     }
                     const profitRecord = await profitPartner.create(record)
                         if(!profitRecord){

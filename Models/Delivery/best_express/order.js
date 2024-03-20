@@ -14,6 +14,7 @@ const bestOrderSchema = new Schema({
     price: {type:Number, required: false},
     fee_cod: {type:Number, required: false},
     total: {type:Number, required: false},
+    pdfStream: {type:String, required: false},
     type: {type:String, required: false},
     status: {type:String, required: false},
     result: {type:String, required: false},

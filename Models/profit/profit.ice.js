@@ -22,7 +22,8 @@ const profitIceSchema = new Schema({
             name: {type:String, required: false},
             aka: {type:String, required: false},
             card_number: {type:String, required: false}
-    }
+    },
+    status:{type:String, require:false}
 },{timestamps:true});
 
 const profitIce = mongoose.model("profit_ice", profitIceSchema);

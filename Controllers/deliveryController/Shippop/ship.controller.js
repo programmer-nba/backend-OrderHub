@@ -610,6 +610,7 @@ booking = async(req, res)=>{
                             'bookbank.name': updatedDocument.flash_pay.name,
                             'bookbank.card_number': updatedDocument.flash_pay.card_number,
                             'bookbank.aka': updatedDocument.flash_pay.aka,
+                            status:"รอดำเนินการ"
                     }
                     profitSender = await profitIce.create(pfIceSender)
                         if(!profitSender){

@@ -422,7 +422,7 @@ createPDFOrder = async(req, res)=>{
             bizData:{
                 txLogisticId:txLogistic,
                 special:"1",
-                // sendStartTime: "2024-03-20 14:04:10",
+                // sendStartTime: "2024-03-20",
                 sender:{
                     "name":data.from.name,
                     "postCode":data.from.postcode,
@@ -490,8 +490,8 @@ createPDFOrder = async(req, res)=>{
                         .status(400)
                         .send({status:false, message:response.data})
             }
-        // // ข้อมูล Base64 ที่ต้องการ decode
-        // const base64Data = response.data.pdfStream;
+        //ข้อมูล Base64 ที่ต้องการ decode
+        const base64Data = response.data.pdfStream;
         // //console.log(base64Data)
 
         // // Decode Base64
@@ -524,6 +524,7 @@ createPDFOrder = async(req, res)=>{
                 type:'PDF',
                 fee_cod: fee_cod,
                 total: total,
+                pdfStream: base64Data,
                 ...response.data
             })
             if(!createOrder){
