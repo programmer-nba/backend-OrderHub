@@ -1199,6 +1199,7 @@ async function invoiceNumber() {
     console.log(combinedData);
     return combinedData;
 }
+
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
                 , getAllBooking, trackingPurchase, labelHtml, getById, delend, getMeBooking, getMeBooking
                 , getPartnerBooking, getOrderDay, getOrderByTracking}
