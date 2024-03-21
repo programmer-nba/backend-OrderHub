@@ -149,7 +149,7 @@ confirmContract = async (req,res)=>{
         }else{
           return res
                   .status(400)
-                  .send({status: false, message: "ไม่สามารถยืนยันได้"})
+                  .send({status: false, message: "กรุณายืนยันสัญญาทั้ง 2 ฉบับ"})
         }
     }else{ //กรณีไม่ตรง
         return res

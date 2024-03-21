@@ -19,6 +19,7 @@ router.route('/orderhub/shop/update/:id').put(auth.checkToken, shop.updateShop)/
 router.route('/orderhub/shop/del/:id').delete(auth.checkToken, shop.delend)//ใช้กำหนด path
 router.route('/orderhub/shop/getMe').get(auth.checkToken, shop.getShopPartner )
 router.route('/orderhub/shop/getMember/:id').get( shop.findShopMember )//ค้นหาพนักงานของช็อปนั้นๆว่ามีกี่คนและชื่ออะไรบ้าง
+router.route('/orderhub/shop/upPicture/:id').post( auth.checkToken, shop.uploadPicture )//อัพโหลดรูปภาพ
 router.route('/orderhub/shopAdmin/getOne/:id').get( auth.checkToken, shop.getShopOne ) //ดึงข้อมูลร้านค้าเดียวที่สนใจ
 
 //SHOP ADMIN

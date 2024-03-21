@@ -15,6 +15,7 @@ const jtOrderSchema = new Schema({
     cost: {type:Number, required: false},
     fee_cod: {type:Number, required: false},
     total: {type:Number, required: false},
+    all: {type: Number , required: false},
     price: {type:Number, required: false},
     success: {type:String, required: false},
     reason: {type:String, required: false},

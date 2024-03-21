@@ -26,6 +26,7 @@ const shopSchema = new Schema({
     district: {type:String, require: true},
     province: {type:String, require: true},
     postcode: {type:String, require: true},
+    picture: {type:String, require: false},
 },{timestamps:true});
 
 const shopPartner = mongoose.model("shop_partner", shopSchema);

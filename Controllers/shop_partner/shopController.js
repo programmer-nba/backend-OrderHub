@@ -1,6 +1,13 @@
 const { Partner } = require("../../Models/partner");
 const { memberShop } = require("../../Models/shop/member_shop");
 const { shopPartner, validate } = require("../../Models/shop/shop_partner");
+const { uploadFileCreate, deleteFile } = require("../../functions/uploadfilecreate");
+const multer = require("multer");
+const storage = multer.diskStorage({
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + "-");
+    },
+  });
 
 create = async (req, res)=>{
     try{
@@ -243,4 +250,50 @@ findShopMember = async (req, res)=>{
     }
 }
 
-module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, getShopPartnerByAdmin, findShopMember}
+uploadPicture = async (req,res)=>{
+    try {
+      let upload = multer({ storage: storage })
+      const fields = [
+        {name: 'picture', maxCount: 1}
+        // {name: 'pictureTwo', maxCount: 1}
+      ]
+      const uploadMiddleware = upload.fields(fields);
+      uploadMiddleware(req, res, async function (err) {
+        const reqFiles = [];
+        const result = [];
+        if (!req.files) {
+          return res.status(400).send({ message: 'No files were uploaded.' });
+        }
+        const url = req.protocol + "://" + req.get("host");
+        for (const fieldName in req.files) {
+          const files = req.files[fieldName];
+          for (var i = 0; i < files.length; i++) {
+            const src = await uploadFileCreate(files[i], res, { i, reqFiles });
+            result.push(src);
+          }
+        }
+        console.log(result[0])
+        const id = req.params.id;
+        const member = await shopPartner.findByIdAndUpdate(id, {
+            picture: result[0],
+          },{new:true});
+          if (!member) {
+              return res.status(500).send({
+              message: "ไม่สามารถเพิ่มรูปภาพได้",
+              status: false,
+            });
+          }else{
+              return res.status(200).send({
+              message: "เพิ่มรูปภาพสำเร็จ",
+              status: true,
+              data: member
+            });
+          }
+      });
+      
+    } catch (error) {
+      return res.status(500).send({ status: false, error: error.message });
+    }
+}
+
+module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, getShopPartnerByAdmin, findShopMember, uploadPicture}

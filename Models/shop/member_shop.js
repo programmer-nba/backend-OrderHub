@@ -14,7 +14,7 @@ const memberSchema = new Schema({
     firstname:{type:String, require: true},
     lastname:{type:String, require: true},
     iden_number:{type:String, require: true},
-    status:{type:String, default: "รอตรวจสอบ", require: false},
+    status:{type:String, default: "เพิ่มสำเร็จ", require: false},
     role:{type:String, default: "shop_member",require: false},
     tel:{type:String, require: true},
     email:{type:String, require: false},

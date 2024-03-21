@@ -19,6 +19,7 @@ const flashOrderSchema = new Schema({
     codAmount: {type:Number,default: 0, required: false},
     fee_cod: {type:Number, required: false},
     total: {type:Number, required: false},
+    all: {type: Number , required: false},
     status: {type:String, default:"booking", required: false}
 },{timestamps: true});
 
