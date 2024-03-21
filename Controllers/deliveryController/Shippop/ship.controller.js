@@ -393,12 +393,15 @@ booking = async(req, res)=>{
             if(!booking_parcel){
                 console.log("ไม่สามารถสร้างข้อมูล booking ได้")
             }
+        let diffTotal
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
             if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                 profitsPartner = price - cost
+                diffTotal = total - profitsPartner 
             }else{
                 profitsPartner = price - priceOne
+                diffTotal = total - profitsPartner
             }
         let profitsPartnerOne 
             if(priceOne != 0){
@@ -417,7 +420,7 @@ booking = async(req, res)=>{
         if(cod_amount == 0){
                     findShopForCredit = await shopPartner.findOneAndUpdate(
                         {shop_number:shop},
-                        { $inc: { credit: -total } },
+                        { $inc: { credit: -diffTotal } },
                         {new:true})
                         if(!findShopForCredit){
                             return res
@@ -426,13 +429,13 @@ booking = async(req, res)=>{
                         }
                     console.log(findShopForCredit.credit)
                         
-                    const plus = findShopForCredit.credit + total
+                    const plus = findShopForCredit.credit + diffTotal
                     const history = {
                             ID: id,
                             role: role,
                             shop_number: shop,
                             orderid: booking_parcel.tracking_code,
-                            amount: total,
+                            amount: diffTotal,
                             before: plus,
                             after: findShopForCredit.credit,
                             type: booking_parcel.courier_code,
@@ -517,7 +520,7 @@ booking = async(req, res)=>{
         }else{ 
                 const findShopTwo = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
-                    { $inc: { credit: -total } },
+                    { $inc: { credit: -diffTotal } },
                     {new:true})
                     if(!findShopTwo){
                         return res
@@ -526,13 +529,13 @@ booking = async(req, res)=>{
                     }
                 console.log(findShopTwo.credit)
                     
-                const plus = findShopTwo.credit + total
+                const plus = findShopTwo.credit + diffTotal
                     const historytwo = {
                         ID: id,
                         role: role,
                         shop_number: shop,
                         orderid: booking_parcel.tracking_code,
-                        amount: total,
+                        amount: diffTotal,
                         before: plus,
                         after: findShopTwo.credit,
                         type: booking_parcel.courier_code,

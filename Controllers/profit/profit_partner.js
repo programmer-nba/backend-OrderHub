@@ -104,6 +104,7 @@ Withdrawal = async (req, res)=>{
                                     .status(400)
                                     .send({status:false, message:"ไม่สามารถสร้างรายการถอนเงินได้"})
                         }
+
                     const difProfitPartner = await Partner.findOneAndUpdate(
                         {_id:id},
                         { $inc: { profit: -amount } },

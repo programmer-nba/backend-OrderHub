@@ -533,12 +533,15 @@ createPDFOrder = async(req, res)=>{
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
             // console.log(createOrder)
+        let diffTotal
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
             if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                 profitsPartner = price - cost
+                diffTotal = total - profitsPartner 
             }else{
                 profitsPartner = price - priceOne
+                diffTotal = total - profitsPartner
             }
         let profitsPartnerOne 
             if(priceOne != 0){
@@ -556,7 +559,7 @@ createPDFOrder = async(req, res)=>{
         if(cod_amount == 0){
                 findShop = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
-                    { $inc: { credit: -price } },
+                    { $inc: { credit: -diffTotal } },
                     {new:true})
                     if(!findShop){
                         return res
@@ -565,13 +568,13 @@ createPDFOrder = async(req, res)=>{
                     }
                 console.log(findShop.credit)
                     
-                const plus = findShop.credit + price
+                const plus = findShop.credit + diffTotal
                 const history = {
                         ID: id,
                         role: role,
                         shop_number: shop,
                         orderid: createOrder.txLogisticId,
-                        amount: price,
+                        amount: diffTotal,
                         before: plus,
                         after: findShop.credit,
                         type: 'BEST(ICE)',
@@ -657,7 +660,7 @@ createPDFOrder = async(req, res)=>{
         }else{
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -total } },
+                { $inc: { credit: -diffTotal } },
                 {new:true})
                 if(!findShopTwo){
                     return res
@@ -666,13 +669,13 @@ createPDFOrder = async(req, res)=>{
                 }
             console.log(findShopTwo.credit)
     
-            const plus = findShopTwo.credit + total
+            const plus = findShopTwo.credit + diffTotal
                 const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: createOrder.txLogisticId,
-                    amount: total,
+                    amount: diffTotal,
                     before: plus,
                     after: findShopTwo.credit,
                     type: 'BEST(ICE)',
@@ -801,7 +804,7 @@ createPDFOrder = async(req, res)=>{
                     profitIceCOD: profit_iceCOD,
                     profitPlus: profitPlus,
                     profitPlusOne: profitPlusOne,
-                    best: response.data
+                    // best: response.data
                 })
     }catch(err){
         return res

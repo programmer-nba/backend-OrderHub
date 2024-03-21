@@ -60,7 +60,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         }
 
         //ผู้ส่ง
-        const senderTel = req.body.srcPhone; //ผู้ส่ง
+        const senderTel = req.body.srcPhone;
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
 
         const updatedDocument = await dropOffs.findOne(filterSender);
@@ -136,14 +136,16 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             total: total,
             fee_cod: fee_cod
           };
-
-        //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
-        let profitsPartner
-            if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
-                profitsPartner = price - cost
-            }else{
-                profitsPartner = price - priceOne
-            }
+          let diffTotal
+          //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
+          let profitsPartner
+              if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
+                  profitsPartner = price - cost
+                  diffTotal = total - profitsPartner 
+              }else{
+                  profitsPartner = price - priceOne
+                  diffTotal = total - profitsPartner
+              }
         let profitsPartnerOne 
             if(priceOne != 0){
                 profitsPartnerOne = priceOne - cost
@@ -158,7 +160,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         if(codForPrice == 0){
             const findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -total } },
+                { $inc: { credit: -diffTotal } },
                 {new:true})
                 if(!findShop){
                     return res
@@ -172,13 +174,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
                 }
-            const plus = findShop.credit + total
+            const plus = findShop.credit + diffTotal
             const history = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    amount: total,
+                    amount: diffTotal,
                     before: plus,
                     after: findShop.credit,
                     type: 'FLE(ICE)',
@@ -288,7 +290,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -total } },
+                { $inc: { credit: -diffTotal } },
                 {new:true})
                 if(!findShopTwo){
                     return res
@@ -297,13 +299,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
             console.log(findShopTwo.credit)
                     
-            const plus = findShopTwo.credit + total
+            const plus = findShopTwo.credit + diffTotal
             const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    amount: total,
+                    amount: diffTotal,
                     before: plus,
                     after: findShopTwo.credit,
                     type: 'FLE(ICE)',

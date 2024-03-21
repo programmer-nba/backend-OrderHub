@@ -13,7 +13,7 @@ const profitTemplateSchema = new Schema({
     email:{type:String, require: false},
     transfer_instructions:{type:String, default: "", require:false},
     notes:{type:String, default: "", require:false},
-    status: {type:String, default: "ขออนุมัติถอนเงิน", require:false},
+    status: {type:String, default: "รอดำเนินการ", require:false},
 },{timestamps:true});
 
 const profitTemplate = mongoose.model("profit_template", profitTemplateSchema);

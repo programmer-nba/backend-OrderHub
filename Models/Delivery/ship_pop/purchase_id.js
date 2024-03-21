@@ -17,6 +17,7 @@ const BookingParcelSchema = new mongoose.Schema({
     courier_code : {type: String, required: true},
     priceOne : {type : Number , required : false},
     price : {type : Number , required : true},
+    declared_value: {type: Number ,required : false},
     cod_amount : {type: Number ,required : true},
     cod_charge : {type: Number , required: true},
     cod_vat : {type: Number , required: false},

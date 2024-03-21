@@ -72,6 +72,7 @@ createOrder = async (req, res)=>{
                 "width": data.parcel.width,
                 "height": data.parcel.height,
                 "isinsured": "0",
+                // "offerfee": "2000"
             },
             "msg_type": "ORDERCREATE",
             "eccompanyid": ecom_id,
@@ -141,12 +142,15 @@ createOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
-        //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
+        let diffTotal
+            //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
             if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                 profitsPartner = price - cost
+                diffTotal = total - profitsPartner 
             }else{
                 profitsPartner = price - priceOne
+                diffTotal = total - profitsPartner
             }
         let profitsPartnerOne 
             if(priceOne != 0){
@@ -165,7 +169,7 @@ createOrder = async (req, res)=>{
         if(cod_amount == 0){
             findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -total } },
+                { $inc: { credit: -diffTotal } },
                 {new:true})
                 if(!findShop){
                     return res
@@ -174,13 +178,13 @@ createOrder = async (req, res)=>{
                 }
             console.log(findShop.credit)
                 
-            const plus = findShop.credit + total
+            const plus = findShop.credit + diffTotal
             const history = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
-                    amount: total,
+                    amount: diffTotal,
                     before: plus,
                     after: findShop.credit,
                     type: 'J&T',
@@ -268,7 +272,7 @@ createOrder = async (req, res)=>{
         }else{
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -total } },
+                { $inc: { credit: -diffTotal } },
                 {new:true})
                 if(!findShopTwo){
                     return res
@@ -277,13 +281,13 @@ createOrder = async (req, res)=>{
                 }
             console.log(findShopTwo.credit)
     
-            const plus = findShopTwo.credit + total
+            const plus = findShopTwo.credit + diffTotal
             const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
-                    amount: total,
+                    amount: diffTotal,
                     before: plus,
                     after: findShopTwo.credit,
                     type: 'J&T',
@@ -405,7 +409,7 @@ createOrder = async (req, res)=>{
                 .status(200)
                 .send({
                     status:true, 
-                    order: createOrder,
+                    order: response.data,
                     history: historyShop,
                     // shop: findShop,
                     profitP: profit_partner,
