@@ -1135,9 +1135,9 @@ priceList = async (req, res)=>{
                     if (cod !== undefined) {
                         let fee = (reqCod * percentCod)/100
                         let formattedFee = parseFloat(fee.toFixed(2));
-                        let all = price + formattedFee
+                        let total = price + formattedFee
                         let profitPartner = price - cost
-                        let total = all - profitPartner
+                        let all = total - profitPartner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                             v.all = all
                             v.fee_cod = formattedFee
@@ -1149,8 +1149,8 @@ priceList = async (req, res)=>{
                     }else{
                         let profitPartner = price - cost
                             v.profitPartner = profitPartner
-                            v.total = price - profitPartner
-                            v.all = price
+                            v.total = price
+                            v.all = price - profitPartner
                         new_data.push(v);
                     }
         }else{
