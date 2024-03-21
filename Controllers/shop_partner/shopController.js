@@ -165,6 +165,17 @@ getAll = async (req, res)=>{
 
 getShopPartner = async (req, res)=>{
     try{
+        if(req.decoded.role == "shop_member"){
+            const getShopMember = await shopPartner.findOne({shop_number: req.decoded.shop_number})
+            if(!getShopMember){
+                return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีร้านค้านี้ในระบบ"})
+            }
+            return res
+                    .status(200)
+                    .send({status:true, data: getShopMember})
+        }
         const id = req.decoded.userid
         console.log(id)
         const getShop = await shopPartner.find({partnerID:id})
