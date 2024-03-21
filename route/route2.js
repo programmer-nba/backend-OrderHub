@@ -37,6 +37,7 @@ router.route('/orderhub/member/update/:id').put( member_shop.update )
 router.route('/orderhub/member/get/:id').get( auth.checkToken, member_shop.getByID )
 router.route('/orderhub/member/approve/:id').put( partner.approveMemberShop )
 router.route('/orderhub/member/cancel/:id').put( partner.cancelMemberShop )
+router.route('/orderhub/member/getPNM').get( member_shop.getMemberPartner )
 
 //Flash Admin
 router.route('/orderhub/flash/getAll').get( authAdmin.checkToken, flash.getAll )

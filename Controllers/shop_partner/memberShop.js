@@ -180,4 +180,20 @@ getByID = async (req,res)=>{
     }
   }
 
-module.exports = { create, getAll, update, getMe, delend, getByID }
+getMemberPartner = async (req, res)=>{
+    try{
+        const getAllResult = await memberShop.find().lean();
+        const getPartnerResult = await Partner.find().lean();
+
+        if (getAllResult && getPartnerResult) {
+            const combinedResults = { ...getAllResult, ...getPartnerResult };
+            return res.status(200).send({ status: true, data: combinedResults });
+        } else {
+            return res.status(404).send({ status: false, message: "ไม่มีข้อมูลในระบบ" });
+        }
+    }catch(err){
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+}
+module.exports = { create, getAll, update, getMe, delend, getByID, getMemberPartner }
