@@ -120,7 +120,7 @@ update = async (req, res)=>{
 getMe = async (req, res)=>{
     try{
         console.log(req.decoded.id)
-        const id = req.decoded.id
+        const id = req.decoded.userid
         const findMe = await memberShop.findOne({_id:id})
         if(findMe){
             return res
