@@ -6,12 +6,12 @@ create = async (req, res)=>{
     try{
         const id = req.decoded.userid
         console.log(id)
-        const {error} = validate(req.body); //ตรวจสอบความถูกต้องของข้อมูลที่เข้ามา
-        if (error){
-            return res
-                    .status(403)
-                    .send({ status: false, message: error.details[0].message });
-        }
+        // const {error} = validate(req.body); //ตรวจสอบความถูกต้องของข้อมูลที่เข้ามา
+        // if (error){
+        //     return res
+        //             .status(403)
+        //             .send({ status: false, message: error.details[0].message });
+        // }
         const taxOrCom = await shopPartner.findOne({
             $or: [ //$or ใช้เพื่อเช็คถ้าเข้าเงื่อนไขใดเงื่อนไขหนึ่งให้เก็บ ducument ของคนๆนั้นไว้(กรณีด้านล่างมี 4 เงื่อนไข)
               { "tax.taxName": req.body.taxName },

@@ -187,22 +187,29 @@ priceList = async (req, res)=>{
                         priceOne: 0,
                         price: Number(price.toFixed()),
                         total: 0,
+                        all: 0,
                         status: status
                     };
 
                     if (cod !== undefined) {
                         let fee = (reqCod * percentCod)/100
                         let formattedFee = parseFloat(fee.toFixed(2));
-                        v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                        v.fee_cod = formattedFee
-                        v.total = price + formattedFee
-                        v.profitPartner = price - cost
+                        let all = price + formattedFee
+                        let profitPartner = price - cost
+                        let total = all - profitPartner
+                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            v.all = all
+                            v.fee_cod = formattedFee
+                            v.total = total
+                            v.profitPartner = profitPartner
                         if(reqCod > price){
                             new_data.push(v);
                         }
                     }else{
-                        v.profitPartner = price - cost
-                        v.total = price
+                        let profitPartner = price - cost
+                            v.profitPartner = profitPartner
+                            v.total = price - profitPartner
+                            v.all = price
                         new_data.push(v);
                     }
                     // console.log(new_data);
@@ -243,7 +250,6 @@ priceList = async (req, res)=>{
                         let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                         let priceOne = Math.ceil(cost + p.percent_shop)
                         let price = priceOne + cost_plus
-                        let priceInteger = reqCod
             
                         let cod_amount = 0
                         let status = null;
@@ -268,22 +274,29 @@ priceList = async (req, res)=>{
                             priceOne: priceOne,
                             price: Number(price.toFixed()),
                             total: 0,
+                            all: 0,
                             status: status
                         };
 
                         if (cod !== undefined) {
                             let fee = (reqCod * percentCod)/100
                             let formattedFee = parseFloat(fee.toFixed(2));
-                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.fee_cod = formattedFee
-                            v.total = price + formattedFee
-                            v.profitPartner = price - priceOne
+                            let all = price + formattedFee
+                            let profitPartner = price - priceOne
+                            let total = all - profitPartner
+                                v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                                v.all = all
+                                v.fee_cod = formattedFee
+                                v.total = total
+                                v.profitPartner = profitPartner
                             if(reqCod > price){
                                 new_data.push(v);
                             }
                         }else{
-                            v.profitPartner = price - priceOne
-                            v.total = price
+                            let profitPartner = price - priceOne
+                                v.profitPartner = profitPartner
+                                v.total = price - profitPartner
+                                v.all = price
                             new_data.push(v);
                         }
                         // console.log(new_data);
@@ -393,15 +406,12 @@ booking = async(req, res)=>{
             if(!booking_parcel){
                 console.log("ไม่สามารถสร้างข้อมูล booking ได้")
             }
-        let diffTotal
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
             if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                 profitsPartner = price - cost
-                diffTotal = total - profitsPartner 
             }else{
                 profitsPartner = price - priceOne
-                diffTotal = total - profitsPartner
             }
         let profitsPartnerOne 
             if(priceOne != 0){
@@ -420,7 +430,7 @@ booking = async(req, res)=>{
         if(cod_amount == 0){
                     findShopForCredit = await shopPartner.findOneAndUpdate(
                         {shop_number:shop},
-                        { $inc: { credit: -diffTotal } },
+                        { $inc: { credit: -total } },
                         {new:true})
                         if(!findShopForCredit){
                             return res
@@ -429,13 +439,13 @@ booking = async(req, res)=>{
                         }
                     console.log(findShopForCredit.credit)
                         
-                    const plus = findShopForCredit.credit + diffTotal
+                    const plus = findShopForCredit.credit + total
                     const history = {
                             ID: id,
                             role: role,
                             shop_number: shop,
                             orderid: booking_parcel.tracking_code,
-                            amount: diffTotal,
+                            amount: total,
                             before: plus,
                             after: findShopForCredit.credit,
                             type: booking_parcel.courier_code,
@@ -520,7 +530,7 @@ booking = async(req, res)=>{
         }else{ 
                 const findShopTwo = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
-                    { $inc: { credit: -diffTotal } },
+                    { $inc: { credit: -total } },
                     {new:true})
                     if(!findShopTwo){
                         return res
@@ -529,13 +539,13 @@ booking = async(req, res)=>{
                     }
                 console.log(findShopTwo.credit)
                     
-                const plus = findShopTwo.credit + diffTotal
+                const plus = findShopTwo.credit + total
                     const historytwo = {
                         ID: id,
                         role: role,
                         shop_number: shop,
                         orderid: booking_parcel.tracking_code,
-                        amount: diffTotal,
+                        amount: total,
                         before: plus,
                         after: findShopTwo.credit,
                         type: booking_parcel.courier_code,

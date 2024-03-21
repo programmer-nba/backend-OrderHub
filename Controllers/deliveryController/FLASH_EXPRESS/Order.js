@@ -136,15 +136,12 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             total: total,
             fee_cod: fee_cod
           };
-          let diffTotal
           //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
           let profitsPartner
               if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                   profitsPartner = price - cost
-                  diffTotal = total - profitsPartner 
               }else{
                   profitsPartner = price - priceOne
-                  diffTotal = total - profitsPartner
               }
         let profitsPartnerOne 
             if(priceOne != 0){
@@ -160,7 +157,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         if(codForPrice == 0){
             const findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -diffTotal } },
+                { $inc: { credit: total } },
                 {new:true})
                 if(!findShop){
                     return res
@@ -174,13 +171,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
                 }
-            const plus = findShop.credit + diffTotal
+            const plus = findShop.credit + total
             const history = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    amount: diffTotal,
+                    amount: total,
                     before: plus,
                     after: findShop.credit,
                     type: 'FLE(ICE)',
@@ -290,7 +287,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -diffTotal } },
+                { $inc: { credit: total } },
                 {new:true})
                 if(!findShopTwo){
                     return res
@@ -299,13 +296,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
             console.log(findShopTwo.credit)
                     
-            const plus = findShopTwo.credit + diffTotal
+            const plus = findShopTwo.credit + total
             const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    amount: diffTotal,
+                    amount: total,
                     before: plus,
                     after: findShopTwo.credit,
                     type: 'FLE(ICE)',
@@ -1068,21 +1065,28 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             priceOne: 0,
                             price: Number(price.toFixed()),
                             total: 0,
+                            all: 0,
                             status: status
                         };
                         if (cod !== undefined) {
                             let fee = (reqCod * percentCod)/100
                             let formattedFee = parseFloat(fee.toFixed(2));
-                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.fee_cod = formattedFee
-                            v.total = price + formattedFee
-                            v.profitPartner = price - cost
+                            let all = price + formattedFee
+                            let profitPartner = price - cost
+                            let total = all - profitPartner
+                                v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                                v.all = all
+                                v.fee_cod = formattedFee
+                                v.total = total
+                                v.profitPartner = profitPartner
                             if(reqCod > price){
                                 new_data.push(v);
                             }
                         }else{
-                            v.profitPartner = price - cost
-                            v.total = price
+                            let profitPartner = price - cost
+                                v.profitPartner = profitPartner
+                                v.total = price - profitPartner
+                                v.all = price
                             new_data.push(v);
                         }
             }else{
@@ -1135,21 +1139,28 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             priceOne: priceOne,
                             price: Number(price.toFixed()),
                             total: 0,
+                            all: 0,
                             status: status
                         };
                         if (cod !== undefined) {
                             let fee = (reqCod * percentCod)/100
                             let formattedFee = parseFloat(fee.toFixed(2));
+                            let all = price + formattedFee
+                            let profitPartner = price - priceOne
+                            let total = all - profitPartner
                                 v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                                v.all = all
                                 v.fee_cod = formattedFee
-                                v.total = price + formattedFee
-                                v.profitPartner = price - priceOne
+                                v.total = total
+                                v.profitPartner = profitPartner
                             if(reqCod > price){
                                 new_data.push(v);
                             }
                         }else{
-                            v.profitPartner = price - priceOne
-                            v.total = price
+                            let profitPartner = price - priceOne
+                                v.profitPartner = profitPartner
+                                v.total = price - profitPartner
+                                v.all = price
                             new_data.push(v);
                         }
             }
