@@ -708,6 +708,7 @@ createPDFOrder = async(req, res)=>{
                                     .status(400)
                                     .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
                         } 
+                // console.log(profitPlus)
                 const pfICE = {
                         Orderer: id,
                         role: role,
@@ -1130,6 +1131,7 @@ priceList = async (req, res)=>{
                         priceOne: 0,
                         price: Number(price.toFixed()),
                         total: 0,
+                        cut_partner: 0,
                         status: status
                     };
                     if (cod !== undefined) {
@@ -1137,9 +1139,9 @@ priceList = async (req, res)=>{
                         let formattedFee = parseFloat(fee.toFixed(2));
                         let total = price + formattedFee
                         let profitPartner = price - cost
-                        let all = total - profitPartner
+                        let cut_partner = total - profitPartner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.all = all
+                            v.cut_partner = cut_partner
                             v.fee_cod = formattedFee
                             v.total = total
                             v.profitPartner = profitPartner
@@ -1150,7 +1152,7 @@ priceList = async (req, res)=>{
                         let profitPartner = price - cost
                             v.profitPartner = profitPartner
                             v.total = price
-                            v.all = price - profitPartner
+                            v.cut_partner = price - profitPartner
                         new_data.push(v);
                     }
         }else{
@@ -1200,6 +1202,7 @@ priceList = async (req, res)=>{
                         priceOne: priceOne,
                         price: Number(price.toFixed()),
                         total: 0,
+                        cut_partner: 0,
                         status: status
                     };
                     console.log(v)
@@ -1208,9 +1211,9 @@ priceList = async (req, res)=>{
                         let formattedFee = parseFloat(fee.toFixed(2));
                         let total = price + formattedFee
                         let profitPartner = price - priceOne
-                        let all = total - profitPartner
+                        let cut_partner = total - profitPartner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.all = all
+                            v.cut_partner = cut_partner
                             v.fee_cod = formattedFee
                             v.total = total
                             v.profitPartner = profitPartner
@@ -1221,7 +1224,7 @@ priceList = async (req, res)=>{
                         let profitPartner = price - priceOne
                             v.profitPartner = profitPartner
                             v.total = price
-                            v.all = price - profitPartner
+                            v.cut_partner = price - profitPartner
                         new_data.push(v);
                     }
         }

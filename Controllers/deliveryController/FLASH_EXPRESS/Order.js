@@ -31,10 +31,10 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const cost = req.body.cost
         const weight = req.body.weight * 1000
         const cost_hub = req.body.cost_hub
-
         const fee_cod = req.body.fee_cod
         const total = req.body.total
-
+        const cut_partner = req.body.cut_partner
+        const price_remote_area = req.body.price_remote_area
         const priceOne = req.body.priceOne
         const codForPrice = req.body.codForPrice
         const price = req.body.price
@@ -133,6 +133,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             priceOne: priceOne,
             price: price,
             codAmount: codForPrice,
+            cut_partner: cut_partner,
+            price_remote_area: price_remote_area,
             total: total,
             fee_cod: fee_cod
           };
@@ -157,7 +159,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         if(codForPrice == 0){
             const findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: total } },
+                { $inc: { credit: -cut_partner } },
                 {new:true})
                 if(!findShop){
                     return res
@@ -171,13 +173,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
                 }
-            const plus = findShop.credit + total
+            const plus = findShop.credit + cut_partner
             const history = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    amount: total,
+                    amount: cut_partner,
                     before: plus,
                     after: findShop.credit,
                     type: 'FLE(ICE)',
@@ -287,7 +289,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: total } },
+                { $inc: { credit: -cut_partner } },
                 {new:true})
                 if(!findShopTwo){
                     return res
@@ -296,13 +298,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
             console.log(findShopTwo.credit)
                     
-            const plus = findShopTwo.credit + total
+            const plus = findShopTwo.credit + cut_partner
             const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: create.response.pno,
-                    amount: total,
+                    amount: cut_partner,
                     before: plus,
                     after: findShopTwo.credit,
                     type: 'FLE(ICE)',
@@ -955,6 +957,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 width: req.body.parcel.width,
                 length: req.body.parcel.length,
                 height: req.body.parcel.height,
+                pricingTable: 1,
                 // mchId: mchId,
                 // nonceStr: nonceStr,
                 // srcName: "Mahunnop",
@@ -975,7 +978,6 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 // width: req.body.width,
                 // length: req.body.length,
                 // height: req.body.height,
-                pricingTable: 1
                 // expressCategory: req.body.expressCategory,
                 // insureDeclareValue: req.body.insureDeclareValue,
                 // insured: req.body.insured,
@@ -993,7 +995,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
             },
         })
         let eFlash = []
-        for (const key in response.data.data) { //ดึงข้อมูลเกี่ยวกับ Error เกี่ยวกับน้ำหนักที่ Responce มาเห็บไว้ใน Array eFlash
+        for (const key in response.data.data) { //ดึงข้อมูลเกี่ยวกับ Error เกี่ยวกับน้ำหนักที่ Response มาเก็บไว้ใน Array eFlash
             if (response.data.data.hasOwnProperty(key)) {
                 // นำค่าข้างใน Array มาแสดง
                 const values = response.data.data[key];
@@ -1040,7 +1042,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         let cost_hub = Number(estimatedPriceInBaht);
                         let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                         let price = Math.ceil(cost + p.percent_shop);
-                        let priceInteger = reqCod
+     
                         let status = null;
                         let cod_amount = 0
 
@@ -1057,6 +1059,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         }
                         v = {
                             ...response.data.data,
+                            price_remote_area: 0,
                             cost_hub: cost_hub,
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
@@ -1065,28 +1068,48 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             priceOne: 0,
                             price: Number(price.toFixed()),
                             total: 0,
-                            all: 0,
+                            cut_partner: 0,
                             status: status
                         };
+                        let respData = response.data.data
                         if (cod !== undefined) {
                             let fee = (reqCod * percentCod)/100
                             let formattedFee = parseFloat(fee.toFixed(2));
-                            let total = price + formattedFee
                             let profitPartner = price - cost
-                            let all = total - profitPartner
+                            let total = price + formattedFee
+                            let cut_partner = total - profitPartner
                                 v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                                v.all = all
                                 v.fee_cod = formattedFee
-                                v.total = total
                                 v.profitPartner = profitPartner
-                            if(reqCod > price){
-                                new_data.push(v);
-                            }
+                                    if(respData.upCountry == true){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                                        let total1 = total + (parseFloat(respData.upCountryAmount)/100) //เปลี่ยนจาก สตางค์เป็นบาท
+                                            v.total = total1
+                                            v.cut_partner = total1 - profitPartner
+                                            v.price_remote_area = (parseFloat(respData.upCountryAmount)/100)
+                                                // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                                //     new_data.push(v);
+                                                // }
+                                    }else{
+                                        v.cut_partner = cut_partner
+                                        v.total = total
+                                            // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                    }
+                                new_data.push(v);  
                         }else{
                             let profitPartner = price - cost
-                                v.profitPartner = profitPartner
-                                v.total = price
-                                v.all = price - profitPartner
+                                if(respData.upCountry == true){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                                    let total = price + (parseFloat(respData.upCountryAmount)/100) //เปลี่ยนจาก สตางค์เป็นบาทฃ
+                                        v.price_remote_area = (parseFloat(respData.upCountryAmount)/100)
+                                        v.total = total
+                                        v.cut_partner = total - profitPartner
+                                        v.profitPartner = profitPartner
+                                }else{
+                                    v.profitPartner = profitPartner
+                                    v.total = price
+                                    v.cut_partner = price - profitPartner
+                                }
                             new_data.push(v);
                         }
             }else{
@@ -1113,7 +1136,6 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let priceOne = Math.ceil(cost + p.percent_shop)
                     let price = priceOne + cost_plus
-                    let priceInteger = reqCod
 
                     let cod_amount = 0
                     let status = null;
@@ -1131,6 +1153,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         }
                         v = {
                             ...response.data.data,
+                            price_remote_area: 0,
                             cost_hub: cost_hub,
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
@@ -1139,28 +1162,48 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             priceOne: priceOne,
                             price: Number(price.toFixed()),
                             total: 0,
-                            all: 0,
+                            cut_partner: 0,
                             status: status
                         };
+                        let respData = response.data.data
                         if (cod !== undefined) {
                             let fee = (reqCod * percentCod)/100
                             let formattedFee = parseFloat(fee.toFixed(2));
-                            let total = price + formattedFee
                             let profitPartner = price - priceOne
-                            let all = total - profitPartner
+                            let total = price + formattedFee
+                            let cut_partner = total - profitPartner
                                 v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                                v.all = all
                                 v.fee_cod = formattedFee
-                                v.total = total
                                 v.profitPartner = profitPartner
-                            if(reqCod > price){
+                                    if(respData.upCountry == true){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                                        let total1 = total + (parseFloat(respData.upCountryAmount)/100) //เปลี่ยนจาก สตางค์เป็นบาท
+                                            v.total = total1
+                                            v.cut_partner = total1 - profitPartner
+                                            v.price_remote_area = (parseFloat(respData.upCountryAmount)/100)
+                                                // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                                //     new_data.push(v);
+                                                // }
+                                    }else{
+                                        v.cut_partner = cut_partner
+                                        v.total = total
+                                            // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                    }
                                 new_data.push(v);
-                            }
                         }else{
                             let profitPartner = price - priceOne
-                                v.profitPartner = profitPartner
-                                v.total = price
-                                v.all = price - profitPartner
+                                if(respData.upCountry == true){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                                    let total = price + (parseFloat(respData.upCountryAmount)/100) //เปลี่ยนจาก สตางค์เป็นบาท
+                                        v.price_remote_area = (parseFloat(respData.upCountryAmount)/100)
+                                        v.total = total
+                                        v.cut_partner = total - profitPartner
+                                        v.profitPartner = profitPartner
+                                }else{
+                                    v.profitPartner = profitPartner
+                                    v.total = price
+                                    v.cut_partner = price - profitPartner
+                                }
                             new_data.push(v);
                         }
             }

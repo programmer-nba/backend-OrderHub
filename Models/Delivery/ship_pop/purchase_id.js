@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
-const { flashOrder } = require("../flash_express/create_order");
 
 const BookingParcelSchema = new mongoose.Schema({
     ID: {type:String, required : false},
@@ -24,8 +23,9 @@ const BookingParcelSchema = new mongoose.Schema({
     fee_cod: {type: Number , required: false},
     cost_hub : {type: Number, required : true},
     cost : {type: Number ,required : true},
+    price_remote_area: {type: Number ,required : false},
     total: {type: Number , required: false},
-    all: {type: Number , required: false},
+    cut_partner: {type: Number , required: false},
     discount: {type: Number, required : true},
     order_status : {type: String, default: "booking", required: true},
     package_detail : {type : Object, default: null, required: false}, // กรณีมีการเรียกเก็บเพิ่มเติม

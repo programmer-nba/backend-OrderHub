@@ -179,6 +179,7 @@ priceList = async (req, res)=>{
                     }
                     v = {
                         ...obj[ob],
+                        price_remote_area: 0,
                         cost_hub: cost_hub,
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
@@ -187,29 +188,48 @@ priceList = async (req, res)=>{
                         priceOne: 0,
                         price: Number(price.toFixed()),
                         total: 0,
-                        all: 0,
+                        cut_partner: 0,
                         status: status
                     };
 
                     if (cod !== undefined) {
                         let fee = (reqCod * percentCod)/100
                         let formattedFee = parseFloat(fee.toFixed(2));
-                        let total = price + formattedFee
                         let profitPartner = price - cost
-                        let all = total - profitPartner
+                        let total = price + formattedFee
+                        let cut_partner = total - profitPartner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.all = all
                             v.fee_cod = formattedFee
-                            v.total = total
                             v.profitPartner = profitPartner
-                        if(reqCod > price){
+                                if(obj[ob].hasOwnProperty("price_remote_area")){
+                                    let total1 = total + obj[ob].price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profitPartner
+                                        v.price_remote_area = obj[ob].price_remote_area
+                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                }else{
+                                    v.cut_partner = cut_partner
+                                    v.total = total
+                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                        //     new_data.push(v);
+                                        // }
+                                }
                             new_data.push(v);
-                        }
                     }else{
                         let profitPartner = price - cost
+                        if(obj[ob].hasOwnProperty("price_remote_area")){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                            let total = price + obj[ob].price_remote_area
+                                v.price_remote_area = obj[ob].price_remote_area
+                                v.total = total
+                                v.cut_partner = total - profitPartner
+                                v.profitPartner = profitPartner
+                        }else{
                             v.profitPartner = profitPartner
                             v.total = price
-                            v.all = price - profitPartner
+                            v.cut_partner = price - profitPartner
+                        }
                         new_data.push(v);
                     }
                     // console.log(new_data);
@@ -239,7 +259,6 @@ priceList = async (req, res)=>{
                             continue; // ข้ามไปยังรอบถัดไป
                         }
                         // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
-                        // ตัวอย่าง: คำนวนตัวเลข, เรียก function, หรือทำอย่างอื่น
                         let v = null;
                         let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
                         if (!p) {
@@ -266,6 +285,7 @@ priceList = async (req, res)=>{
                         }
                         v = {
                             ...obj[ob],
+                            price_remote_area: 0,
                             cost_hub: cost_hub,
                             cost: cost,
                             cod_amount: Number(cod_amount.toFixed()),
@@ -274,29 +294,48 @@ priceList = async (req, res)=>{
                             priceOne: priceOne,
                             price: Number(price.toFixed()),
                             total: 0,
-                            all: 0,
+                            cut_partner: 0,
                             status: status
                         };
 
                         if (cod !== undefined) {
                             let fee = (reqCod * percentCod)/100
                             let formattedFee = parseFloat(fee.toFixed(2));
-                            let total = price + formattedFee
                             let profitPartner = price - priceOne
-                            let all = total - profitPartner
+                            let total = price + formattedFee
+                            let cut_partner = total - profitPartner
                                 v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                                v.all = all
                                 v.fee_cod = formattedFee
-                                v.total = total
                                 v.profitPartner = profitPartner
-                            if(reqCod > price){
+                                    if(obj[ob].hasOwnProperty("price_remote_area")){
+                                        let total1 = total + obj[ob].price_remote_area
+                                        v.price_remote_area = obj[ob].price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profitPartner
+                                            // if(reqCod > total1){
+                                            //     new_data.push(v);
+                                            // }
+                                    }else{
+                                        v.cut_partner = cut_partner
+                                        v.total = total
+                                            // if(reqCod > total){
+                                            //     new_data.push(v);
+                                            // }
+                                    }
                                 new_data.push(v);
-                            }
                         }else{
                             let profitPartner = price - priceOne
+                            if(obj[ob].hasOwnProperty("price_remote_area")){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                                let total = price + obj[ob].price_remote_area
+                                    v.price_remote_area = obj[ob].price_remote_area
+                                    v.total = total
+                                    v.cut_partner = total - profitPartner
+                                    v.profitPartner = profitPartner
+                            }else{
                                 v.profitPartner = profitPartner
                                 v.total = price
-                                v.all = price - profitPartner
+                                v.cut_partner = price - profitPartner
+                            }
                             new_data.push(v);
                         }
                         // console.log(new_data);
@@ -331,10 +370,10 @@ booking = async(req, res)=>{
         const costHub = req.body.cost_hub
         const cost = req.body.cost
         const shop = req.body.shop_id
-
         const fee_cod = req.body.fee_cod
         const total = req.body.total
-
+        const cut_partner = req.body.cut_partner
+        const price_remote_area = req.body.price_remote_area
         const weight = req.body.parcel.weight * 1000
         const id = req.decoded.userid
         const cod_amount = req.body.cod_amount
@@ -396,6 +435,8 @@ booking = async(req, res)=>{
                 cost_hub: costHub,
                 cost: cost,
                 fee_cod: fee_cod,
+                price_remote_area: price_remote_area,
+                cut_partner: cut_partner,
                 total: total,
                 parcel: parcel,
                 priceOne: priceOne,
@@ -430,7 +471,7 @@ booking = async(req, res)=>{
         if(cod_amount == 0){
                     findShopForCredit = await shopPartner.findOneAndUpdate(
                         {shop_number:shop},
-                        { $inc: { credit: -total } },
+                        { $inc: { credit: -cut_partner } },
                         {new:true})
                         if(!findShopForCredit){
                             return res
@@ -439,13 +480,13 @@ booking = async(req, res)=>{
                         }
                     console.log(findShopForCredit.credit)
                         
-                    const plus = findShopForCredit.credit + total
+                    const plus = findShopForCredit.credit + cut_partner
                     const history = {
                             ID: id,
                             role: role,
                             shop_number: shop,
                             orderid: booking_parcel.tracking_code,
-                            amount: total,
+                            amount: cut_partner,
                             before: plus,
                             after: findShopForCredit.credit,
                             type: booking_parcel.courier_code,
@@ -530,7 +571,7 @@ booking = async(req, res)=>{
         }else{ 
                 const findShopTwo = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
-                    { $inc: { credit: -total } },
+                    { $inc: { credit: -cut_partner } },
                     {new:true})
                     if(!findShopTwo){
                         return res
@@ -539,13 +580,13 @@ booking = async(req, res)=>{
                     }
                 console.log(findShopTwo.credit)
                     
-                const plus = findShopTwo.credit + total
+                const plus = findShopTwo.credit + cut_partner
                     const historytwo = {
                         ID: id,
                         role: role,
                         shop_number: shop,
                         orderid: booking_parcel.tracking_code,
-                        amount: total,
+                        amount: cut_partner,
                         before: plus,
                         after: findShopTwo.credit,
                         type: booking_parcel.courier_code,
