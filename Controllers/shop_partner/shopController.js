@@ -307,4 +307,173 @@ uploadPicture = async (req,res)=>{
     }
 }
 
-module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, getShopPartnerByAdmin, findShopMember, uploadPicture}
+tranfersCreditsToShop = async (req, res)=>{
+    try{
+        const partner_id = req.decoded.userid
+        const id_shop = req.params.id_shop
+        const amount = req.body.amount
+            if (!amount || isNaN(amount) || amount < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
+                return res
+                        .status(400)
+                        .send({ status: false, message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
+            }else if (!/^(\d+(\.\d{1,2})?)$/.test(amount.toString())){ //เช็คทศนิยมไม่เกิน 2 ตำแหน่ง
+                return res
+                        .status(400)
+                        .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
+            }
+        
+        const findPartner = await Partner.findOne(
+            {
+                _id:partner_id,
+                shop_partner:{
+                    $elemMatch: { _id: id_shop } //การหา _id ที่ตรงกับ id_shop ที่ user ส่งมา
+                }
+            }
+        )
+            if(!findPartner){
+                return res
+                        .status(404)
+                        .send({status:false, message:"กรุณาระบุร้านค้าที่ท่านเป็นเจ้าของ"})
+            }else if(findPartner.credits <= 0){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาเติมเงินเข้าระบบก่อนที่จะทำการโยกย้ายเงินไปยัง สาขา ที่ท่านต้องการ"})
+            }else if(findPartner.credits < amount){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุจำนวนเงินไม่เกิน credits ที่คุณมี"})
+            }
+        //ตัดเงิน Partner
+        const cutCredtisPartner = await Partner.findOneAndUpdate(
+            {_id:partner_id},
+            {
+                $inc: { credits: -amount }
+            },
+            {new:true})
+            if(!cutCredtisPartner){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถลบเงิน Partner ได้"})
+            }
+        //เพิ่มเงิน Shop
+        const tranferToShop = await shopPartner.findOneAndUpdate(
+            {_id:id_shop},
+            {
+                $inc: { credit: +amount }
+            },
+            {new:true})
+            if(!tranferToShop){
+                // ถ้าไม่สามารถเพิ่มเงินให้กับร้านค้าได้
+                // ควรจะยกเลิกการลดเครดิตของ Partner ที่ทำไว้ก่อนหน้านี้
+                // โดยการย้อนคืนการลดเครดิตที่ทำไว้
+                await Partner.findOneAndUpdate(
+                    { _id: partner_id },
+                    { $inc: { credits: +amount } }
+                );
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถเพิ่มเงิน Shop ได้"})
+            }
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    parner: cutCredtisPartner, 
+                    shop: tranferToShop })
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+tranfersShopToPartner = async (req, res)=>{
+    try{
+        const partner_id = req.decoded.userid
+        const id_shop = req.params.id_shop
+        const amount = req.body.amount
+            if (!amount || isNaN(amount) || amount < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
+                return res.status(400).send({ status: false, message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
+            }else if (!/^(\d+(\.\d{1,2})?)$/.test(amount.toString())){
+                return res
+                        .status(400)
+                        .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
+            }
+
+        const findPartner = await Partner.findOne(
+            {
+                _id:partner_id,
+                shop_partner:{
+                    $elemMatch: { _id: id_shop } //การหา _id ที่ตรงกับ id_shop ที่ user ส่งมา
+                }
+            }
+        )
+            if(!findPartner){
+                return res
+                        .status(404)
+                        .send({status:false, message:"กรุณาระบุร้านค้าที่ท่านเป็นเจ้าของ"})
+            }
+
+        const findCreditShop = await shopPartner.findOne({_id:id_shop})
+            if(!findCreditShop){
+                return res
+                        .status(404)
+                        .send({status:false, message:"กรุณาระบุร้านค้าให้ถูกต้อง"})
+            }else if(findCreditShop.credit <= 0){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ร้านค้านี้ยังไม่มี credits ให้ทำการโยกย้ายเงิน(กรุณาเติมเงินเข้าร้านค้าก่อน)"})
+            }else if(findCreditShop.credit < amount){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุจำนวนเงินไม่เกิน credits ที่ร้านค้ามี"})
+            }
+
+        //ตัดเงิน Shop
+        const cutCredtisShop = await shopPartner.findOneAndUpdate(
+            {_id:id_shop},
+            {
+                $inc: { credit: -amount }
+            },
+            {new:true})
+            if(!cutCredtisShop){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถลบเงิน Shop ได้"})
+            }
+        //เพิ่มเงิน Partner
+        const tranferToPartner = await Partner.findOneAndUpdate(
+            {_id:partner_id},
+            {
+                $inc: { credits: +amount }
+            },
+            {new:true})
+            if(!tranferToPartner){
+                // ถ้าไม่สามารถเพิ่มเงินให้กับพาร์ทเนอร์ได้
+                // ควรจะยกเลิกการลดเครดิตของ Shop ที่ทำไว้ก่อนหน้านี้
+                // โดยการย้อนคืนการลดเครดิตที่ทำไว้
+                await shopPartner.findOneAndUpdate(
+                    { _id: id_shop },
+                    { $inc: { credit: +amount } }
+                );
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
+            }
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    parner: cutCredtisShop, 
+                    shop: tranferToPartner })
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
+                getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner }

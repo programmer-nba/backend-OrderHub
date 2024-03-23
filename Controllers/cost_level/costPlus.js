@@ -62,4 +62,25 @@ editCostPlus = async (req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
-module.exports = { create, editCostPlus }
+
+getUplineById = async (req, res)=>{
+    try{
+        const id = req.params.id
+        const findPartner = await costPlus.findOne({_id:id})
+            if(!findPartner){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์เจอ"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findPartner})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+module.exports = { create, editCostPlus, getUplineById }

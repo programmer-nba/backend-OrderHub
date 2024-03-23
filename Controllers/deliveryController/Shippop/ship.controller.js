@@ -1236,6 +1236,187 @@ getOrderByTracking = async (req, res)=>{
     }
 }
 
+priceListTest = async(req, res)=>{
+    try{
+        // let data = [];
+            // data.push({
+            //     "0": {
+            //         "from": {
+            //             "name": "ผู้ส่ง ต้นทาง 1",
+            //             "address": "บริษัท​ ชิปป๊อป​ จำกัด​ 1",
+            //             "district": "ถนนพญาไท",
+            //             "state": "ราชเทวี",
+            //             "province": "กรุงเทพมหานคร",
+            //             "postcode": "10400",
+            //             "tel": "0123456789",
+            //         },
+            //         "to": {
+            //             "name": "ผู้รับ ปลายทาง 1",
+            //             "address": "บริษัท​ ชิปป๊อป​ จำกัด​ 2",
+            //             "district": "สีลม",
+            //             "state": "บางรัก",
+            //             "province": "กรุงเทพมหานคร",
+            //             "postcode": "10500",
+            //             "tel": "0123456789",
+            //         },
+            //         "parcel": {
+            //             "name": "สินค้าชิ้นที่ 1",
+            //             "weight": 18000,
+            //             "width": 30,
+            //             "length": 30,
+            //             "height": 30
+            //         },
+            //         "courier_code": "FLE",
+            //         "showall": 1
+            //     },
+            //     "1": {
+            //         "from": {
+            //             "name": "ผู้ส่ง ต้นทาง 2",
+            //             "address": "บริษัท​ ชิปป๊อป​ จำกัด​ 2",
+            //             "district": "ถนนพญาไท",
+            //             "state": "ราชเทวี",
+            //             "province": "กรุงเทพมหานคร",
+            //             "postcode": "10400",
+            //             "tel": "0123456789"
+            //         },
+            //         "to": {
+            //             "name": "ผู้รับ ปลายทาง 2",
+            //             "address": "บริษัท​ ชิปป๊อป​ จำกัด​ 2",
+            //             "district": "สีลม",
+            //             "state": "บางรัก",
+            //             "province": "กรุงเทพมหานคร",
+            //             "postcode": "10500",
+            //             "tel": "0123456789"
+            //         },
+            //         "parcel": {
+            //             "name": "สินค้าชิ้นที่ 2",
+            //             "weight": 1000,
+            //             "width": 1,
+            //             "length": 1,
+            //             "height": 1
+            //         },
+            //         "courier_code": "EMST",
+            //         "showall": 1
+            //     }
+            // });
+        const value = {
+            api_key: process.env.SHIPPOP_API_KEY,
+            data: {
+                "0": {
+                    "from": {
+                        "name": "ผู้ส่ง ต้นทาง 1",
+                        "address": "บริษัท​ ชิปป๊อป​ จำกัด 2 ​",
+                        "district": "ถนนพญาไท",
+                        "state": "ราชเทวี",
+                        "province": "กรุงเทพมหานคร",
+                        "postcode": "10400",
+                        "tel": "0123456789",
+                    },
+                    "to": {
+                        "name": "ผู้รับ ปลายทาง 1",
+                        "address": "บริษัท​ ชิปป๊อป​ จำกัด​ 2",
+                        "district": "สีลม",
+                        "state": "บางรัก",
+                        "province": "กรุงเทพมหานคร",
+                        "postcode": "10500",
+                        "tel": "0123456789",
+                    },
+                    "parcel": {
+                        "name": "สินค้าชิ้นที่ 1",
+                        "weight": 1000,
+                        "width": 30,
+                        "length": 30,
+                        "height": 30
+                    },
+                    "courier_code": "FLE",
+                    "showall": 1
+                },
+                "1": {
+                    "from": {
+                        "name": "ผู้ส่ง ต้นทาง 2",
+                        "address": "บริษัท​ ชิปป๊อป​ จำกัด 1​",
+                        "district": "ถนนพญาไท",
+                        "state": "ราชเทวี",
+                        "province": "กรุงเทพมหานคร",
+                        "postcode": "10400",
+                        "tel": "0123456789"
+                    },
+                    "to": {
+                        "name": "ผู้รับ ปลายทาง 2",
+                        "address": "บริษัท​ ชิปป๊อป​ จำกัด​ 2",
+                        "district": "สีลม",
+                        "state": "บางรัก",
+                        "province": "กรุงเทพมหานคร",
+                        "postcode": "10500",
+                        "tel": "0123456789"
+                    },
+                    "parcel": {
+                        "name": "สินค้าชิ้นที่ 2",
+                        "weight": 1000,
+                        "width": 10,
+                        "length": 10,
+                        "height": 10
+                    },
+                    "courier_code": "FLE",
+                    "showall": 1
+                },
+                "2": {
+                    "from": {
+                        "name": "ผู้ส่ง ต้นทาง 3",
+                        "address": "บริษัท​ ชิปป๊อป​ จำกัด 3",
+                        "district": "ถนนพญาไท",
+                        "state": "ราชเทวี",
+                        "province": "กรุงเทพมหานคร",
+                        "postcode": "10400",
+                        "tel": "0123456789"
+                    },
+                    "to": {
+                        "name": "ผู้รับ ปลายทาง 3",
+                        "address": "บริษัท​ ชิปป๊อป​ จำกัด​ 23",
+                        "district": "สีลม",
+                        "state": "บางรัก",
+                        "province": "กรุงเทพมหานคร",
+                        "postcode": "10500",
+                        "tel": "0123456789"
+                    },
+                    "parcel": {
+                        "name": "สินค้าชิ้นที่ 3",
+                        "weight": 2000,
+                        "width": 10,
+                        "length": 10,
+                        "height": 10
+                    },
+                    "courier_code": "FLE",
+                    "showall": 1
+                }
+            }
+        };
+        const resp = await axios.post(`${process.env.SHIPPOP_URL}/pricelist/`,value,
+            {
+                headers: {"Accept-Encoding": "gzip,deflate,compress"},
+            }
+        )
+        if (!resp.data.status) {
+            return res
+                    .status(400)
+                    .send({status: false, message: resp.data.message});
+        }
+        
+        return res
+                .status(200)
+                .send({ 
+                    status: true, 
+                    // origin_data: req.body, 
+                    data: resp.data
+                });
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber() {
     data = `ODHSP`
     let random = Math.floor(Math.random() * 100000000000)
@@ -1257,4 +1438,4 @@ async function invoiceNumber() {
 
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
                 , getAllBooking, trackingPurchase, labelHtml, getById, delend, getMeBooking, getMeBooking
-                , getPartnerBooking, getOrderDay, getOrderByTracking}
+                , getPartnerBooking, getOrderDay, getOrderByTracking, priceListTest}

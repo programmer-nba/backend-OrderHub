@@ -20,7 +20,9 @@ router.route('/orderhub/shop/del/:id').delete(auth.checkToken, shop.delend)//ใ
 router.route('/orderhub/shop/getMe').get(auth.checkToken, shop.getShopPartner )
 router.route('/orderhub/shop/getMember/:id').get( shop.findShopMember )//ค้นหาพนักงานของช็อปนั้นๆว่ามีกี่คนและชื่ออะไรบ้าง
 router.route('/orderhub/shop/upPicture/:id').post( auth.checkToken, shop.uploadPicture )//อัพโหลดรูปภาพ
-router.route('/orderhub/shopAdmin/getOne/:id').get( auth.checkToken, shop.getShopOne ) //ดึงข้อมูลร้านค้าเดียวที่สนใจ
+router.route('/orderhub/shop/getOne/:id').get( auth.checkToken, shop.getShopOne ) //ดึงข้อมูลร้านค้าเดียวที่สนใจ
+router.route('/orderhub/shop/tranfer/shop/:id_shop').put( auth.checkToken, shop.tranfersCreditsToShop ) //ย้ายเงินจาก partner เข้า shop ที่ต้องการ
+router.route('/orderhub/shop/tranfer/partner/:id_shop').put( auth.checkToken, shop.tranfersShopToPartner )//ย้ายเงินจาก shop กลับเข้า partner ที่ต้องการ
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
@@ -76,6 +78,7 @@ router.route('/orderhub/flash/typeExpress/del/:code').delete( typeExpress.delend
 //cost level
 router.route('/orderhub/cost/create').post( auth.checkToken, cost.create )
 router.route('/orderhub/cost/edit').put( auth.checkToken, cost.editCostPlus )
+router.route('/orderhub/cost/upline/:id').get( auth.checkToken, cost.getUplineById )
 
 //shippop admin
 router.route('/orderhub/shippop/getAll').get( authAdmin.checkToken, ship.getAllBooking )
@@ -95,6 +98,7 @@ router.route('/orderhub/shippop/lebelHtml').post( auth.checkToken, ship.labelHtm
 router.route('/orderhub/shippop/getme').get( auth.checkToken, ship.getMeBooking )
 router.route('/orderhub/shippop/getArray').get( auth.checkToken, ship.getOrderDay )
 router.route('/orderhub/shippop/getTracking/:tracking_code').get( auth.checkToken, ship.getOrderByTracking )
+router.route('/orderhub/shippop/pricelist/test').post( auth.checkToken, ship.priceListTest )
 
 //percent
 router.route('/orderhub/percent/create').post( authAdmin.checkToken, percent.create )
@@ -108,7 +112,7 @@ router.route('/orderhub/flashpay/qrcreate').post( auth.checkToken, FP.QRCreate )
 router.route('/orderhub/flashpay/payment/results').post( auth.checkToken, FP.paymentResults )
 router.route('/orderhub/flashpay/payment/transaction').get( auth.checkToken, FP.transactionResult )
 router.route('/orderhub/flashpay/payment/notify').post( auth.checkToken, FP.notifyTransaction )
-router.route('/orderhub/flashpay/payment/vertify').post( FP.vertifyNotify )
+// router.route('/orderhub/flashpay/payment/vertify').post( FP.vertifyNotify )
 
 //shop history (ประวัติการเงินของแต่ละช็อป)
 const historyShop = require('../Controllers/shop_partner/shop.history')
@@ -170,7 +174,7 @@ router.route('/orderhub/best/del/:txLogisticId').delete( authAdmin.checkToken, b
 router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.getPartnerBooking )
 
 //profit partner
-const profitPN = require('../Controllers/profit/profit_partner')
+const profitPN = require('../Controllers/profit/withdrawal_partner')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
 router.route('/orderhub/profitPartner/Withdrawal/:id').post( auth.checkToken, profitPN.Withdrawal )
 

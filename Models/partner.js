@@ -11,6 +11,7 @@ const partnerSchema = new Schema({
     username: {type:String, require: true},
     password: {type:String, require: true},
     profit: {type:Number, default: 0, require: false},
+    credits: {type:Number, default: 0, require: false},
     iden_number: {type:String, require: true},
     tel: {type:String, require: true},
     email: {type:String, require: true},
@@ -26,7 +27,7 @@ const partnerSchema = new Schema({
     },
     shop_partner:[
       { 
-        shop_number: {type:Number, require: false},
+        shop_number: {type:String, require: false},
         shop_name: {type:String, require: false},
         address:  {type:String, require: false},
         street_address: {type:String, require: false},

@@ -55,24 +55,33 @@ getSumForMe = async (req, res)=>{
 
 Withdrawal = async (req, res)=>{
     try{
-        const amount = req.body.amount
         const idBank = req.params.id
         const id = req.decoded.userid
-        // console.log("id:", id);
+        const amount = req.body.amount
+            if (!amount || isNaN(amount) || amount < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
+                return res
+                        .status(400)
+                        .send({ status: false, message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
+            }else if (!/^(\d+(\.\d{1,2})?)$/.test(amount.toString())){ //เช็คทศนิยมไม่เกิน 2 ตำแหน่ง
+                return res
+                        .status(400)
+                        .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
+            }
+
         let flashPay
         const findPartner = await Partner.findOne({_id:id})
             if (!findPartner) {
                 return res
                         .status(404)
                         .send({ status: false, message: "ไม่มีพาร์ทเนอร์ที่ท่านตามหา" });
-            }else if(findPartner.profit == 0){
+            }else if(findPartner.credits == 0){
                 return res
                         .status(400)
                         .send({status: false, message:"ท่านไม่สามารถถอนเงินได้"})
-            }else if(findPartner.profit < amount){
+            }else if(findPartner.credits < amount){
                 return res
                         .status(400)
-                        .send({status: false, message:"จำนวนเงินที่ท่านกรอกมากกว่ากำไรของท่าน"})
+                        .send({status: false, message:"จำนวนเงินที่ท่านกรอกมากกว่า credits ของท่าน"})
             } else {
                     const result = await bankRecord.findOne({ ID: id }); // หาเอกสารที่มี ID เท่ากับ id
 
@@ -82,9 +91,15 @@ Withdrawal = async (req, res)=>{
                             console.log(flashPay); // แสดงข้อมูลทั้งหมดใน Object ที่ตรงกับเงื่อนไข
                         } else {
                             console.log('ไม่พบ flash_pay ที่มี _id เท่ากับ idBank');
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบธนาคารที่ท่านระบุ"})
                         }
                     } else {
                         console.log('ไม่พบเอกสารที่มี ID เท่ากับ id');
+                        return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูลธนาคารของท่าน(กรุณาสร้างบัญชี Book bank ของท่าน)"})
                     }
                     const orderid = await invoiceNumber(dayjsTimestamp)
                     console.log(orderid)
@@ -98,8 +113,8 @@ Withdrawal = async (req, res)=>{
                             phone_number: findPartner.tel ,
                             email:findPartner.email,
                     }
-                    const createProfit = await profitTemplate.create(v)
-                        if(!createProfit){
+                    const createTemplate = await profitTemplate.create(v)
+                        if(!createTemplate){
                             return res
                                     .status(400)
                                     .send({status:false, message:"ไม่สามารถสร้างรายการถอนเงินได้"})
@@ -107,8 +122,8 @@ Withdrawal = async (req, res)=>{
 
                     const difProfitPartner = await Partner.findOneAndUpdate(
                         {_id:id},
-                        { $inc: { profit: -amount } },
-                        {new:true, projection: { profit: 1 }})
+                        { $inc: { credits: -amount } },
+                        {new:true, projection: { credits: 1 }})
                         if(!difProfitPartner){
                             return res
                                     .status(400)
@@ -136,7 +151,7 @@ Withdrawal = async (req, res)=>{
                         .send({
                                 status:true,
                                 // data: flashPay,
-                                profit: createProfit,
+                                profit: createTemplate,
                                 diffProfit: difProfitPartner,
                                 record: profitRecord
                         })
