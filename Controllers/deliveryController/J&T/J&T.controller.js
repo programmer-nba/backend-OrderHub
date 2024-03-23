@@ -13,6 +13,7 @@ const { historyWallet } = require("../../../Models/topUp/history_topup");
 const { profitIce } = require("../../../Models/profit/profit.ice");
 const { profitPartner } = require("../../../Models/profit/profit.partner");
 const { dropOffs } = require("../../../Models/Delivery/dropOff");
+const { profitTemplate } = require("../../../Models/profit/profit.template");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -29,10 +30,10 @@ createOrder = async (req, res)=>{
         const price = req.body.price
         const cost = req.body.cost
         const cost_hub = req.body.cost_hub
-
         const fee_cod = req.body.fee_cod
         const total = req.body.total
-
+        const price_remote_area = req.body.price_remote_area //ราคาพื้นที่ห่างไกล J&T ไม่มีบอกน้าา
+        const cut_partner = req.body.cut_partner
         const priceOne = req.body.priceOne
         const shop = req.body.shop_number
         const weight = data.parcel.weight //หน่วยเป็น kg อยู่แล้วไม่ต้องแก้ไข
@@ -131,9 +132,12 @@ createOrder = async (req, res)=>{
                 },
                 invoice: invoice,
                 status:'booking',
+                cost_hub: cost_hub,
+                cost: cost,
                 cod_amount:cod_amount,
                 fee_cod: fee_cod,
                 total: total,
+                cut_partner: cut_partner,
                 price: price,
                 ...new_data
             })
@@ -158,15 +162,15 @@ createOrder = async (req, res)=>{
         let profit_partnerOne
         let profit_ice
         let profit_iceCOD
-        let profitSender
         let historyShop
         let findShop
         let profitPlus
         let profitPlusOne
+        let createTemplate
         if(cod_amount == 0){
             findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: total } },
+                { $inc: { credit: -cut_partner } },
                 {new:true})
                 if(!findShop){
                     return res
@@ -175,13 +179,13 @@ createOrder = async (req, res)=>{
                 }
             console.log(findShop.credit)
                 
-            const plus = findShop.credit + total
+            const plus = findShop.credit + cut_partner
             const history = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
-                    amount: total,
+                    amount: cut_partner,
                     before: plus,
                     after: findShop.credit,
                     type: 'J&T',
@@ -258,8 +262,12 @@ createOrder = async (req, res)=>{
                         }
                     profitPlusOne = await Partner.findOneAndUpdate(
                             {_id:headLine},
-                            { $inc: { profit: +profitsPartnerOne } },
-                            {new:true, projection: { profit: 1 }})
+                            { $inc: { 
+                                    profit: +profitsPartnerOne,
+                                    credits: +profitsPartnerOne
+                                } 
+                            },
+                            {new:true, projection: { profit: 1, credits: 1 }})
                             if(!profitPlusOne){
                                 return res
                                         .status(400)
@@ -269,7 +277,7 @@ createOrder = async (req, res)=>{
         }else{
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: total } },
+                { $inc: { credit: -cut_partner } },
                 {new:true})
                 if(!findShopTwo){
                     return res
@@ -278,13 +286,13 @@ createOrder = async (req, res)=>{
                 }
             console.log(findShopTwo.credit)
     
-            const plus = findShopTwo.credit + total
+            const plus = findShopTwo.credit + cut_partner
             const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
-                    amount: total,
+                    amount: cut_partner,
                     before: plus,
                     after: findShopTwo.credit,
                     type: 'J&T',
@@ -351,24 +359,27 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                 }
-
-            const pfIceSender = {
+         
+            const pfSenderTemplate = {
+                    orderid: new_data.txlogisticid,
                     Orderer: id,
                     role: role,
                     shop_number: shop,
-                    orderid: new_data.txlogisticid,
-                    profit: cod_amount,
-                    express: 'J&T',
                     type: 'COD(SENDER)',
-                    'bookbank.name': updatedDocument.flash_pay.name,
-                    'bookbank.card_number': updatedDocument.flash_pay.card_number,
-                    'bookbank.aka': updatedDocument.flash_pay.aka,
+                    'template.partner_number': new_data.txlogisticid,
+                    'template.account_name':updatedDocument.flash_pay.name,
+                    'template.account_number':updatedDocument.flash_pay.card_number,
+                    'template.bank':updatedDocument.flash_pay.aka,
+                    'template.amount':cod_amount,
+                    'template.phone_number': updatedDocument.tel,
+                    'template.email':updatedDocument.email,
+                    status:"กำลังขนส่งสินค้า"
             }
-            profitSender = await profitIce.create(pfIceSender)
-                if(!profitSender){
+            createTemplate = await profitTemplate.create(pfSenderTemplate)
+                if(!createTemplate){
                     return res
                             .status(400)
-                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                            .send({status:false, message:"ไม่สามารถสร้างรายการ COD ของผู้ส่งได้"})
                 }
             if(priceOne != 0){
                     const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
@@ -392,8 +403,12 @@ createOrder = async (req, res)=>{
                         }
                     profitPlusOne = await Partner.findOneAndUpdate(
                             {_id:headLine},
-                            { $inc: { profit: +profitsPartnerOne } },
-                            {new:true, projection: { profit: 1 }})
+                            { $inc: { 
+                                    profit: +profitsPartnerOne,
+                                    credits: +profitsPartnerOne
+                                } 
+                            },
+                            {new:true, projection: { profit: 1, credits: 1 }})
                             if(!profitPlusOne){
                                 return res
                                         .status(400)
@@ -412,10 +427,10 @@ createOrder = async (req, res)=>{
                     profitP: profit_partner,
                     profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
-                    profitSender: profitSender,
                     profitIceCOD: profit_iceCOD,
                     profitPlus: profitPlus,
-                    profitPlusOne: profitPlusOne
+                    profitPlusOne: profitPlusOne,
+                    template: createTemplate
                 })
     }catch(err){
         // console.log(err)
@@ -731,6 +746,7 @@ priceList = async (req, res)=>{
                         priceOne: 0,
                         price: Number(price.toFixed()),
                         total: 0,
+                        cut_partner: 0,
                         status: status
                     };
                     if (cod !== undefined) {
@@ -744,9 +760,7 @@ priceList = async (req, res)=>{
                             v.fee_cod = formattedFee
                             v.total = total
                             v.profitPartner = profitPartner
-                        if(reqCod > price){
-                            new_data.push(v);
-                        }
+                        new_data.push(v);
                     }else{
                         let profitPartner = price - cost
                             v.profitPartner = profitPartner

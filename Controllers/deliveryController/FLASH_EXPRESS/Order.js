@@ -13,6 +13,7 @@ const { codExpress } = require('../../../Models/COD/cod.model');
 const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { dropOffs } = require('../../../Models/Delivery/dropOff');
+const { profitTemplate } = require('../../../Models/profit/profit.template');
 
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
@@ -69,7 +70,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         .status(404)
                         .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
             }
-        
+        console.log(updatedDocument)
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
             // console.log(formDataOnly)
@@ -253,9 +254,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                         }
                 profitPlusOne = await Partner.findOneAndUpdate(
-                            {_id:headLine},
-                            { $inc: { profit: +profitsPartnerOne } },
-                            {new:true, projection: { profit: 1 }})
+                        {_id:headLine},
+                        { $inc: { 
+                                profit: +profitsPartnerOne,
+                                credits: +profitsPartnerOne
+                        } 
+                        },
+                        {new:true, projection: { profit: 1, credits: 1 }})
                             if(!profitPlusOne){
                                 return res
                                         .status(400)
@@ -373,6 +378,28 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                 }
+            const pfSenderTemplate = {
+                    orderid: create.response.pno,
+                    Orderer: id,
+                    role: role,
+                    shop_number: shop,
+                    type: 'COD(SENDER)',
+                    'template.partner_number': create.response.pno,
+                    'template.account_name':updatedDocument.flash_pay.name,
+                    'template.account_number':updatedDocument.flash_pay.card_number,
+                    'template.bank':updatedDocument.flash_pay.aka,
+                    'template.amount':codForPrice,
+                    'template.phone_number': updatedDocument.tel,
+                    'template.email':updatedDocument.email,
+                    status:"กำลังขนส่งสินค้า"
+            }
+           
+            const createTemplate = await profitTemplate.create(pfSenderTemplate)
+                if(!createTemplate){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถสร้างรายการ COD ของผู้ส่งได้"})
+                }
             let profitPlusOne
             if(priceOne != 0){
                     const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
@@ -397,32 +424,19 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
 
                     profitPlusOne = await Partner.findOneAndUpdate(
                             {_id:headLine},
-                            { $inc: { profit: +profitsPartnerOne } },
-                            {new:true, projection: { profit: 1 }})
-                            if(!profitPlusOne){
-                                return res
-                                        .status(400)
-                                        .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
-                            }
+                            { $inc: { 
+                                    profit: +profitsPartnerOne,
+                                    credits: +profitsPartnerOne
+                            } 
+                            },
+                            {new:true, projection: { profit: 1, credits: 1 }})
+                                if(!profitPlusOne){
+                                    return res
+                                            .status(400)
+                                            .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                                }
                 }
-            const pfIceSender = {
-                    Orderer: id,
-                    role: role,
-                    shop_number: shop,
-                    orderid: create.response.pno,
-                    profit: codForPrice,
-                    express: 'FLE(ICE)',
-                    type: 'COD(SENDER)',
-                    'bookbank.name': updatedDocument.flash_pay.name,
-                    'bookbank.card_number': updatedDocument.flash_pay.card_number,
-                    'bookbank.aka': updatedDocument.flash_pay.aka,
-                }
-            const profitSender = await profitIce.create(pfIceSender)
-                    if(!profitSender){
-                        return res
-                                .status(400)
-                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
-                    }
+           
             return res
                     .status(200)
                     .send({
@@ -432,10 +446,10 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         profitPartner: profit_partner,
                         profitPartnerOne: profit_partnerOne,
                         profitIce: profit_ice,
-                        profitSender: profitSender,
                         profitIceCOD: profit_iceCOD,
                         profitPlus: profitPlus,
-                        profitPlusOne: profitPlusOne
+                        profitPlusOne: profitPlusOne,
+                        template: createTemplate
                     })
         }
 

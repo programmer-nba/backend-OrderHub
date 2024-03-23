@@ -67,7 +67,9 @@ createPartner = async (req, res) => {
         const employee = await Partner.create(req.body); //เพิ่มพนักงานเข้าระบบ
         const createCost = await costPlus.create(
             {_id: employee._id,
-            partner_number: employee.partnerNumber}
+            partner_number: employee.partnerNumber,
+            firstname: employee.firstname,
+            lastname: employee.lastname}
         )
         return res
                 .status(200)
@@ -95,11 +97,6 @@ createPartner = async (req, res) => {
                     .send({status:false, message:"ไม่สามารถค้นหาหมายเลขพาร์ทเนอร์เจอ"})
         }else if (findCost.cost_level.length === 0){
             // สร้างข้อมูลที่ต้อง push เข้าไป
-            const newData = {
-              level: 1,
-              cost_plus: "",
-              partner_number: ""
-            };
 
             const employee = await Partner.create( //เพิ่มพนักงานเข้าระบบ
               {
@@ -108,7 +105,16 @@ createPartner = async (req, res) => {
                 "upline.upline_number":req.body.upline_number
               }
             );
-      
+
+            // สร้างข้อมูลที่ต้อง push เข้าไป
+            const newData = {
+              level: 1,
+              cost_plus: "",
+              partner_number: "",
+              firstname: employee.firstname,
+              lastname: employee.lastname
+            };
+
             // กำหนด partner_number ใน newData เพื่อเป็นค่าที่ได้จากการสร้างพนักงาน
             newData.partner_number = employee.partnerNumber;
             // Push ข้อมูลใหม่เข้าไปใน cost_level

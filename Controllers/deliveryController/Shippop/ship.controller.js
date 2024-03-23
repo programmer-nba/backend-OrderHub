@@ -10,6 +10,7 @@ const { costPlus } = require('../../../Models/costPlus');
 const { codExpress } = require('../../../Models/COD/cod.model');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { profitIce } = require('../../../Models/profit/profit.ice');
+const { profitTemplate } = require("../../../Models/profit/profit.template");
 
 priceList = async (req, res)=>{
     try{
@@ -468,6 +469,7 @@ booking = async(req, res)=>{
         let findShopForCredit
         let profitPlus
         let profitPlusOne
+        let createTemplate
         if(cod_amount == 0){
                     findShopForCredit = await shopPartner.findOneAndUpdate(
                         {shop_number:shop},
@@ -560,8 +562,12 @@ booking = async(req, res)=>{
                             }
                         profitPlusOne = await Partner.findOneAndUpdate(
                                 {_id:headLine},
-                                { $inc: { profit: +profitsPartnerOne } },
-                                {new:true, projection: { profit: 1 }})
+                                { $inc: { 
+                                        profit: +profitsPartnerOne,
+                                        credits: +profitsPartnerOne
+                                    } 
+                                },
+                                {new:true, projection: { profit: 1, credits: 1 }})
                                 if(!profitPlusOne){
                                     return res
                                             .status(400)
@@ -653,24 +659,28 @@ booking = async(req, res)=>{
                                     .status(400)
                                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                         }
-                    const pfIceSender = {
+                    
+                    const pfSenderTemplate = {
+                            orderid: booking_parcel.tracking_code,
                             Orderer: id,
                             role: role,
                             shop_number: shop,
-                            orderid: booking_parcel.tracking_code,
-                            profit: cod_amount,
-                            express: booking_parcel.courier_code,
                             type: 'COD(SENDER)',
-                            'bookbank.name': updatedDocument.flash_pay.name,
-                            'bookbank.card_number': updatedDocument.flash_pay.card_number,
-                            'bookbank.aka': updatedDocument.flash_pay.aka,
-                            status:"รอดำเนินการ"
+                            'template.partner_number': booking_parcel.tracking_code,
+                            'template.account_name':updatedDocument.flash_pay.name,
+                            'template.account_number':updatedDocument.flash_pay.card_number,
+                            'template.bank':updatedDocument.flash_pay.aka,
+                            'template.amount':cod_amount,
+                            'template.phone_number': updatedDocument.tel,
+                            'template.email':updatedDocument.email,
+                            status:"กำลังขนส่งสินค้า"
                     }
-                    profitSender = await profitIce.create(pfIceSender)
-                        if(!profitSender){
+
+                    createTemplate = await profitTemplate.create(pfSenderTemplate)
+                        if(!createTemplate){
                             return res
                                     .status(400)
-                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
+                                    .send({status:false, message:"ไม่สามารถสร้างรายการ COD ของผู้ส่งได้"})
                         }
                     if(priceOne != 0){
                         const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
@@ -694,8 +704,12 @@ booking = async(req, res)=>{
                             }
                         profitPlusOne = await Partner.findOneAndUpdate(
                                 {_id:headLine},
-                                { $inc: { profit: +profitsPartnerOne } },
-                                {new:true, projection: { profit: 1 }})
+                                { $inc: { 
+                                        profit: +profitsPartnerOne,
+                                        credits: +profitsPartnerOne
+                                    } 
+                                },
+                                {new:true, projection: { profit: 1, credits: 1 }})
                                 if(!profitPlusOne){
                                     return res
                                             .status(400)
@@ -713,10 +727,10 @@ booking = async(req, res)=>{
                     profitP: profit_partner,
                     profitPartnerOne: profit_partnerOne,
                     profitIce: profit_ice,
-                    profitSender: profitSender,
                     profitIceCOD: profit_iceCOD,
                     profitPlus: profitPlus,
-                    profitPlusOne: profitPlusOne
+                    profitPlusOne: profitPlusOne,
+                    template: createTemplate
                 })
     }catch(err){
         console.log(err)

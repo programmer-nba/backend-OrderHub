@@ -105,13 +105,14 @@ Withdrawal = async (req, res)=>{
                     console.log(orderid)
                     let v = {
                             orderid: orderid,
-                            partner_number: findPartner.partnerNumber,
-                            account_name:flashPay.name,
-                            account_number:flashPay.card_number,
-                            bank:flashPay.aka,
-                            amount:amount,
-                            phone_number: findPartner.tel ,
-                            email:findPartner.email,
+                            'template.partner_number': findPartner.partnerNumber,
+                            'template.account_name':flashPay.name,
+                            'template.account_number':flashPay.card_number,
+                            'template.bank':flashPay.aka,
+                            'template.amount':amount,
+                            'template.phone_number': findPartner.tel ,
+                            'template.email':findPartner.email,
+                            type: 'ถอนเงิน'
                     }
                     const createTemplate = await profitTemplate.create(v)
                         if(!createTemplate){

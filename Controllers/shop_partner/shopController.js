@@ -461,6 +461,16 @@ tranfersShopToPartner = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
             }
+        // const dataHistoryShop = {
+        //         partnerID: partner_id,
+        //         shop_number: cutCredtisShop.shop_number,
+        //         orderid: topup.invoice,
+        //         amount: amount,
+        //         before: findCreditShop.credit,
+        //         type: "slip",
+        //         remark: "พาร์ทเนอร์เติมเงินเข้าร้านค้า"
+        //     }
+        //     const historyShop = await historyWalletShop.create(dataHistoryShop)
         return res
                 .status(200)
                 .send({
