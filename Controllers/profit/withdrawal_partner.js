@@ -166,6 +166,56 @@ Withdrawal = async (req, res)=>{
     }
 }
 
+changStatus = async (req, res)=>{
+    try{
+        const data = []
+        const orderids = req.body.orderid
+        for (const orderid of orderids) {
+            if (orderid.startsWith('WD')) {
+                const findTemplate = await profitTemplate.findOneAndUpdate(
+                    {orderid:orderid},
+                    {status:"กำลังดำเนินการ"},
+                    {new:true, projection: { orderid: 1, status: 1 }})
+                    if(!findTemplate){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขออเดอร์คำร้องขอถอนเงินหน้าต่าง admin ได้"})
+                    }
+                const findRecord = await profitPartner.findOneAndUpdate(
+                    {orderid:orderid},
+                    {status:"กำลังดำเนินการ"},
+                    {new:true, projection: { orderid: 1, status: 1 }})
+                    if(!findRecord){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขออเดอร์คำร้องขอถอนเงินหน้าต่าง partner ได้"})
+                    }
+                data.push(findTemplate)
+                data.push(findRecord)
+            } else {
+                const findTemplate = await profitTemplate.findOneAndUpdate(
+                    {orderid:orderid},
+                    {status:"กำลังดำเนินการ"},
+                    {new:true, projection: { orderid: 1, status: 1 }})
+                    if(!findTemplate){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขออเดอร์ของ COD(SENDER)ได้"})
+                    }
+                data.push(findTemplate)
+            }
+        }
+        return res
+                .status(200)
+                .send({status:true, data:data})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res  
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 100000)
@@ -185,4 +235,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, getSumForMe, Withdrawal }
+module.exports = { getAll, getSumForMe, Withdrawal, changStatus }

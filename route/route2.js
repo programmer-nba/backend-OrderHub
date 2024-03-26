@@ -23,6 +23,7 @@ router.route('/orderhub/shop/upPicture/:id').post( auth.checkToken, shop.uploadP
 router.route('/orderhub/shop/getOne/:id').get( auth.checkToken, shop.getShopOne ) //ดึงข้อมูลร้านค้าเดียวที่สนใจ
 router.route('/orderhub/shop/tranfer/shop/:id_shop').put( auth.checkToken, shop.tranfersCreditsToShop ) //ย้ายเงินจาก partner เข้า shop ที่ต้องการ
 router.route('/orderhub/shop/tranfer/partner/:id_shop').put( auth.checkToken, shop.tranfersShopToPartner )//ย้ายเงินจาก shop กลับเข้า partner ที่ต้องการ
+router.route('/orderhub/shop/update/express/:id_shop').put( authAdmin.checkToken, shop.editExpress )
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
@@ -177,6 +178,7 @@ router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.ge
 const profitPN = require('../Controllers/profit/withdrawal_partner')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
 router.route('/orderhub/profitPartner/Withdrawal/:id').post( auth.checkToken, profitPN.Withdrawal )
+router.route('/orderhub/profitPartner/chang/wait').put( authAdmin.checkToken, profitPN.changStatus )
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')

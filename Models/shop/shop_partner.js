@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema
 const Joi = require("joi");
+const { PercentCourier } = require("../Delivery/ship_pop/percent");
+
 
 const shopSchema = new Schema({
     partnerID:{type:String, require: false},
@@ -27,7 +29,41 @@ const shopSchema = new Schema({
     province: {type:String, require: true},
     postcode: {type:String, require: true},
     picture: {type:String ,default:"", require: false},
+    express: [{
+        express: {type : String, required: false},
+        courier_code : {type : String, required: true},
+        courier_name : {type : String, required: true},
+        percent_orderHUB : {type : Number, required : true},
+        percent_shop : {type : Number, required : true},
+        on_off : {type : Boolean, default: true, required : false }
+    }]
 },{timestamps:true});
+
+shopSchema.pre('save',async function(next){
+    try{
+        const Shop = this;
+        const findPercent = await PercentCourier.find()
+            if(!findPercent || findPercent.length === 0){
+                console.log("ไม่สามารถค้นหาเปอร์เซ็นแต่ละขนส่งได้(อยู่ใน Schema shop_partner)")
+            }else {
+                // เพิ่มข้อมูลจาก findPercent ลงใน this.express
+                findPercent.forEach(percent => {
+                    Shop.express.push({
+                        express: percent.express,
+                        courier_code: percent.courier_code,
+                        courier_name: percent.courier_name,
+                        percent_orderHUB: percent.percent_orderHUB,
+                        percent_shop: percent.percent_shop,
+                        on_off: percent.on_off
+                    });
+                });
+            }
+        next();
+    }catch(err){
+        console.log(err)
+        next();
+    }
+})
 
 const shopPartner = mongoose.model("shop_partner", shopSchema);
 

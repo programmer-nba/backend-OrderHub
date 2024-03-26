@@ -10,7 +10,7 @@ const historySchema = new Schema({
     orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
     amount:{type:Number, require: false},
     before:{type:String, require: false},
-    after:{type:String, require: false, default: "รอแอดมินยืนยัน"},
+    after:{type:String, require: false, default: ""},
     type:{type:String, require: false, default: "none"},
     remark:{type:String, require:false}
 },{timestamps:true});

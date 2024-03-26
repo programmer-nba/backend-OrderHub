@@ -226,7 +226,7 @@ shippop = async(req, res)=>{
                                 before: plus,
                                 after: findShopTwo.credit,
                                 type: booking_parcel.courier_code,
-                                remark: "ขนส่งสินค้าแบบ COD(SHIPPOP)"
+                                remark: "ขนส่งสินค้าแบบ COD(PACKAGE ONE)"
                             }
                             // console.log(history)
                             historyShop = await historyWalletShop.create(historytwo)
@@ -358,6 +358,356 @@ shippop = async(req, res)=>{
         console.log(err)
     }
 }
+shippopPriceList = async(req, res)=>{
+    try{
+        const percent = await PercentCourier.find();
+        const shop = req.body.shop_number
+        const id = req.decoded.userid
+        const weight = req.body.parcel.weight * 1000
+        const formData = req.body
+        let reqCod = req.body.cod
+        let percentCod
+        if(reqCod > 0){
+            const findCod = await codExpress.findOne({express:"SHIPPOP"})
+            percentCod = findCod.percent
+        }
+        const cod = percentCod
+        console.log(cod)
+        if(req.decoded.role == 'shop_member'){
+            if(req.decoded.shop_number != shop){
+                console.log(req.decoded.shop_number, shop)
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
+            }
+        }
+        //ผู้ส่ง
+        const sender = formData.from; 
+        const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+        
+            const data_sender = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
+                ...sender,
+                ID: id,
+                status: 'ผู้ส่ง',
+                shop_id: shop,
+                postcode: String(sender.postcode),
+            };
+
+        const optionsSender = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
+        
+        const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
+            if (resultSender.upsertedCount > 0) {
+                console.log('สร้างข้อมูลผู้ส่งคนใหม่');
+            } else {
+                console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+            }
+        
+        const infoSender = await dropOffs.findOne(filterSender)
+            if(!infoSender){
+                console.log('ไม่มีข้อมูลผู้ส่ง')
+            }
+
+        //ผู้รับ
+        const recipient = formData.to; // ผู้รับ
+        const filter = { ID: id, tel: recipient.tel, status: 'ผู้รับ' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+
+            const update = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
+                ...recipient,
+                ID: id,
+                status: 'ผู้รับ',
+                shop_id: shop,
+                postcode: String(recipient.postcode),
+            };
+
+        const options = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
+        
+        const result = await dropOffs.updateOne(filter, update, options);
+            if (result.upsertedCount > 0) {
+                console.log('สร้างข้อมูลผู้รับคนใหม่');
+            } else {
+                console.log('อัปเดตข้อมูลผู้รับเรียบร้อย');
+            }
+        
+        const findForCost = await shopPartner.findOne({shop_number:shop})
+        if(!findForCost){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
+        }
+
+        const findPartner = await Partner.findOne({partnerNumber:findForCost.partner_number})
+        if(!findPartner){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีหมายเลขพาร์ทเนอร์ของท่าน"})
+        }
+        const upline = findPartner.upline.head_line
+
+        let data = [];
+            data.push({
+                "from": {
+                    "name": req.body.from.name,
+                    "address": req.body.from.address,
+                    "district": req.body.from.district,
+                    "state": req.body.from.state,
+                    "province": req.body.from.province,
+                    "postcode": req.body.from.postcode,
+                    "tel": req.body.from.tel
+                },
+                "to": {
+                    "name": req.body.to.name,
+                    "address": req.body.to.address,
+                    "district": req.body.to.district,
+                    "state": req.body.to.state,
+                    "province": req.body.to.province,
+                    "postcode": req.body.to.postcode,
+                    "tel": req.body.to.tel
+                },
+                "parcel": {
+                    // "name": "สินค้าชิ้นที่ 1",
+                    "weight": weight,
+                    "width": req.body.parcel.width,
+                    "length": req.body.parcel.length,
+                    "height": req.body.parcel.height
+                },
+            //DHL FLE
+                "showall": 1,
+                "shop_number": req.body.shop_number//524854
+        });
+        const value = {
+            api_key: process.env.SHIPPOP_API_KEY,
+            data: data,
+        };
+        const resp = await axios.post(`${process.env.SHIPPOP_URL}/pricelist/`,value,
+            {
+                headers: {"Accept-Encoding": "gzip,deflate,compress"},
+            }
+        )
+        if (!resp.data.status) {
+            return res
+                    .status(400)
+                    .send({status: false, message: resp.data.message});
+        }
+        const obj = resp.data.data[0];
+        const new_data = [];
+
+        if(upline === 'ICE'){
+            for (const ob of Object.keys(obj)) {
+                if (obj[ob].available) {
+                    if (reqCod > 0 && obj[ob].courier_code == 'ECP') {
+                        console.log('Encountered "ECP". Skipping this iteration.');
+                        continue; // ข้ามไปยังรอบถัดไป
+                    }
+                    // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
+                    // ตัวอย่าง: คำนวนตัวเลข, เรียก function, หรือทำอย่างอื่น
+                    let v = null;
+                    let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
+                    if (!p) {
+                        console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
+                    }
+                    // คำนวนต้นทุนของร้านค้า
+                    let cost_hub = Number(obj[ob].price);
+                    let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = Math.ceil(cost + p.percent_shop);
+
+                    let status = null;
+                    let cod_amount = 0
+                    
+                    try {
+                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                        if (findForCost.credit < price) {
+                            status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                        } else {
+                            status = 'พร้อมใช้บริการ';
+                        }
+                    } catch (error) {
+                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                        console.error(error);
+                    }
+                    v = {
+                        ...obj[ob],
+                        price_remote_area: 0,
+                        cost_hub: cost_hub,
+                        cost: cost,
+                        cod_amount: Number(cod_amount.toFixed()),
+                        fee_cod: 0,
+                        profitPartner: 0,
+                        priceOne: 0,
+                        price: Number(price.toFixed()),
+                        total: 0,
+                        cut_partner: 0,
+                        status: status
+                    };
+
+                    if (cod !== undefined) {
+                        let fee = (reqCod * percentCod)/100
+                        let formattedFee = parseFloat(fee.toFixed(2));
+                        let profitPartner = price - cost
+                        let total = price + formattedFee
+                        let cut_partner = total - profitPartner
+                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            v.fee_cod = formattedFee
+                            v.profitPartner = profitPartner
+                                if(obj[ob].hasOwnProperty("price_remote_area")){
+                                    let total1 = total + obj[ob].price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profitPartner
+                                        v.price_remote_area = obj[ob].price_remote_area
+                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                }else{
+                                    v.cut_partner = cut_partner
+                                    v.total = total
+                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                        //     new_data.push(v);
+                                        // }
+                                }
+                            new_data.push(v);
+                    }else{
+                        let profitPartner = price - cost
+                        if(obj[ob].hasOwnProperty("price_remote_area")){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                            let total = price + obj[ob].price_remote_area
+                                v.price_remote_area = obj[ob].price_remote_area
+                                v.total = total
+                                v.cut_partner = total - profitPartner
+                                v.profitPartner = profitPartner
+                        }else{
+                            v.profitPartner = profitPartner
+                            v.total = price
+                            v.cut_partner = price - profitPartner
+                        }
+                        new_data.push(v);
+                    }
+                    // console.log(new_data);
+                } else {
+                    // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
+                    console.log(`Skipping ${obj[ob].courier_code} because available is false`);
+                }
+            }
+        }else {
+                const costFind = await costPlus.findOne(
+                    {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
+                    { _id: 0, 'cost_level.$': 1 })
+                if(!costFind){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ค้นหาหมายเลขแนะนำไม่เจอ"})
+                }else if(costFind.cost_level[0].cost_plus === ""){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่ทำการแนะนำระบุส่วนต่าง"})
+                }
+                const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
+                for (const ob of Object.keys(obj)) {
+                    if (obj[ob].available) {
+                        if (reqCod > 0 && obj[ob].courier_code == 'ECP') {
+                            console.log('Encountered "ECP". Skipping this iteration.');
+                            continue; // ข้ามไปยังรอบถัดไป
+                        }
+                        // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
+                        let v = null;
+                        let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
+                        if (!p) {
+                            console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
+                        }
+                        // คำนวนต้นทุนของร้านค้า
+                        let cost_hub = Number(obj[ob].price);
+                        let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let priceOne = Math.ceil(cost + p.percent_shop)
+                        let price = priceOne + cost_plus
+            
+                        let cod_amount = 0
+                        let status = null;
+                        
+                        try {
+                            await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                            if (findForCost.credit < price) {
+                                status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                            } else {
+                                status = 'พร้อมใช้บริการ';
+                            }
+                        } catch (error) {
+                            console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                        }
+                        v = {
+                            ...obj[ob],
+                            price_remote_area: 0,
+                            cost_hub: cost_hub,
+                            cost: cost,
+                            cod_amount: Number(cod_amount.toFixed()),
+                            fee_cod: 0,
+                            profitPartner: 0,
+                            priceOne: priceOne,
+                            price: Number(price.toFixed()),
+                            total: 0,
+                            cut_partner: 0,
+                            status: status
+                        };
+
+                        if (cod !== undefined) {
+                            let fee = (reqCod * percentCod)/100
+                            let formattedFee = parseFloat(fee.toFixed(2));
+                            let profitPartner = price - priceOne
+                            let total = price + formattedFee
+                            let cut_partner = total - profitPartner
+                                v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                                v.fee_cod = formattedFee
+                                v.profitPartner = profitPartner
+                                    if(obj[ob].hasOwnProperty("price_remote_area")){
+                                        let total1 = total + obj[ob].price_remote_area
+                                        v.price_remote_area = obj[ob].price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profitPartner
+                                            // if(reqCod > total1){
+                                            //     new_data.push(v);
+                                            // }
+                                    }else{
+                                        v.cut_partner = cut_partner
+                                        v.total = total
+                                            // if(reqCod > total){
+                                            //     new_data.push(v);
+                                            // }
+                                    }
+                                new_data.push(v);
+                        }else{
+                            let profitPartner = price - priceOne
+                            if(obj[ob].hasOwnProperty("price_remote_area")){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                                let total = price + obj[ob].price_remote_area
+                                    v.price_remote_area = obj[ob].price_remote_area
+                                    v.total = total
+                                    v.cut_partner = total - profitPartner
+                                    v.profitPartner = profitPartner
+                            }else{
+                                v.profitPartner = profitPartner
+                                v.total = price
+                                v.cut_partner = price - profitPartner
+                            }
+                            new_data.push(v);
+                        }
+                        // console.log(new_data);
+                    } else {
+                        // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
+                        console.log(`Skipping ${obj[ob].courier_code} because available is false`);
+                    }
+                }
+        }
+        return res
+                .status(200)
+                .send({ 
+                    status: true, 
+                    origin_data: req.body, 
+                    new: new_data,
+                    sender: infoSender
+                });
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 flash = async(req, res)=>{
     try{
         const apiUrl = process.env.TRAINING_URL

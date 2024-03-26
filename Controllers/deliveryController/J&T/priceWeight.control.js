@@ -2,6 +2,7 @@ const { priceWeight } = require("../../../Models/Delivery/J&T/priceWeight");
 
 createWeight = async(req, res)=>{
     try{
+        // const id_shop = req.params.id_shop
         const weight = req.body.weight
         const price = req.body.price
         const findWeight = await priceWeight.findOne({weight: weight})

@@ -320,7 +320,7 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                 }
-            profitPlus = await Partner.findOneAndUpdate(
+            profitPlus = await Partner.findOneAndUpdate( //เก็บกำไรที่ทำได้
                     {_id:findShopTwo.partnerID},
                     { $inc: { profit: +profitsPartner } },
                     {new:true, projection: { profit: 1 }})

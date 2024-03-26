@@ -153,12 +153,17 @@ priceList = async (req, res)=>{
                         continue; // ข้ามไปยังรอบถัดไป
                     }
                     // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
-                    // ตัวอย่าง: คำนวนตัวเลข, เรียก function, หรือทำอย่างอื่น
                     let v = null;
-                    let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
-                    if (!p) {
-                        console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
-                    }
+                    let p = findForCost.express.find(element => element.courier_code == obj[ob].courier_code);
+                    // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                        if(p.on_off == false){
+                            console.log(`Skipping courier ${obj[ob].courier_code} if off`)
+                            continue
+                        }
+                    // let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
+                        if (!p) {
+                            console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
+                        }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(obj[ob].price);
                     let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
@@ -596,7 +601,7 @@ booking = async(req, res)=>{
                         before: plus,
                         after: findShopTwo.credit,
                         type: booking_parcel.courier_code,
-                        remark: "ขนส่งสินค้าแบบ COD(SHIPPOP)"
+                        remark: "ขนส่งสินค้าแบบ COD(PACKAGE ONE)"
                     }
                     // console.log(history)
                     historyShop = await historyWalletShop.create(historytwo)
@@ -852,7 +857,7 @@ cancelOrder = async(req, res)=>{
         //                         before: findShopCOD.before,
         //                         after: 'COD',
         //                         type: findPno.courier_code,
-        //                         remark: "ยกเลิกขนส่งสินค้าแบบ COD(SHIPPOP)"
+        //                         remark: "ยกเลิกขนส่งสินค้าแบบ COD(PACKAGE ONE)"
         //                 }
         //                 const historyShop = await historyWalletShop.create(history)
         //                     if(!historyShop){

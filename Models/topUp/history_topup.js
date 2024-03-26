@@ -12,7 +12,7 @@ const historySchema = new Schema({
     lastname:{type:String, require: false},
     amount:{type:Number, require: false},
     before:{type:String, require: false},
-    after:{type:String, require: false, default: "รอชำระเงิน"},
+    after:{type:String, require: false, default: "รอชำระเงิน"}, //after ทำหน้าที่เหมือน status ไปแล้วใช้บ่งบอกสถานะ
     money_now:{type:String, require: false, default: ""},
     type:{type:String, require: false, default: "none"},
     image:{type:String, require: false, default: "none"},

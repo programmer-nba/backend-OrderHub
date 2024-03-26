@@ -44,6 +44,7 @@ const partnerSchema = new Schema({
         level: {type:String, default: 1, require: false}
     },
     role: {type:String, default: "partner", require: true},
+    type: {type:String, require: false},
     status_partner: {type:String, default: "newpartner", require: true},
     contractOne: {type:String, default: "false", require: true}, // สถานะสัญญาที่ 1
     contractTwo: {type:String, default: "false", require: true}, //สถานะสัญญาที่ 2 
