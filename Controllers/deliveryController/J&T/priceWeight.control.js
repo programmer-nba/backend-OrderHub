@@ -2,17 +2,22 @@ const { priceWeight } = require("../../../Models/Delivery/J&T/priceWeight");
 
 createWeight = async(req, res)=>{
     try{
-        // const id_shop = req.params.id_shop
+        const id_shop = req.params.id_shop
         const weight = req.body.weight
         const price = req.body.price
-        const findWeight = await priceWeight.findOne({weight: weight})
+        const findWeight = await priceWeight.findOne(
+            {
+                id_shop: id_shop,
+                weight: weight
+            })
             if(findWeight){
                 return res
                         .status(400)
                         .send({status:false, message:"มีน้ำหนักนี้ในระบบแล้ว"})
             }
         const create = await priceWeight.create(
-            {
+            {   
+                id_shop: id_shop,
                 weight: weight,
                 price: price
             }
@@ -34,17 +39,17 @@ createWeight = async(req, res)=>{
 
 editWeight = async (req, res)=>{
     try{
-        const id = req.params.id
-        const weight = req.body.weight
-        const price = req.body.price
-        const edit = await priceWeight.findByIdAndUpdate(
-            {_id:id},
+        const id_weight = req.params.id_weight
+        const { weight, price} = req.body
+        const edit = await priceWeight.findOneAndUpdate(
+            {
+                _id: id_weight
+            },
             {
                 weight:weight,
                 price:price
             },
-            {new:true}
-        )
+            {new:true})
             if(!edit){
                 return res
                         .status(400)
@@ -78,6 +83,25 @@ getAll = async(req, res)=>{
     }
 }
 
+getWeightShop = async(req, res)=>{
+    try{
+        const id_shop = req.params.id_shop
+        const findWeight = await priceWeight.find({id_shop:id_shop})
+            if(!findWeight){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาน้ำหนักของร้านค้านี้เจอ"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findWeight})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
 delend = async (req, res)=>{
     try{
         const id = req.params.id
@@ -96,4 +120,4 @@ delend = async (req, res)=>{
                 .send({status:false, message:err})
     }
 }
-module.exports = { createWeight, editWeight, getAll, delend }
+module.exports = { createWeight, editWeight, getAll, delend, getWeightShop }

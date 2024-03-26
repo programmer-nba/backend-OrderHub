@@ -596,6 +596,40 @@ editExpress = async (req, res)=>{
     }
 }
 
+editExpressAll = async (req, res)=>{
+    try{
+        const id_shop = req.params.id_shop
+        const on_off = req.body.on_off
+            if (on_off !== true && on_off !== false) {
+                return res
+                        .status(200)
+                        .send({status:false, message:"ท่านต้องกรอก true or false เท่านั้น"})
+            } 
+        const updateExpress = await shopPartner.updateMany(
+            {
+                _id:id_shop
+            }, 
+            { 
+                $set: { 
+                    "express.$[].on_off": on_off
+                }
+            },
+            {new:true})
+            if(!updateExpress){
+                return res 
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถแก้ไขได้"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data: updateExpress})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
 async function invoicePTS() {
     let data = `PTS`
     let random = Math.floor(Math.random() * 10000000000)
@@ -634,4 +668,5 @@ async function invoiceSTP() {
     return combinedData;
 }
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
-                getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress }
+                getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
+                , editExpressAll }

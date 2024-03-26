@@ -24,6 +24,8 @@ router.route('/orderhub/shop/getOne/:id').get( auth.checkToken, shop.getShopOne 
 router.route('/orderhub/shop/tranfer/shop/:id_shop').put( auth.checkToken, shop.tranfersCreditsToShop ) //ย้ายเงินจาก partner เข้า shop ที่ต้องการ
 router.route('/orderhub/shop/tranfer/partner/:id_shop').put( auth.checkToken, shop.tranfersShopToPartner )//ย้ายเงินจาก shop กลับเข้า partner ที่ต้องการ
 router.route('/orderhub/shop/update/express/:id_shop').put( authAdmin.checkToken, shop.editExpress )
+router.route('/orderhub/shop/update/expressAll/:id_shop').put( authAdmin.checkToken, shop.editExpressAll )
+
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
@@ -147,10 +149,11 @@ router.route('/orderhub/cod/del/:id').delete( cod.delend )
 
 //กำหนักราคา/น้ำหนัก J&T
 const priceWeight = require('../Controllers/deliveryController/J&T/priceWeight.control')
-router.route('/orderhub/weight/post').post( priceWeight.createWeight )
-router.route('/orderhub/weight/edit/:id').put( priceWeight.editWeight )
-router.route('/orderhub/weight/getAll').get( priceWeight.getAll )
-router.route('/orderhub/weight/del/:id').delete( priceWeight.delend )
+router.route('/orderhub/weight/post/:id_shop').post( authAdmin.checkToken, priceWeight.createWeight )
+router.route('/orderhub/weight/edit/:id_weight').put( authAdmin.checkToken, priceWeight.editWeight )
+router.route('/orderhub/weight/getAll/').get( authAdmin.checkToken, priceWeight.getAll )
+router.route('/orderhub/weight/get/weight/:id_shop').get( auth.checkToken,priceWeight.getWeightShop )
+router.route('/orderhub/weight/del/:id').delete( authAdmin.checkToken, priceWeight.delend )
 
 //best express
 const best = require('../Controllers/deliveryController/BEST_EXPRESS/best.controller')
@@ -164,10 +167,11 @@ router.route('/orderhub/best/getme').get( auth.checkToken, best.getMeBooking )
 router.route('/orderhub/best/getById/:txLogisticId').get( auth.checkToken, best.getById )
 //กำหนดราคา/น้ำหนัก best express
 const bestWeight = require('../Controllers/deliveryController/BEST_EXPRESS/priceWeightBest')
-router.route('/orderhub/weightBest/post').post( bestWeight.createWeight )
-router.route('/orderhub/weightBest/edit/:id').put( bestWeight.editWeight )
-router.route('/orderhub/weightBest/getAll').get( bestWeight.getAll )
-router.route('/orderhub/weightBest/del/:id').delete( bestWeight.delend )
+router.route('/orderhub/weightBest/post/:id_shop').post( authAdmin.checkToken, bestWeight.createWeight )
+router.route('/orderhub/weightBest/edit/:id_weight').put( authAdmin.checkToken, bestWeight.editWeight )
+router.route('/orderhub/weightBest/getAll').get( authAdmin.checkToken, bestWeight.getAll )
+router.route('/orderhub/weightBest/get/weight/:id_shop').get( auth.checkToken,bestWeight.getWeightShop )
+router.route('/orderhub/weightBest/del/:id').delete( authAdmin.checkToken, bestWeight.delend )
 //best Admin
 router.route('/orderhub/best/getAll').get( authAdmin.checkToken, best.getAll )
 router.route('/orderhub/best/getOne/:txLogisticId').get( authAdmin.checkToken, best.getById )
@@ -220,4 +224,6 @@ router.route('/orderhub/bankRecord/FP/del/:id').delete( auth.checkToken, bankRec
 router.route('/orderhub/bankRecord/FP/edit/:id').put( auth.checkToken, bankRecord.updateBankFP )
 router.route('/orderhub/bankRecord/FP/getMe').get( auth.checkToken, bankRecord.getMeFP )
 
+const remoteBest = require('../Controllers/deliveryController/BEST_EXPRESS/best.remote')
+router.route('/orderhub/remote/best').post( remoteBest.createRemote )
 module.exports = router;

@@ -14,7 +14,7 @@ const { profitTemplate } = require("../../../Models/profit/profit.template");
 
 priceList = async (req, res)=>{
     try{
-        const percent = await PercentCourier.find();
+        // const percent = await PercentCourier.find();
         const shop = req.body.shop_number
         const id = req.decoded.userid
         const weight = req.body.parcel.weight * 1000
@@ -24,6 +24,10 @@ priceList = async (req, res)=>{
         if(reqCod > 0){
             const findCod = await codExpress.findOne({express:"SHIPPOP"})
             percentCod = findCod.percent
+        }else if(weight == 0){
+            return res
+                    .status(400)
+                    .send({status:false, message:"กรุณาระบุน้ำหนัก"})
         }
         const cod = percentCod
         console.log(cod)
@@ -157,12 +161,14 @@ priceList = async (req, res)=>{
                     let p = findForCost.express.find(element => element.courier_code == obj[ob].courier_code);
                     // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
                         if(p.on_off == false){
-                            console.log(`Skipping courier ${obj[ob].courier_code} if off`)
+                            console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
                             continue
-                        }
-                    // let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
-                        if (!p) {
+                        }else if (!p) {
                             console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
+                        }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง ${p.courier_name}(PAGEKAGE ONE) กรุณาติดต่อ Admin`})
                         }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(obj[ob].price);
@@ -266,10 +272,18 @@ priceList = async (req, res)=>{
                         }
                         // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
                         let v = null;
-                        let p = percent.find((c) => c.courier_code === obj[ob].courier_code);
-                        if (!p) {
-                            console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
-                        }
+                        let p = findForCost.express.find(element => element.courier_code == obj[ob].courier_code);
+                        // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                            if(p.on_off == false){
+                                console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
+                                continue
+                            }else if (!p) {
+                                console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
+                            }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง ${p.courier_name}(PAGEKAGE ONE) กรุณาติดต่อ Admin`})
+                            }
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(obj[ob].price);
                         let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)

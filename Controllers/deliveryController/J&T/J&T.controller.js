@@ -674,33 +674,36 @@ label = async (req, res)=>{
 priceList = async (req, res)=>{
     // console.log(req.body)
     try{
-        const percent = await PercentCourier.find();
         const formData = req.body
         const shop = formData.shop_number
-        const weight = formData.parcel.weight * 1000
+        const weight = formData.parcel.weight
         let reqCod = req.body.cod
         let percentCod 
-        const result  = await priceWeight.find({weight: {$gte: weight}})
-            .sort({weight:1})
-            .limit(1)
-            .exec()
-
-            if(result.length == 0){
-                return res
-                        .status(400)
-                        .send({status: false, message:"น้ำหนักของคุณมากเกินไป"})
-            }
-            if(reqCod > 0){
-                const findCod = await codExpress.findOne({express:"J&T"})
-                percentCod = findCod.percent
-            }
-        const cod = percentCod
         const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
             if(!findForCost){
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
+        const result  = await priceWeight.find(
+            {
+                id_shop: findForCost._id,
+                weight: {$gte: weight}
+            })
+            .sort({weight:1})
+            .limit(1)
+            .exec()
+
+        // console.log(result)
+            if(result.length == 0){
+                return res
+                        .status(400)
+                        .send({status: false, message:"น้ำหนักของคุณมากเกินไป"})
+            }else if(reqCod > 0){
+                const findCod = await codExpress.findOne({express:"J&T"})
+                percentCod = findCod.percent
+            }
+        const cod = percentCod
         
         const findPartner = await Partner.findOne({partnerNumber:findForCost.partner_number}) //เช็คว่ามี partner เจ้าของ shop จริงหรือเปล่า
             if(!findPartner){
@@ -713,16 +716,25 @@ priceList = async (req, res)=>{
 
         let new_data = []
         if(upline === 'ICE'){
-            let v = null;
-            let p = percent.find((c) => c.courier_code === 'J&T');
-                if (!p) {
-                    console.log(`ยังไม่มี courier name: J&T`);
-                }
+                let v = null;
+                let p = findForCost.express.find(element => element.courier_code == 'J&T');
+                        // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                            if(p.on_off == false){
+                                console.log(`Skipping 'J&T' because courier is off`)
+                                return res
+                                        .status(200)
+                                        .send({status:true, result: new_data })
+                            }else if (!p) {
+                                console.log(`ยังไม่มี courier name: 'J&T'`);
+                            }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง J&T กรุณาติดต่อ Admin`})
+                            }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = result[0].price;
                     let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let price = Math.ceil(cost + p.percent_shop);
-                    let priceInteger = reqCod
                     let status = null;
                     let cod_amount = 0
 
@@ -783,16 +795,25 @@ priceList = async (req, res)=>{
             }
             const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
                 let v = null;
-                let p = percent.find((c) => c.courier_code === 'J&T');
-                if (!p) {
-                    console.log(`ยังไม่มี courier name: J&T`);
-                }
+                let p = findForCost.express.find(element => element.courier_code == 'J&T');
+                // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                    if(p.on_off == false){
+                        console.log(`Skipping 'J&T' because courier is off`)
+                        return res
+                                .status(200)
+                                .send({status:true, result: new_data })
+                    }else if (!p) {
+                        console.log(`ยังไม่มี courier name: 'J&T'`);
+                    }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง J&T กรุณาติดต่อ Admin`})
+                    }
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub = result[0].price;
                 let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                 let priceOne = Math.ceil(cost + p.percent_shop)
                 let price = priceOne + cost_plus
-                let priceInteger = reqCod
                 let cod_amount = 0
                 let status = null;
                     try {
