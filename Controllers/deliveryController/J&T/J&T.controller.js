@@ -14,6 +14,7 @@ const { profitIce } = require("../../../Models/profit/profit.ice");
 const { profitPartner } = require("../../../Models/profit/profit.partner");
 const { dropOffs } = require("../../../Models/Delivery/dropOff");
 const { profitTemplate } = require("../../../Models/profit/profit.template");
+const { jntRemoteArea } = require("../../../Models/remote_area/JNT.area");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -138,6 +139,7 @@ createOrder = async (req, res)=>{
                 fee_cod: fee_cod,
                 total: total,
                 cut_partner: cut_partner,
+                price_remote_area: price_remote_area,
                 price: price,
                 ...new_data
             })
@@ -678,6 +680,7 @@ priceList = async (req, res)=>{
         const shop = formData.shop_number
         const weight = formData.parcel.weight
         let reqCod = req.body.cod
+        let price_remote_area
         let percentCod 
         const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
             if(!findForCost){
@@ -694,7 +697,7 @@ priceList = async (req, res)=>{
             .limit(1)
             .exec()
 
-        // console.log(result)
+            // console.log(result)
             if(result.length == 0){
                 return res
                         .status(400)
@@ -711,9 +714,24 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขพาร์ทเนอร์ของท่าน"})
             }
-        
         const upline = findPartner.upline.head_line
-
+        // console.log(upline)
+        const findPostCode = await jntRemoteArea.findOne({postcode:formData.to.postcode})
+            if(findPostCode){
+                if(findPostCode.type == 'remoteArea'){
+                    price_remote_area = findPostCode.fee_remote
+                }else{
+                    // console.log(findPostCode.fee_tourist)
+                    let fee_tourist = findPostCode.fee_tourist
+                    for (let i = 0; i < fee_tourist.length; i++){
+                        if (weight >= fee_tourist[i].weightstart && weight <= fee_tourist[i].weightend){
+                            price_remote_area = fee_tourist[i].fee
+                            break;
+                        }
+                    }
+                }
+            }
+        console.log(price_remote_area)
         let new_data = []
         if(upline === 'ICE'){
                 let v = null;
@@ -750,6 +768,7 @@ priceList = async (req, res)=>{
                     }
                     v = {
                         express: "J&T",
+                        price_remote_area: 0,
                         cost_hub: cost_hub,
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
@@ -768,16 +787,37 @@ priceList = async (req, res)=>{
                         let profitPartner = price - cost
                         let cut_partner = total - profitPartner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.cut_partner = cut_partner
                             v.fee_cod = formattedFee
-                            v.total = total
                             v.profitPartner = profitPartner
-                        new_data.push(v);
+                                if(price_remote_area != undefined){
+                                    let total1 = total + price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profitPartner
+                                        v.price_remote_area = price_remote_area
+                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                }else{
+                                    v.cut_partner = cut_partner
+                                    v.total = total
+                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                        //     new_data.push(v);
+                                        // }
+                                }
+                            new_data.push(v);
                     }else{
                         let profitPartner = price - cost
+                        if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                            let total = price + price_remote_area
+                                v.price_remote_area = price_remote_area
+                                v.total = total
+                                v.cut_partner = total - profitPartner
+                                v.profitPartner = profitPartner
+                        }else{
                             v.profitPartner = profitPartner
                             v.total = price
                             v.cut_partner = price - profitPartner
+                        }
                         new_data.push(v);
                     }
         }else{
@@ -828,6 +868,7 @@ priceList = async (req, res)=>{
                     }
                     v = {
                         express: "J&T",
+                        price_remote_area: 0,
                         cost_hub: cost_hub,
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
@@ -847,18 +888,37 @@ priceList = async (req, res)=>{
                         let profitPartner = price - priceOne
                         let cut_partner = total - profitPartner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.cut_partner = cut_partner
                             v.fee_cod = formattedFee
-                            v.total = total
                             v.profitPartner = profitPartner
-                        if(reqCod > price){
+                                if(price_remote_area != undefined){
+                                    let total1 = total + price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profitPartner
+                                        v.price_remote_area = price_remote_area
+                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                }else{
+                                    v.cut_partner = cut_partner
+                                    v.total = total
+                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                        //     new_data.push(v);
+                                        // }
+                                }
                             new_data.push(v);
-                        }
                     }else{
                         let profitPartner = price - priceOne
+                        if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                            let total = price + price_remote_area
+                                v.price_remote_area = price_remote_area
+                                v.total = total
+                                v.cut_partner = total - profitPartner
+                                v.profitPartner = profitPartner
+                        }else{
                             v.profitPartner = profitPartner
                             v.total = price
                             v.cut_partner = price - profitPartner
+                        }
                         new_data.push(v);
                     }
         }

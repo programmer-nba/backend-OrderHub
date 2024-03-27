@@ -483,7 +483,6 @@ booking = async(req, res)=>{
         let profit_partnerOne
         let profit_ice
         let profit_iceCOD
-        let profitSender
         let historyShop
         let findShopForCredit
         let profitPlus

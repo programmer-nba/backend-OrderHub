@@ -13,6 +13,7 @@ const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { dropOffs } = require('../../../Models/Delivery/dropOff');
+const { bestRemoteArea } = require('../../../Models/remote_area/best.area');
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -40,7 +41,9 @@ createOrder = async(req, res)=>{
         const price = req.body.price
         const data = req.body
         const weight = data.parcel.weight 
-        
+        const cut_partner = data.parcel.cut_partner 
+        const price_remote_area = req.body.price_remote_area
+
         //ผู้ส่ง
         const senderTel = data.from.tel; 
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -124,6 +127,9 @@ createOrder = async(req, res)=>{
                 price: price,
                 status:'booking',
                 type:'Online',
+                price_remote_area:price_remote_area,
+                cut_partner: cut_partner,
+                total: total,
                 ...response.data
             })
             if(!createOrder){
@@ -155,7 +161,7 @@ createOrder = async(req, res)=>{
         if(cod_amount == 0){
                 findShop = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
-                    { $inc: { credit: -price } },
+                    { $inc: { credit: -cut_partner } },
                     {new:true})
                     if(!findShop){
                         return res
@@ -164,13 +170,13 @@ createOrder = async(req, res)=>{
                     }
                 console.log(findShop.credit)
                     
-                const plus = findShop.credit + price
+                const plus = findShop.credit + cut_partner
                 const history = {
                         ID: id,
                         role: role,
                         shop_number: shop,
                         orderid: createOrder.txLogisticId,
-                        amount: price,
+                        amount: cut_partner,
                         before: plus,
                         after: findShop.credit,
                         type: 'BEST(ICE)',
@@ -243,7 +249,11 @@ createOrder = async(req, res)=>{
                             }
                         profitPlusOne = await Partner.findOneAndUpdate(
                                 {_id:headLine},
-                                { $inc: { profit: +profitsPartnerOne } },
+                                { $inc: { 
+                                    profit: +profitsPartnerOne,
+                                    credits: +profitsPartnerOne
+                                    } 
+                                },
                                 {new:true, projection: { profit: 1 }})
                                 if(!profitPlusOne){
                                     return res
@@ -254,7 +264,7 @@ createOrder = async(req, res)=>{
         }else{
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: -total } },
+                { $inc: { credit: -cut_partner } },
                 {new:true})
                 if(!findShopTwo){
                     return res
@@ -263,13 +273,13 @@ createOrder = async(req, res)=>{
                 }
             console.log(findShopTwo.credit)
     
-            const plus = findShopTwo.credit + total
+            const plus = findShopTwo.credit + cut_partner
                 const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: createOrder.txLogisticId,
-                    amount: total,
+                    amount: cut_partner,
                     before: plus,
                     after: findShopTwo.credit,
                     type: 'BEST(ICE)',
@@ -359,7 +369,11 @@ createOrder = async(req, res)=>{
                             }
                         profitPlusOne = await Partner.findOneAndUpdate(
                                 {_id:headLine},
-                                { $inc: { profit: +profitsPartnerOne } },
+                                { $inc: { 
+                                    profit: +profitsPartnerOne,
+                                    credits: +profitsPartnerOne
+                                    } 
+                                },
                                 {new:true, projection: { profit: 1 }})
                                 if(!profitPlusOne){
                                     return res
@@ -405,6 +419,9 @@ createPDFOrder = async(req, res)=>{
         const price = req.body.price
         const data = req.body
         const weight = data.parcel.weight
+        const cut_partner = req.body.cut_partner 
+        const price_remote_area = req.body.price_remote_area
+
         const invoice = await invoiceBST()
         //ผู้ส่ง
         const senderTel = data.from.tel; 
@@ -492,7 +509,7 @@ createPDFOrder = async(req, res)=>{
             }
         //ข้อมูล Base64 ที่ต้องการ decode
         const base64Data = response.data.pdfStream;
-        // //console.log(base64Data)
+        // console.log(base64Data)
 
         // // Decode Base64
         // const binaryData = Buffer.from(base64Data, 'base64');
@@ -524,6 +541,8 @@ createPDFOrder = async(req, res)=>{
                 type:'PDF',
                 fee_cod: fee_cod,
                 total: total,
+                cut_partner: cut_partner,
+                price_remote_area: price_remote_area,
                 pdfStream: base64Data,
                 ...response.data
             })
@@ -556,7 +575,7 @@ createPDFOrder = async(req, res)=>{
         if(cod_amount == 0){
                 findShop = await shopPartner.findOneAndUpdate(
                     {shop_number:shop},
-                    { $inc: { credit: total } },
+                    { $inc: { credit: -cut_partner } },
                     {new:true})
                     if(!findShop){
                         return res
@@ -565,13 +584,13 @@ createPDFOrder = async(req, res)=>{
                     }
                 console.log(findShop.credit)
                     
-                const plus = findShop.credit + total
+                const plus = findShop.credit + cut_partner
                 const history = {
                         ID: id,
                         role: role,
                         shop_number: shop,
                         orderid: createOrder.txLogisticId,
-                        amount: total,
+                        amount: cut_partner,
                         before: plus,
                         after: findShop.credit,
                         type: 'BEST(ICE)',
@@ -646,8 +665,12 @@ createPDFOrder = async(req, res)=>{
                             }
                         profitPlusOne = await Partner.findOneAndUpdate(
                                 {_id:headLine},
-                                { $inc: { profit: +profitsPartnerOne } },
-                                {new:true, projection: { profit: 1 }})
+                                { $inc: { 
+                                    profit: +profitsPartnerOne,
+                                    credits: +profitsPartnerOne
+                                    } 
+                                },
+                                {new:true, projection: { profit: 1, credits: 1 }})
                                 if(!profitPlusOne){
                                     return res
                                             .status(400)
@@ -657,7 +680,7 @@ createPDFOrder = async(req, res)=>{
         }else{
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
-                { $inc: { credit: total } },
+                { $inc: { credit: -cut_partner } },
                 {new:true})
                 if(!findShopTwo){
                     return res
@@ -666,13 +689,13 @@ createPDFOrder = async(req, res)=>{
                 }
             console.log(findShopTwo.credit)
     
-            const plus = findShopTwo.credit + total
+            const plus = findShopTwo.credit + cut_partner
                 const historytwo = {
                     ID: id,
                     role: role,
                     shop_number: shop,
                     orderid: createOrder.txLogisticId,
-                    amount: total,
+                    amount: cut_partner,
                     before: plus,
                     after: findShopTwo.credit,
                     type: 'BEST(ICE)',
@@ -740,24 +763,7 @@ createPDFOrder = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                     }
-                // const pfIceSender = {
-                //         Orderer: id,
-                //         role: role,
-                //         shop_number: shop,
-                //         orderid: createOrder.txLogisticId,
-                //         profit: cod_amount,
-                //         express: 'BEST(ICE)',
-                //         type: 'COD(SENDER)',
-                //         'bookbank.name': updatedDocument.best.name,
-                //         'bookbank.card_number': updatedDocument.best.card_number,
-                //         'bookbank.aka': updatedDocument.best.aka,
-                // }
-                // profitSender = await profitIce.create(pfIceSender)
-                //     if(!profitSender){
-                //         return res
-                //                 .status(400)
-                //                 .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
-                //     }
+                
                 if(priceOne != 0){
                         const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
                         const headLine = findUpline.upline.head_line
@@ -778,10 +784,15 @@ createPDFOrder = async(req, res)=>{
                                         .status(400)
                                         .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
                             }
+                        console.log(headLine)
                         profitPlusOne = await Partner.findOneAndUpdate(
                                 {_id:headLine},
-                                { $inc: { profit: +profitsPartnerOne } },
-                                {new:true, projection: { profit: 1 }})
+                                { $inc: { 
+                                    profit: +profitsPartnerOne,
+                                    credits: +profitsPartnerOne
+                                    } 
+                                },
+                                {new:true, projection: { profit: 1, credits: 1 }})
                                 if(!profitPlusOne){
                                     return res
                                             .status(400)
@@ -805,6 +816,7 @@ createPDFOrder = async(req, res)=>{
                     // best: response.data
                 })
     }catch(err){
+        console.log(err)
         return res
                 .status(500)
                 .send({status:false, message:err})
@@ -1058,13 +1070,28 @@ cancelOrder = async (req, res)=>{
 priceList = async (req, res)=>{
     // console.log(req.body)
     try{
-        const percent = await PercentCourier.find();
         const formData = req.body
         const shop = formData.shop_number
-        const weight = formData.parcel.weight * 1000
+        const weight = formData.parcel.weight
         let reqCod = req.body.cod
-        let percentCod 
-        const result  = await priceWeightBest.find({weight: {$gte: weight}})
+        let percentCod
+        let price_remote_area
+        if(weight == 0){
+            return res
+                    .status(400)
+                    .send({status:false, message:"กรุณาระบุน้ำหนัก"})
+        }
+        const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
+            if(!findForCost){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
+            }
+        const result  = await priceWeightBest.find(
+            {
+                id_shop: findForCost._id,
+                weight: {$gte: weight}
+            })
             .sort({weight:1})
             .limit(1)
             .exec()
@@ -1080,12 +1107,6 @@ priceList = async (req, res)=>{
             }
         
         const cod = percentCod
-        const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
-            if(!findForCost){
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
-            }
         
         const findPartner = await Partner.findOne({partnerNumber:findForCost.partner_number}) //เช็คว่ามี partner เจ้าของ shop จริงหรือเปล่า
             if(!findPartner){
@@ -1096,18 +1117,31 @@ priceList = async (req, res)=>{
         
         const upline = findPartner.upline.head_line
 
+        const findPostCode = await bestRemoteArea.findOne({Postcode:formData.to.postcode})
+            if(findPostCode){
+                price_remote_area = findPostCode.Price
+            }
         let new_data = []
         if(upline === 'ICE'){
-            let v = null;
-            let p = percent.find((c) => c.courier_code === 'BEST(ICE)');
-                if (!p) {
-                    console.log(`ยังไม่มี courier name: BEST(ICE)`);
-                }
+                let v = null;
+                let p = findForCost.express.find(element => element.courier_code == 'J&T');
+                        // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                            if(p.on_off == false){
+                                console.log(`Skipping 'J&T' because courier is off`)
+                                return res
+                                        .status(200)
+                                        .send({status:true, result: new_data })
+                            }else if (!p) {
+                                console.log(`ยังไม่มี courier name: 'J&T'`);
+                            }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง J&T กรุณาติดต่อ Admin`})
+                            }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = result[0].price;
                     let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                     let price = Math.ceil(cost + p.percent_shop);
-                    let priceInteger = reqCod
                     let status = null;
                     let cod_amount = 0
 
@@ -1123,6 +1157,7 @@ priceList = async (req, res)=>{
                     }
                     v = {
                         express: "BEST(ICE)",
+                        price_remote_area: 0,
                         cost_hub: cost_hub,
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
@@ -1141,18 +1176,37 @@ priceList = async (req, res)=>{
                         let profitPartner = price - cost
                         let cut_partner = total - profitPartner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.cut_partner = cut_partner
                             v.fee_cod = formattedFee
-                            v.total = total
                             v.profitPartner = profitPartner
-                        if(reqCod > price){
+                                if(price_remote_area != undefined){
+                                    let total1 = total + price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profitPartner
+                                        v.price_remote_area = price_remote_area
+                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                }else{
+                                    v.cut_partner = cut_partner
+                                    v.total = total
+                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                        //     new_data.push(v);
+                                        // }
+                                }
                             new_data.push(v);
-                        }
                     }else{
                         let profitPartner = price - cost
+                        if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                            let total = price + price_remote_area
+                                v.price_remote_area = price_remote_area
+                                v.total = total
+                                v.cut_partner = total - profitPartner
+                                v.profitPartner = profitPartner
+                        }else{
                             v.profitPartner = profitPartner
                             v.total = price
                             v.cut_partner = price - profitPartner
+                        }
                         new_data.push(v);
                     }
         }else{
@@ -1170,16 +1224,26 @@ priceList = async (req, res)=>{
             }
             const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
                 let v = null;
-                let p = percent.find((c) => c.courier_code === 'BEST(ICE)');
-                if (!p) {
-                    console.log(`ยังไม่มี courier name: BEST(ICE)`);
-                }
+                let p = findForCost.express.find(element => element.courier_code == 'J&T');
+                // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                    if(p.on_off == false){
+                        console.log(`Skipping 'J&T' because courier is off`)
+                        return res
+                                .status(200)
+                                .send({status:true, result: new_data })
+                    }else if (!p) {
+                        console.log(`ยังไม่มี courier name: 'J&T'`);
+                    }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง J&T กรุณาติดต่อ Admin`})
+                    }
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub = result[0].price;
                 let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
                 let priceOne = Math.ceil(cost + p.percent_shop)
                 let price = priceOne + cost_plus
-                let priceInteger = reqCod
+
                 let cod_amount = 0
                 let status = null;
                     try {
@@ -1194,6 +1258,7 @@ priceList = async (req, res)=>{
                     }
                     v = {
                         express: "BEST(ICE)",
+                        price_remote_area: 0,
                         cost_hub: cost_hub,
                         cost: cost,
                         cod_amount: Number(cod_amount.toFixed()),
@@ -1213,18 +1278,37 @@ priceList = async (req, res)=>{
                         let profitPartner = price - priceOne
                         let cut_partner = total - profitPartner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.cut_partner = cut_partner
                             v.fee_cod = formattedFee
-                            v.total = total
                             v.profitPartner = profitPartner
-                        if(reqCod > price){
+                                if(price_remote_area != undefined){
+                                    let total1 = total + price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profitPartner
+                                        v.price_remote_area = price_remote_area
+                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                }else{
+                                    v.cut_partner = cut_partner
+                                    v.total = total
+                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                        //     new_data.push(v);
+                                        // }
+                                }
                             new_data.push(v);
-                        }
                     }else{
                         let profitPartner = price - priceOne
+                        if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                            let total = price + price_remote_area
+                                v.price_remote_area = price_remote_area
+                                v.total = total
+                                v.cut_partner = total - profitPartner
+                                v.profitPartner = profitPartner
+                        }else{
                             v.profitPartner = profitPartner
                             v.total = price
                             v.cut_partner = price - profitPartner
+                        }
                         new_data.push(v);
                     }
         }

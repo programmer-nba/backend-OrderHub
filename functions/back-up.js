@@ -707,7 +707,6 @@ shippopPriceList = async(req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
-
 flash = async(req, res)=>{
     try{
         const apiUrl = process.env.TRAINING_URL

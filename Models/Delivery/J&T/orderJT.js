@@ -17,6 +17,7 @@ const jtOrderSchema = new Schema({
     fee_cod: {type:Number, required: false},
     total: {type:Number, required: false},
     cut_partner: {type: Number , required: false},
+    price_remote_area: {type: Number , required: false},
     price: {type:Number, required: false},
     success: {type:String, required: false},
     reason: {type:String, required: false},

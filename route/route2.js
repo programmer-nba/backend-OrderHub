@@ -226,4 +226,8 @@ router.route('/orderhub/bankRecord/FP/getMe').get( auth.checkToken, bankRecord.g
 
 const remoteBest = require('../Controllers/deliveryController/BEST_EXPRESS/best.remote')
 router.route('/orderhub/remote/best').post( remoteBest.createRemote )
+
+const remoteJnt = require('../Controllers/deliveryController/J&T/J&T.remote')
+router.route('/orderhub/remote/jnt').post( remoteJnt.createRemote )
+
 module.exports = router;
