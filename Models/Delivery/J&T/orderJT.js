@@ -19,6 +19,7 @@ const jtOrderSchema = new Schema({
     cut_partner: {type: Number , required: false},
     price_remote_area: {type: Number , required: false},
     price: {type:Number, required: false},
+    declared_value: {type:Number, required: false},
     success: {type:String, required: false},
     reason: {type:String, required: false},
     txlogisticid: {type:String, required: false},

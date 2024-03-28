@@ -15,6 +15,7 @@ const { profitPartner } = require("../../../Models/profit/profit.partner");
 const { dropOffs } = require("../../../Models/Delivery/dropOff");
 const { profitTemplate } = require("../../../Models/profit/profit.template");
 const { jntRemoteArea } = require("../../../Models/remote_area/JNT.area");
+const { orderAll } = require("../../../Models/Delivery/order_all");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -33,6 +34,8 @@ createOrder = async (req, res)=>{
         const cost_hub = req.body.cost_hub
         const fee_cod = req.body.fee_cod
         const total = req.body.total
+        const declared_value = req.body.declared_value
+        const insuranceFee = req.body.insuranceFee
         const price_remote_area = req.body.price_remote_area //ราคาพื้นที่ห่างไกล J&T ไม่มีบอกน้าา
         const cut_partner = req.body.cut_partner
         const priceOne = req.body.priceOne
@@ -73,19 +76,23 @@ createOrder = async (req, res)=>{
                 "length": data.parcel.length,
                 "width": data.parcel.width,
                 "height": data.parcel.height,
-                "isinsured": "0",
+                "isinsured": "1",
                 // "offerfee": "2000"
             },
             "msg_type": "ORDERCREATE",
             "eccompanyid": ecom_id,
         }
-        if(cod_amount != 0){
+        if(cod_amount > 0){
             fromData.logistics_interface.itemsvalue = cod_amount
             console.log(cod_amount)
         }
+        // if(cod_amount != 0){
+        //     fromData.logistics_interface.itemsvalue = cod_amount
+        //     console.log(cod_amount)
+        // }
          //ผู้ส่ง
          const senderTel = data.from.tel;
-         console.log(senderTel)
+        //  console.log(senderTel)
          const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
  
          const updatedDocument = await dropOffs.findOne(filterSender);
@@ -141,6 +148,8 @@ createOrder = async (req, res)=>{
                 cut_partner: cut_partner,
                 price_remote_area: price_remote_area,
                 price: price,
+                declared_value: declared_value,
+                insuranceFee: insuranceFee,
                 ...new_data
             })
             if(!createOrder){
@@ -148,7 +157,42 @@ createOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
-            //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
+        const createOrderAll = await orderAll.create(
+            {
+                ID:id,
+                shop_number:shop,
+                role:role,
+                tracking_code: new_data.txlogisticid,
+                from:{
+                    ...data.from
+                },
+                to:{
+                    ...data.to
+                },
+                parcel:{
+                    ...data.parcel
+                },
+                invoice: invoice,
+                status:'booking',
+                cost_hub: cost_hub,
+                cost: cost,
+                cod_amount:cod_amount,
+                fee_cod: fee_cod,
+                total: total,
+                cut_partner: cut_partner,
+                price_remote_area: price_remote_area,
+                price: price,
+                declared_value: declared_value,
+                insuranceFee: insuranceFee,
+                express: "JNT",
+                ...new_data //mailno อยู่ในนี้แล้ว ไม่ต้องประกาศ
+            })
+            if(!createOrderAll){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
+            }
+        //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let profitsPartner
             if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                 profitsPartner = price - cost
@@ -423,7 +467,7 @@ createOrder = async (req, res)=>{
                 .status(200)
                 .send({
                     status:true, 
-                    order: createOrder,
+                    order: createOrderAll,
                     history: historyShop,
                     // shop: findShop,
                     profitP: profit_partner,
@@ -679,6 +723,7 @@ priceList = async (req, res)=>{
         const formData = req.body
         const shop = formData.shop_number
         const weight = formData.parcel.weight
+        const declared_value = formData.declared_value
         let reqCod = req.body.cod
         let price_remote_area
         let percentCod 
@@ -778,8 +823,14 @@ priceList = async (req, res)=>{
                         price: Number(price.toFixed()),
                         total: 0,
                         cut_partner: 0,
+                        declared_value: declared_value,
+                        insuranceFee: 0,
                         status: status
                     };
+                    if(declared_value > 0){
+                        let insuredFee = (declared_value * 3)/100
+                        v.insuranceFee = insuredFee
+                    }
                     if (cod !== undefined) {
                         let fee = (reqCod * percentCod)/100
                         let formattedFee = parseFloat(fee.toFixed(2));
@@ -878,8 +929,14 @@ priceList = async (req, res)=>{
                         price: Number(price.toFixed()),
                         total: 0,
                         cut_partner: 0,
+                        declared_value: declared_value,
+                        insuranceFee: 0,
                         status: status
                     };
+                    if(declared_value > 0){
+                        let insuredFee = (declared_value * 3)/100
+                        v.insuranceFee = insuredFee
+                    }
                     // console.log(v)
                     if (cod !== undefined) {
                         let fee = (reqCod * percentCod)/100

@@ -19,6 +19,8 @@ const flashOrderSchema = new Schema({
     codAmount: {type:Number,default: 0, required: false},
     fee_cod: {type:Number, required: false},
     price_remote_area: {type: Number ,required : false},
+    declared_value: {type: Number ,required : false},
+    insuranceFee: {type: Number ,required : false},
     total: {type:Number, required: false},
     cut_partner: {type: Number , required: false},
     status: {type:String, default:"booking", required: false}

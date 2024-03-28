@@ -35,6 +35,7 @@ createOrder = async(req, res)=>{
         const cost = req.body.cost
         const cost_hub = req.body.cost_hub
         const fee_cod = req.body.fee_cod
+        const declared_value = req.body.declared_value
         const total = req.body.total
         const priceOne = req.body.priceOne
         const cod_amount = req.body.cod_amount
@@ -97,14 +98,17 @@ createOrder = async(req, res)=>{
             },
             partnerID: PARTNER_ID
         }
-        if(cod_amount != 0){
-            formData.bizData.items.item[0].itemValue = cod_amount
-            formData.bizData.itemsValue = cod_amount
-            formData.bizData.bankCardOwner = updatedDocument.best.name
-            formData.bizData.bankCode = updatedDocument.best.code
-            formData.bizData.bankCardNo = updatedDocument.best.card_number
-            console.log(cod_amount)
-        }
+            if(cod_amount > 0){
+                formData.bizData.items.item[0].itemValue = cod_amount
+                formData.bizData.itemsValue = cod_amount
+                formData.bizData.bankCardOwner = updatedDocument.best.name
+                formData.bizData.bankCode = updatedDocument.best.code
+                formData.bizData.bankCardNo = updatedDocument.best.card_number
+                console.log(cod_amount)
+            }
+            if(declared_value > 0){
+                
+            }
         const newData = await doSign(formData, charset, keys)
             console.log(newData)
         const response = await axios.post(BEST_URL,newData,{
@@ -1072,6 +1076,7 @@ priceList = async (req, res)=>{
     try{
         const formData = req.body
         const shop = formData.shop_number
+        const declared_value = req.body.declared_value
         const weight = formData.parcel.weight
         let reqCod = req.body.cod
         let percentCod
@@ -1167,6 +1172,7 @@ priceList = async (req, res)=>{
                         price: Number(price.toFixed()),
                         total: 0,
                         cut_partner: 0,
+                        declared_value: declared_value,
                         status: status
                     };
                     if (cod !== undefined) {
@@ -1268,6 +1274,7 @@ priceList = async (req, res)=>{
                         price: Number(price.toFixed()),
                         total: 0,
                         cut_partner: 0,
+                        declared_value: declared_value,
                         status: status
                     };
                     console.log(v)

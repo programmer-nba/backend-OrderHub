@@ -11,6 +11,7 @@ const { codExpress } = require('../../../Models/COD/cod.model');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitTemplate } = require("../../../Models/profit/profit.template");
+const { orderAll } = require('../../../Models/Delivery/order_all');
 
 priceList = async (req, res)=>{
     try{
@@ -18,17 +19,19 @@ priceList = async (req, res)=>{
         const shop = req.body.shop_number
         const id = req.decoded.userid
         const weight = req.body.parcel.weight * 1000
+        const declared_value = req.body.declared_value
         const formData = req.body
         let reqCod = req.body.cod
         let percentCod
-        if(reqCod > 0){
-            const findCod = await codExpress.findOne({express:"SHIPPOP"})
-            percentCod = findCod.percent
-        }else if(weight == 0){
-            return res
-                    .status(400)
-                    .send({status:false, message:"กรุณาระบุน้ำหนัก"})
-        }
+            if(reqCod > 0){
+                const findCod = await codExpress.findOne({express:"SHIPPOP"})
+                percentCod = findCod.percent
+            }
+            if(weight == 0){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุน้ำหนัก"})
+            }
         const cod = percentCod
         console.log(cod)
         if(req.decoded.role == 'shop_member'){
@@ -122,7 +125,7 @@ priceList = async (req, res)=>{
                     "tel": req.body.to.tel
                 },
                 "parcel": {
-                    // "name": "สินค้าชิ้นที่ 1",
+                    "name": req.body.parcel.name,
                     "weight": weight,
                     "width": req.body.parcel.width,
                     "length": req.body.parcel.length,
@@ -201,9 +204,14 @@ priceList = async (req, res)=>{
                         price: Number(price.toFixed()),
                         total: 0,
                         cut_partner: 0,
+                        declared_value: declared_value,
+                        insuranceFee: 0,
                         status: status
                     };
-
+                    if(declared_value > 0){
+                        let insuredFee = (declared_value * 3)/100
+                        v.insuranceFee = insuredFee
+                    }
                     if (cod !== undefined) {
                         let fee = (reqCod * percentCod)/100
                         let formattedFee = parseFloat(fee.toFixed(2));
@@ -315,14 +323,20 @@ priceList = async (req, res)=>{
                             price: Number(price.toFixed()),
                             total: 0,
                             cut_partner: 0,
+                            declared_value: declared_value,
+                            insuranceFee: 0,
                             status: status
                         };
-
+                        let insuredFee = 0
+                        if(declared_value > 0){
+                            insuredFee = (declared_value * 3)/100
+                            v.insuranceFee = insuredFee
+                        }
                         if (cod !== undefined) {
                             let fee = (reqCod * percentCod)/100
                             let formattedFee = parseFloat(fee.toFixed(2));
                             let profitPartner = price - priceOne
-                            let total = price + formattedFee
+                            let total = price + formattedFee 
                             let cut_partner = total - profitPartner
                                 v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                                 v.fee_cod = formattedFee
@@ -393,6 +407,7 @@ booking = async(req, res)=>{
         const fee_cod = req.body.fee_cod
         const total = req.body.total
         const cut_partner = req.body.cut_partner
+        const insuranceFee = req.body.insuranceFee
         const price_remote_area = req.body.price_remote_area
         const weight = req.body.parcel.weight * 1000
         const id = req.decoded.userid
@@ -446,12 +461,14 @@ booking = async(req, res)=>{
         const parcel = data[0].parcel
         const new_data = []
         const v = {
-                ...Data,
+                ...Data, //มี declared_value อยู่แล้วใน ...Data ไม่ต้องสร้างเพิ่ม
                 invoice: invoice,
                 ID: id,
                 role: role,
                 purchase_id: String(resp.data.purchase_id),
                 shop_id: req.body.shop_id,
+                shop_number: req.body.shop_id,
+                insuranceFee: insuranceFee,
                 cost_hub: costHub,
                 cost: cost,
                 fee_cod: fee_cod,
@@ -461,10 +478,15 @@ booking = async(req, res)=>{
                 parcel: parcel,
                 priceOne: priceOne,
                 price: Number(price.toFixed()),
+                express: "SHIPPOP"
           };
          new_data.push(v);
         const booking_parcel = await BookingParcel.create(v);
             if(!booking_parcel){
+                console.log("ไม่สามารถสร้างข้อมูล booking ได้")
+            }
+        const createOrderAll = await orderAll.create(v)
+            if(!createOrderAll){
                 console.log("ไม่สามารถสร้างข้อมูล booking ได้")
             }
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง

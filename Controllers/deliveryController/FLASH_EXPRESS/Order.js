@@ -14,6 +14,7 @@ const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { dropOffs } = require('../../../Models/Delivery/dropOff');
 const { profitTemplate } = require('../../../Models/profit/profit.template');
+const { orderAll } = require('../../../Models/Delivery/order_all');
 
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
@@ -37,6 +38,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const cut_partner = req.body.cut_partner
         const price_remote_area = req.body.price_remote_area
         const priceOne = req.body.priceOne
+        const declared_value = req.body.declared_value
+        const insuranceFee = req.body.insuranceFee
         const codForPrice = req.body.codForPrice
         const price = req.body.price
         const shop = req.body.shop_number
@@ -54,11 +57,15 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             ...req.body
             // เพิ่ม key-value pairs ตามต้องการ
           };
-        if(codForPrice != 0){
+        if(codForPrice > 0){
             formData.codEnabled = 1
             formData.codAmount = cod_amount;
             // console.log(cod_amount)
         }
+        // if(declared_value > 0){
+        //     formData.insured = 1
+        //     formData.insureDeclareValue = declared_value * 100
+        // }
 
         //ผู้ส่ง
         const senderTel = req.body.srcPhone;
@@ -88,23 +95,22 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
 
         const new_data = {
             from: {
-              srcName: req.body.srcName, 
-              srcPhone: req.body.srcPhone,
-              srcProvinceName: req.body.srcProvinceName,
-              srcCityName: req.body.srcCityName,
-              srcDistrictName: req.body.srcDistrictName,
-              srcPostalCode: req.body.srcPostalCode,
-              srcDetailAddress: req.body.srcDetailAddress
+                name: req.body.srcName, 
+                tel: req.body.srcPhone,
+                province: req.body.srcProvinceName,
+                state: req.body.srcCityName,
+                district: req.body.srcDistrictName,
+                postcode: req.body.srcPostalCode,
+                address: req.body.srcDetailAddress
             },
             to: {
-              dstName: req.body.dstName, 
-              dstPhone: req.body.dstPhone,
-              dstHomePhone: req.body.dstHomePhone,
-              dstProvinceName: req.body.dstProvinceName,
-              dstCityName: req.body.dstCityName,
-              dstDistrictName: req.body.dstDistrictName,
-              dstPostalCode: req.body.dstPostalCode,
-              dstDetailAddress: req.body.dstDetailAddress
+                name: req.body.dstName, 
+                tel: req.body.dstPhone,
+                province: req.body.dstProvinceName,
+                state: req.body.dstCityName,
+                district: req.body.dstDistrictName,
+                postcode: req.body.dstPostalCode,
+                address: req.body.dstDetailAddress
             },
             parcel: {
               weight: req.body.weight, 
@@ -126,6 +132,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
               ...response.data.data,
               invoice: invoice
             },
+            invoice: invoice,
+            tracking_code: response.data.data.pno,
             ID: id,
             shop_number: shop,
             role: role,
@@ -134,13 +142,17 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             priceOne: priceOne,
             price: price,
             codAmount: codForPrice,
+            cod_amount: codForPrice,
             cut_partner: cut_partner,
             price_remote_area: price_remote_area,
+            declared_value: declared_value,
+            insuranceFee: insuranceFee,
             total: total,
-            fee_cod: fee_cod
+            fee_cod: fee_cod,
+            express:"FLASH"
           };
           //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
-          let profitsPartner
+        let profitsPartner
               if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
                   profitsPartner = price - cost
               }else{
@@ -173,6 +185,10 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     return res
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
+                }
+            const createOrderAll = await orderAll.create(new_data)
+                if(!createOrderAll){
+                    console.log("ไม่สามารถสร้างข้อมูล orderAll ได้")
                 }
             const plus = findShop.credit + cut_partner
             const history = {
@@ -272,7 +288,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     .status(200)
                     .send({
                         status:true, message:"เชื่อมต่อสำเร็จ", 
-                        data: create,
+                        data: createOrderAll,
                         // shop: findShop,
                         history: historyShop,
                         profitP: profit_partner,
@@ -291,6 +307,10 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     return res
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
+                }
+            const createOrderAll = await orderAll.create(new_data)
+                if(!createOrderAll){
+                    console.log("ไม่สามารถสร้างข้อมูล orderAll ได้")
                 }
             const findShopTwo = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
@@ -441,7 +461,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     .status(200)
                     .send({
                         status:true, message:"เชื่อมต่อสำเร็จ", 
-                        data: create,
+                        data: createOrderAll,
                         history: historyShop2,
                         profitPartner: profit_partner,
                         profitPartnerOne: profit_partnerOne,
@@ -930,10 +950,10 @@ nontification = async (req, res)=>{ //เรียกดูงานรับใ
 
 estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
     try{
-        const percent = await PercentCourier.find();
         const apiUrl = process.env.TRAINING_URL
         const mchId = process.env.MCH_ID
         const shop = req.body.shop_number
+        const declared_value = req.body.declared_value * 100 //เปลี่ยนจากบาทเป็นสตางค์
         const weight = req.body.parcel.weight * 1000
         let reqCod = req.body.cod
         let percentCod
@@ -976,6 +996,8 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 length: req.body.parcel.length,
                 height: req.body.parcel.height,
                 pricingTable: 1,
+                insureDeclareValue: 0,
+                insured: 0,
                 // mchId: mchId,
                 // nonceStr: nonceStr,
                 // srcName: "Mahunnop",
@@ -997,15 +1019,17 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 // length: req.body.length,
                 // height: req.body.height,
                 // expressCategory: req.body.expressCategory,
-                // insureDeclareValue: req.body.insureDeclareValue,
-                // insured: req.body.insured,
                 // opdInsureEnabled: req.body.opdInsureEnabled,
                 // pricingTable: req.body.pricingTable
                 //  เพิ่ม key-value pairs ตามต้องการ
           };
+          if(declared_value > 0){
+                formData.insured = 1
+                formData.insureDeclareValue = declared_value
+          }
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-            //console.log(formDataOnly)
+            // console.log(formDataOnly)
         const response = await axios.post(`${apiUrl}/open/v1/orders/estimate_rate`,querystring.stringify(formDataOnly),{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -1098,6 +1122,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             price: Number(price.toFixed()),
                             total: 0,
                             cut_partner: 0,
+                            declared_value: declared_value / 100, //แปลงจากสตางค์ เป็นบาท
                             status: status
                         };
                         let respData = response.data.data
@@ -1202,6 +1227,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                             price: Number(price.toFixed()),
                             total: 0,
                             cut_partner: 0,
+                            declared_value: declared_value / 100, //แปลงจากสตางค์ เป็นบาท
                             status: status
                         };
                         let respData = response.data.data
