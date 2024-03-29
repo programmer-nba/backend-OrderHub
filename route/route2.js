@@ -230,4 +230,12 @@ router.route('/orderhub/remote/best').post( remoteBest.createRemote )
 const remoteJnt = require('../Controllers/deliveryController/J&T/J&T.remote')
 router.route('/orderhub/remote/jnt').post( remoteJnt.createRemote )
 
+//order all ทุกขนส่งเพื่อทำ Bill
+const orderAll = require('../Controllers/deliveryController/order_all/order_all')
+router.route('/orderhub/orderall/getAll').get( auth.checkToken, orderAll.getAll )
+router.route('/orderhub/orderall/get/user/:shop_number').get( auth.checkToken, orderAll.getByIdUser )
+router.route('/orderhub/orderall/get/tracking/:tracking_code').get( auth.checkToken, orderAll.getByTrackingCode )
+router.route('/orderhub/orderall/del/:id').delete( auth.checkToken, orderAll.delend )
+router.route('/orderhub/orderall/update/bill/status').put( auth.checkToken, orderAll.updateBillStatus )
+
 module.exports = router;

@@ -14,6 +14,7 @@ const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { dropOffs } = require('../../../Models/Delivery/dropOff');
 const { bestRemoteArea } = require('../../../Models/remote_area/best.area');
+const { orderAll } = require('../../../Models/Delivery/order_all');
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -418,6 +419,8 @@ createPDFOrder = async(req, res)=>{
         const cost_hub = req.body.cost_hub
         const fee_cod = req.body.fee_cod
         const total = req.body.total
+        const insuranceFee = req.body.insuranceFee
+        const declared_value = req.body.declared_value
         const priceOne = req.body.priceOne
         const cod_amount = req.body.cod_amount
         const price = req.body.price
@@ -523,7 +526,7 @@ createPDFOrder = async(req, res)=>{
         //     if (err) throw err;
         //         console.log('สร้าง PDF ไม่สำเร็จ');
         //     });
-
+            
         const createOrder = await bestOrder.create(
             {
                 ID:id,
@@ -542,11 +545,14 @@ createPDFOrder = async(req, res)=>{
                 status:'booking',
                 cod_amount:cod_amount,
                 price: price,
+                priceOne: priceOne,
                 type:'PDF',
                 fee_cod: fee_cod,
                 total: total,
                 cut_partner: cut_partner,
                 price_remote_area: price_remote_area,
+                insuranceFee: insuranceFee,
+                declared_value: declared_value,
                 pdfStream: base64Data,
                 ...response.data
             })
@@ -554,6 +560,43 @@ createPDFOrder = async(req, res)=>{
                 return res
                         .status(404)
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
+            }
+        const createOrderAll = await orderAll.create(
+                {
+                    ID:id,
+                    shop_number:shop,
+                    role:role,
+                    tracking_code: response.data.txLogisticId,
+                    mailno: response.data.mailNo,
+                    from: {
+                        ...data.from
+                    },
+                    to: {
+                        ...data.to
+                    },
+                    parcel: {
+                        ...data.parcel
+                    },
+                    invoice: invoice,
+                    status:'booking',
+                    cod_amount:cod_amount,
+                    priceOne: priceOne,
+                    price: price,
+                    type:'PDF',
+                    fee_cod: fee_cod,
+                    total: total,
+                    cut_partner: cut_partner,
+                    express: 'BEST',
+                    price_remote_area: price_remote_area,
+                    insuranceFee: insuranceFee,
+                    declared_value: declared_value,
+                    pdfStream: base64Data,
+                    ...response.data
+            })
+            if(!createOrderAll){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถสร้างออเดอร์(ALL)ได้"})
             }
             // console.log(createOrder)
         //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
@@ -808,7 +851,7 @@ createPDFOrder = async(req, res)=>{
                 .status(200)
                 .send({
                     status:true, 
-                    order: createOrder,
+                    order: createOrderAll,
                     history: historyShop,
                     // shop: findShop
                     profitP: profit_partner,
@@ -1081,6 +1124,11 @@ priceList = async (req, res)=>{
         let reqCod = req.body.cod
         let percentCod
         let price_remote_area
+        if(reqCod > 50000){ //เอามาจาก PDF best knowledge
+            return res
+                    .status(400)
+                    .send({status:false, meessage:"บริการ COD ต้องไม่เกิน 50,000 บาท/ชิ้น"})
+        }
         if(weight == 0){
             return res
                     .status(400)

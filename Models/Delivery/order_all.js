@@ -28,6 +28,8 @@ const orderAllSchema = new Schema({
         total: {type: Number , required: false},
         cut_partner: {type: Number , required: false},
         express: {type : String, required : false},
+        type: {type : String, required : false},
+        pdfStream: {type : String, required : false},
         bill_status : {type : String, default: "พักบิล", required : false},
         order_status : {type: String, default: "booking", required: false},
 },{timestamps:true})
