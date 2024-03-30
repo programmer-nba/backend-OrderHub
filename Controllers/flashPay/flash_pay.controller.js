@@ -1,10 +1,7 @@
 const { generateSign_FP, generateVetify } = require('./generate.signFP')
 const axios = require('axios')
-const dayjs = require('dayjs')
-const path = require('path');
+const dayjs = require('dayjs');
 const fs = require('fs');
-const qrcode = require('qrcode');
-const qr = require('qr-image');
 const crypto = require('crypto');
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');

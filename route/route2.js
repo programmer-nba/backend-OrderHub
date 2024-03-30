@@ -238,4 +238,14 @@ router.route('/orderhub/orderall/get/tracking/:tracking_code').get( auth.checkTo
 router.route('/orderhub/orderall/del/:id').delete( auth.checkToken, orderAll.delend )
 router.route('/orderhub/orderall/update/bill/status').put( auth.checkToken, orderAll.updateBillStatus )
 
+//insured
+const insured = require('../Controllers/deliveryController/Insured/insuredFee')
+router.route('/orderhub/insured/getAll').get( authAdmin.checkToken, insured.getAll )
+router.route('/orderhub/insured/update/:id').put( authAdmin.checkToken, insured.update )
+router.route('/orderhub/insured/create').post( authAdmin.checkToken, insured.create )
+router.route('/orderhub/insured/del/:id').delete( authAdmin.checkToken, insured.delend )
+router.route('/orderhub/insured/del_value/:id').delete( authAdmin.checkToken, insured.del_value )
+router.route('/orderhub/insured/push_value/:id').put( authAdmin.checkToken, insured.push_value )
+router.route('/orderhub/insured/get/express/:id').get( authAdmin.checkToken, insured.getExpress )
+
 module.exports = router;
