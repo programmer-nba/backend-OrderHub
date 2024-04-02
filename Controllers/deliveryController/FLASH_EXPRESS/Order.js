@@ -1406,6 +1406,7 @@ async function invoiceNumber() {
     console.log(combinedData);
     return combinedData;
 }
+
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
                     ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
                     estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking }

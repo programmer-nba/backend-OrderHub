@@ -38,6 +38,19 @@ const partnerSchema = new Schema({
         status: {type:String, require: false}
       }
     ],
+    shop_me:[
+      {
+        shop_number: {type:String, require: false},
+        shop_name: {type:String, require: false},
+        address:  {type:String, require: false},
+        street_address: {type:String, require: false},
+        sub_district:  {type:String, require: false},
+        district:  {type:String, require: false},
+        province:  {type:String, require: false},
+        postcode:  {type:String, require: false},
+        status: {type:String, require: false}
+      }
+    ],
     upline:{
         head_line: {type:String, default:'ICE', require: false},
         upline_number: {type:String, default:'ICE', require: false},
@@ -48,32 +61,43 @@ const partnerSchema = new Schema({
     status_partner: {type:String, default: "newpartner", require: true},
     contractOne: {type:String, default: "false", require: true}, // สถานะสัญญาที่ 1
     contractTwo: {type:String, default: "false", require: true}, //สถานะสัญญาที่ 2 
+    express: [{
+        express: {type : String, required: false},
+        courier_code : {type : String, required: false},
+        courier_name : {type : String, required: false},
+        percent_orderHUB : {type : Number, required : false},
+        percent_shop : {type : Number, required : false},
+        on_off : {type : Boolean, default: true, required : false }
+    }],
 },{timestamps: true});
 
 partnerSchema.pre('save',async function(next){   //ทำ Middleware การ Hash ก่อน EmployeeScheme ที่ User กรอกมาจะ save
-      const user = this;
+      try{
+          const user = this;
+          // สุ่มหมายเลขในช่วง 30000-39999
+          const randomShopNumber = Math.floor(Math.random() * (399999 - 300000 + 1)) + 300000;
+    
+          // ตรวจสอบว่าหมายเลขนี้ไม่ซ้ำกับหมายเลขอื่น ๆ ในฐานข้อมูล
+          const existingPartner = await user.constructor.findOne({ partnerNumber: randomShopNumber });
+    
+          if (existingPartner) {
+              // ถ้าซ้ำให้สุ่มใหม่
+              return user.pre('save', next);
+          }
+          // กำหนดหมายเลขให้กับ partnerNumber
+          user.partnerNumber = randomShopNumber;
 
-      // สุ่มหมายเลขในช่วง 30000-39999
-      const randomShopNumber = Math.floor(Math.random() * (399999 - 300000 + 1)) + 300000;
-
-      // ตรวจสอบว่าหมายเลขนี้ไม่ซ้ำกับหมายเลขอื่น ๆ ในฐานข้อมูล
-      const existingPartner = await user.constructor.findOne({ partnerNumber: randomShopNumber });
-
-      if (existingPartner) {
-          // ถ้าซ้ำให้สุ่มใหม่
-          return user.pre('save', next);
-      }
-
-      // กำหนดหมายเลขให้กับ partnerNumber
-      user.partnerNumber = randomShopNumber;
-
-      try {
-          // ทำการ hash password โดย bcrypt
-          const hash = await bcrypt.hash(user.password, 10);
-          user.password = hash;
-          next();
-      } catch (error) {
-          console.error(error);
+          try {
+              // ทำการ hash password โดย bcrypt
+              const hash = await bcrypt.hash(user.password, 10);
+              user.password = hash;
+              next();
+          } catch (error) {
+              console.error("เข้ารหัส:",error);
+              next(error);
+          }
+      }catch(err){
+          console.error("main:",error);
           next(error);
       }
 })
