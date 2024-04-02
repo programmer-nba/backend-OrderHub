@@ -9,6 +9,7 @@ const { Blacklist } = require("../Models/blacklist");
 const { Admin } = require("../Models/admin");
 const { memberShop } = require("../Models/shop/member_shop");
 const { costPlus } = require("../Models/costPlus");
+const { PercentCourier } = require("../Models/Delivery/ship_pop/percent");
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-");
@@ -73,27 +74,10 @@ createPartner = async (req, res) => {
                       .status(401)
                       .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
           }
-      let shopExpressData
-      const findPercent = await PercentCourier.find()
-            if(!findPercent || findPercent.length === 0){
-                console.log("ไม่สามารถค้นหาเปอร์เซ็นแต่ละขนส่งได้(อยู่ใน Schema shop_partner)")
-            }else {
-                shopExpressData = findPercent.map(percent => (
-                  {
-                    express: percent.express,
-                    courier_code: percent.courier_code,
-                    courier_name: percent.courier_name,
-                    percent_orderHUB: percent.percent_orderHUB,
-                    percent_shop: percent.percent_shop,
-                    on_off: percent.on_off
-                  }
-                ));
-            }
+      
       const employee = await Partner.create(
         {
-          ...req.body,
-          express: shopExpressData
-          
+            ...req.body
         }); //เพิ่มพนักงานเข้าระบบ
           if(!employee){
             return res

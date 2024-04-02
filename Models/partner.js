@@ -60,15 +60,7 @@ const partnerSchema = new Schema({
     type: {type:String, require: false},
     status_partner: {type:String, default: "newpartner", require: true},
     contractOne: {type:String, default: "false", require: true}, // สถานะสัญญาที่ 1
-    contractTwo: {type:String, default: "false", require: true}, //สถานะสัญญาที่ 2 
-    express: [{
-        express: {type : String, required: false},
-        courier_code : {type : String, required: false},
-        courier_name : {type : String, required: false},
-        percent_orderHUB : {type : Number, required : false},
-        percent_shop : {type : Number, required : false},
-        on_off : {type : Boolean, default: true, required : false }
-    }],
+    contractTwo: {type:String, default: "false", require: true}, //สถานะสัญญาที่ 2
 },{timestamps: true});
 
 partnerSchema.pre('save',async function(next){   //ทำ Middleware การ Hash ก่อน EmployeeScheme ที่ User กรอกมาจะ save

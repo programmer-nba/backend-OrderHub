@@ -1,3 +1,4 @@
+const { PercentCourier } = require("../../Models/Delivery/ship_pop/percent");
 const { Partner } = require("../../Models/partner");
 const { memberShop } = require("../../Models/shop/member_shop");
 const { historyWalletShop } = require("../../Models/shop/shop_history");
@@ -622,7 +623,7 @@ editExpressAll = async (req, res)=>{
             }
         return res
                 .status(200)
-                .send({status:true, data: updateExpress})
+                .send({status:true,message:"แก้ไขสถานะสำเร็จ", data: updateExpress})
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res
@@ -630,6 +631,55 @@ editExpressAll = async (req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
+pushExpress = async (req, res)=>{
+    try{
+        const id_shop = req.params.id_shop
+
+        const findPercent = await PercentCourier.find()
+        const findShop = await shopPartner.findOne(
+            {
+                _id:id_shop
+            })
+        const expressShop = findShop.express
+        const existingCourierCodes = expressShop.map(express => express.courier_code);
+        
+        for (const percent of findPercent) {
+            if (!existingCourierCodes.includes(percent.courier_code)) { //includes() เป็นเมธอดของ Array ใน JavaScript ที่ใช้เพื่อตรวจสอบว่าค่าที่ระบุมีอยู่ใน Array หรือไม่ ซึ่งจะคืนค่าเป็น true หากค่าที่ระบุมีอยู่ใน Array และคืนค่าเป็น false หากค่าที่ระบุไม่มีอยู่ใน Array
+                // เพิ่มข้อมูลใหม่เข้าไปใน expressShop
+                const expressData = {
+                    express: percent.express,
+                    courier_code: percent.courier_code,
+                    courier_name: percent.courier_name,
+                    percent_orderHUB: percent.percent_orderHUB,
+                    percent_shop: percent.percent_shop,
+                    on_off: percent.on_off
+                };
+                const updateExpress = await shopPartner.findOneAndUpdate(
+                    {
+                        _id: id_shop
+                    },
+                    {
+                        $push: { express: expressData }
+                    },
+                    { new: true }
+                );
+            }
+        }
+        const findUpdateShop = await shopPartner.findOne(
+            {
+                _id:id_shop
+            })
+        return res
+                .status(200)
+                .send({status:true, data:findUpdateShop.express})  
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoicePTS() {
     let data = `PTS`
     let random = Math.floor(Math.random() * 10000000000)
@@ -669,4 +719,4 @@ async function invoiceSTP() {
 }
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
-                , editExpressAll }
+                , editExpressAll ,pushExpress}

@@ -14,6 +14,7 @@ const PercentCourier = mongoose.model("percent_courier", PercentCourierSchema);
 
 const validate = (data)=>{
     const schema = Joi.object({
+        express : Joi.string(),
         courier_code : Joi.string().required().label("กรุณากรอกรหัสขนส่ง"),
         courier_name : Joi.string().required().label("กรุณากรอกชื่อขนส่ง"),
         percent_orderHUB : Joi.number().required().label("กรุณากรอกเปอร์เซ็นของบริษัท"),

@@ -25,6 +25,7 @@ router.route('/orderhub/shop/tranfer/shop/:id_shop').put( auth.checkToken, shop.
 router.route('/orderhub/shop/tranfer/partner/:id_shop').put( auth.checkToken, shop.tranfersShopToPartner )//ย้ายเงินจาก shop กลับเข้า partner ที่ต้องการ
 router.route('/orderhub/shop/update/express/:id_shop').put( auth.checkToken, shop.editExpress )
 router.route('/orderhub/shop/update/expressAll/:id_shop').put( auth.checkToken, shop.editExpressAll )
+router.route('/orderhub/shop/update/pushExpress/:id_shop').put( auth.checkToken, shop.pushExpress )
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
