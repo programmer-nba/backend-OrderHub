@@ -16,12 +16,6 @@ create = async (req, res)=>{
     try{
         const id = req.decoded.userid
         console.log(id)
-        // const {error} = validate(req.body); //ตรวจสอบความถูกต้องของข้อมูลที่เข้ามา
-        // if (error){
-        //     return res
-        //             .status(403)
-        //             .send({ status: false, message: error.details[0].message });
-        // }
         const taxOrCom = await shopPartner.findOne({
             $or: [ //$or ใช้เพื่อเช็คถ้าเข้าเงื่อนไขใดเงื่อนไขหนึ่งให้เก็บ ducument ของคนๆนั้นไว้(กรณีด้านล่างมี 4 เงื่อนไข)
               { "tax.taxName": req.body.taxName },
@@ -35,32 +29,45 @@ create = async (req, res)=>{
                     .status(400)
                     .send({status:false, message:'ชื่อที่จดทะเบียนหรือเลขที่จดทะเบียนมีอยู่แล้วในระบบ',data:taxOrCom})
         }
-        const findId = await Partner.findOne({_id:id})
-        if(findId){
-            const findNameShop = await shopPartner.findOne({shop_number:req.body.shop_number})
-                if(findNameShop){
-                    return res
-                            .status(400)
-                            .send({status:false, message:"มีผู้ใช้รหัสร้านค้านี้แล้ว"})
-                }
-            const createShop = await shopPartner.create(
-                {...req.body,
-                "tax.taxName":req.body.taxName,
-                "tax.taxNumber":req.body.taxNumber,
-                "commercial.commercialName":req.body.commercialName,
-                "commercial.commercialNumber":req.body.commercialNumber,
-                partnerID:id,
-                partner_number:findId.partnerNumber,
-                firstname:findId.firstname,
-                lastname:findId.lastname})
+        const createPartner = await Partner.create(
+            {
+                antecedent: req.body.partner_antecedent,
+                firstname: req.body.partner_firstname,
+                lastname: req.body.partner_lastname,
+                username: req.body.partner_email,
+                password: req.body.partner_iden_number,
+                iden_number: req.body.partner_iden_number,
+                tel: req.body.partner_tel,
+                email: req.body.partner_email,
+                address: req.body.partner_address,
+                street_address: req.body.partner_street_address,
+                sub_district: req.body.partner_sub_district,
+                district: req.body.partner_district,
+                province: req.body.partner_province,
+                postcode: req.body.partner_postcode
+            }
+        )
+            if(!createPartner){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถสร้างพาร์ทเนอร์ได้"})
+            }
+        const createShop = await shopPartner.create(
+                {
+                    ...req.body,
+                    "tax.taxName":req.body.taxName,
+                    "tax.taxNumber":req.body.taxNumber,
+                    "commercial.commercialName":req.body.commercialName,
+                    "commercial.commercialNumber":req.body.commercialNumber,
+                    partnerID:id,
+                    partner_number:findId.partnerNumber,
+                    firstname:findId.firstname,
+                    lastname:findId.lastname
+            })
             return res
                     .status(200)
                     .send({status:true, data:createShop})
-        }else{
-            return res
-                    .status(400)
-                    .send({status:false, message:"ไม่มี partner ID ของท่านในระบบ"})
-        }
+        
     }catch(err){
         console.log(err)
         return res
@@ -562,14 +569,16 @@ tranfersShopToPartner = async (req, res)=>{
 editExpress = async (req, res)=>{
     try{
         const id_shop = req.params.id_shop
-        const {id_express, percent_orderHUB, percent_shop, on_off} = req.body
+        const {id_express, costBangkok_metropolitan, costUpcountry, salesBangkok_metropolitan, salesUpcountry, on_off} = req.body
         console.log(req.body)
         const findShop = await shopPartner.findByIdAndUpdate(
             id_shop,
             { 
                 $set: { 
-                    "express.$[element].percent_orderHUB": percent_orderHUB,
-                    "express.$[element].percent_shop": percent_shop,
+                    "express.$[element].costBangkok_metropolitan": costBangkok_metropolitan,
+                    "express.$[element].costUpcountry": costUpcountry,
+                    "express.$[element].salesBangkok_metropolitan": salesBangkok_metropolitan,
+                    "express.$[element].salesUpcountry": salesUpcountry,
                     "express.$[element].on_off": on_off
                 } 
             },
@@ -637,42 +646,89 @@ pushExpress = async (req, res)=>{
         const id_shop = req.params.id_shop
 
         const findPercent = await PercentCourier.find()
-        const findShop = await shopPartner.findOne(
-            {
-                _id:id_shop
-            })
-        const expressShop = findShop.express
-        const existingCourierCodes = expressShop.map(express => express.courier_code);
-        
-        for (const percent of findPercent) {
-            if (!existingCourierCodes.includes(percent.courier_code)) { //includes() เป็นเมธอดของ Array ใน JavaScript ที่ใช้เพื่อตรวจสอบว่าค่าที่ระบุมีอยู่ใน Array หรือไม่ ซึ่งจะคืนค่าเป็น true หากค่าที่ระบุมีอยู่ใน Array และคืนค่าเป็น false หากค่าที่ระบุไม่มีอยู่ใน Array
-                // เพิ่มข้อมูลใหม่เข้าไปใน expressShop
-                const expressData = {
-                    express: percent.express,
-                    courier_code: percent.courier_code,
-                    courier_name: percent.courier_name,
-                    percent_orderHUB: percent.percent_orderHUB,
-                    percent_shop: percent.percent_shop,
-                    on_off: percent.on_off
-                };
-                const updateExpress = await shopPartner.findOneAndUpdate(
-                    {
-                        _id: id_shop
-                    },
-                    {
-                        $push: { express: expressData }
-                    },
-                    { new: true }
-                );
+        const findShop = await shopPartner.find()
+        let newData = []
+        for (let i = 0; i < findShop.length; i++) {
+            const expressShop = findShop[i].express
+                // console.log(expressShop)
+            const existingCourierCodes = expressShop.map(express => express.courier_code);
+            for (const percent of findPercent) {
+                if (!existingCourierCodes.includes(percent.courier_code)) { //includes() เป็นเมธอดของ Array ใน JavaScript ที่ใช้เพื่อตรวจสอบว่าค่าที่ระบุมีอยู่ใน Array หรือไม่ ซึ่งจะคืนค่าเป็น true หากค่าที่ระบุมีอยู่ใน Array และคืนค่าเป็น false หากค่าที่ระบุไม่มีอยู่ใน Array
+                    // เพิ่มข้อมูลใหม่เข้าไปใน expressShop
+                    const expressData = {
+                        express: percent.express,
+                        courier_code: percent.courier_code,
+                        courier_name: percent.courier_name,
+                        costBangkok_metropolitan: percent.costBangkok_metropolitan,
+                        costUpcountry: percent.costUpcountry,
+                        salesBangkok_metropolitan: percent.salesBangkok_metropolitan,
+                        salesUpcountry: percent.salesUpcountry,
+                        on_off: percent.on_off,
+                        cancel_contract: percent.cancel_contract
+                    };
+                    newData.push({
+                        _id:findShop[i]._id,
+                        expressData
+                    })
+                    const updateExpress = await shopPartner.findOneAndUpdate(
+                        {
+                            _id: findShop[i]._id
+                        },
+                        {
+                            $push: { express: expressData }
+                        },
+                        { new: true }
+                    );
+                }
             }
         }
-        const findUpdateShop = await shopPartner.findOne(
-            {
-                _id:id_shop
-            })
         return res
                 .status(200)
-                .send({status:true, data:findUpdateShop.express})  
+                .send({status:true, data:newData})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+statusContract = async (req, res)=>{
+    try{
+            const status = req.body.status
+            const express = req.body.express
+                if(status != true && status != false){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณากรอก true or false เท่านั้น"})
+                }
+            const findPercent = await PercentCourier.updateMany(
+                { express: express },
+                { $set: { cancel_contract: status } },
+                { returnOriginal: false })
+                if(!findPercent){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่มีขนส่งนี้ในระบบ"})
+                }
+            const update = await shopPartner.updateMany(
+                    { "express.express": express }, // เงื่อนไขในการค้นหาเอกสารที่มี "express" ในอาร์เรย์ซึ่งมีค่าเป็น express ที่ถูกส่งเข้ามา
+                    { $set: { "express.$[elem].cancel_contract": status } }, // ทำการอัปเดตฟิลด์ "cancel_contract" ของอ็อบเจกต์ในอาร์เรย์ "express"
+                    { arrayFilters: [{ "elem.express": express }] } // กำหนดเงื่อนไขในการอัปเดตเฉพาะอ็อบเจกต์ที่มี "express" เท่ากับค่าที่ถูกส่งเข้ามา
+                );
+                if (update.modifiedCount == 0) {
+                    return res.status(200).send({
+                        status: true,
+                        message: "กรุณาใส่ชื่อขนส่งให้ถูกต้อง"
+                    });
+                }
+        return res 
+                .status(200)
+                .send({
+                    status:true, 
+                    message:`แก้ไขสถานะ cancel_contract(${status}) สำเร็จ`, 
+                    data: update,
+                    courier: findPercent
+                })
     }catch(err){
         return res
                 .status(500)
@@ -719,4 +775,5 @@ async function invoiceSTP() {
 }
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
-                , editExpressAll ,pushExpress}
+                , editExpressAll ,pushExpress, statusContract}
+

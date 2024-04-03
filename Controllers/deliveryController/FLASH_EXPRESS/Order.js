@@ -1077,7 +1077,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
             if(upline === 'ICE'){
                 let v = null;
                         let p = findForCost.express.find(element => element.courier_code == 'FLE(ICE)');
-                        // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                        // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
                             if(p.on_off == false){
                                 console.log(`Skipping 'FLE(ICE)' because courier is off`)
                                 return res
@@ -1085,7 +1085,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                                         .send({status:false, data:response.data, result: new_data })
                             }else if (!p) {
                                 console.log(`ยังไม่มี courier name: 'FLE(ICE)'`);
-                            }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                            }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
                                 return res
                                         .status(400)
                                         .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง FLE(ICE) กรุณาติดต่อ Admin`})
@@ -1093,8 +1093,8 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
 
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(estimatedPriceInBaht);
-                        let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                        let price = Math.ceil(cost + p.percent_shop);
+                        let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let price = Math.ceil(cost + p.costUpcountry);
      
                         let status = null;
                         let cod_amount = 0
@@ -1182,7 +1182,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
                     let v = null;
                     let p = findForCost.express.find(element => element.courier_code == 'FLE(ICE)');
-                        // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                        // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
                             if(p.on_off == false){
                                 console.log(`Skipping 'FLE(ICE)' because courier is off`)
                                 return res
@@ -1190,15 +1190,15 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                                         .send({status:false, data:response.data, result: new_data })
                             }else if (!p) {
                                 console.log(`ยังไม่มี courier name: 'FLE(ICE)'`);
-                            }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                            }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
                                 return res
                                         .status(400)
                                         .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง FLE(ICE) กรุณาติดต่อ Admin`})
                             }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(estimatedPriceInBaht);
-                    let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let priceOne = Math.ceil(cost + p.percent_shop)
+                    let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let priceOne = Math.ceil(cost + p.costUpcountry)
                     let price = priceOne + cost_plus
 
                     let cod_amount = 0

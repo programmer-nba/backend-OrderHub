@@ -162,21 +162,21 @@ priceList = async (req, res)=>{
                     // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
                     let v = null;
                     let p = findForCost.express.find(element => element.courier_code == obj[ob].courier_code);
-                    // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                    // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
                         if(p.on_off == false){
                             console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
                             continue
                         }else if (!p) {
                             console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
-                        }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                        }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
                             return res
                                     .status(400)
                                     .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง ${p.courier_name}(PAGEKAGE ONE) กรุณาติดต่อ Admin`})
                         }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(obj[ob].price);
-                    let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let price = Math.ceil(cost + p.percent_shop);
+                    let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = Math.ceil(cost + p.costUpcountry);
 
                     let status = null;
                     let cod_amount = 0
@@ -281,21 +281,21 @@ priceList = async (req, res)=>{
                         // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
                         let v = null;
                         let p = findForCost.express.find(element => element.courier_code == obj[ob].courier_code);
-                        // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                        // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
                             if(p.on_off == false){
                                 console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
                                 continue
                             }else if (!p) {
                                 console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
-                            }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                            }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
                                 return res
                                         .status(400)
                                         .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง ${p.courier_name}(PAGEKAGE ONE) กรุณาติดต่อ Admin`})
                             }
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(obj[ob].price);
-                        let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                        let priceOne = Math.ceil(cost + p.percent_shop)
+                        let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let priceOne = Math.ceil(cost + p.costUpcountry)
                         let price = priceOne + cost_plus
             
                         let cod_amount = 0

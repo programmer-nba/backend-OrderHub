@@ -79,8 +79,8 @@ update = async(req, res)=>{
         const id = req.params.id;
         const percent  = await PercentCourier.findByIdAndUpdate(id,
             {
-                percent_orderHUB: req.body.percent_orderHUB,
-                percent_shop: req.body.percent_shop
+                costBangkok_metropolitan: req.body.costBangkok_metropolitan,
+                costUpcountry: req.body.costUpcountry
             },{new:true});
         if(percent){
             return res

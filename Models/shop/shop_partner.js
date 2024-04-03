@@ -33,9 +33,12 @@ const shopSchema = new Schema({
         express: {type : String, required: false},
         courier_code : {type : String, required: true},
         courier_name : {type : String, required: true},
-        percent_orderHUB : {type : Number, required : true},
-        percent_shop : {type : Number, required : true},
-        on_off : {type : Boolean, default: true, required : false }
+        costBangkok_metropolitan : {type : Number, required : true},
+        costUpcountry : {type : Number, required : true},
+        salesBangkok_metropolitan : {type : Number, default: 0, required :false},
+        salesUpcountry : {type : Number, default: 0, required : false},
+        on_off : {type : Boolean, default: true, required : false },
+        cancel_contract : {type : Boolean, default: false, required : false }
     }]
 },{timestamps:true});
 
@@ -52,9 +55,12 @@ shopSchema.pre('save',async function(next){
                         express: percent.express,
                         courier_code: percent.courier_code,
                         courier_name: percent.courier_name,
-                        percent_orderHUB: percent.percent_orderHUB,
-                        percent_shop: percent.percent_shop,
-                        on_off: percent.on_off
+                        costBangkok_metropolitan: percent.costBangkok_metropolitan,
+                        costUpcountry: percent.costUpcountry,
+                        salesBangkok_metropolitan: percent.salesBangkok_metropolitan,
+                        salesUpcountry: percent.salesUpcountry,
+                        on_off: percent.on_off,
+                        cancel_contract : percent.cancel_contract
                     });
                 });
             }

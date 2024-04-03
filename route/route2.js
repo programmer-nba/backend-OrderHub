@@ -26,6 +26,7 @@ router.route('/orderhub/shop/tranfer/partner/:id_shop').put( auth.checkToken, sh
 router.route('/orderhub/shop/update/express/:id_shop').put( auth.checkToken, shop.editExpress )
 router.route('/orderhub/shop/update/expressAll/:id_shop').put( auth.checkToken, shop.editExpressAll )
 router.route('/orderhub/shop/update/pushExpress/:id_shop').put( auth.checkToken, shop.pushExpress )
+router.route('/orderhub/shop/updateContract').put( authAdmin.checkToken, shop.statusContract )
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
@@ -229,6 +230,9 @@ router.route('/orderhub/remote/best').post( remoteBest.createRemote )
 
 const remoteJnt = require('../Controllers/deliveryController/J&T/J&T.remote')
 router.route('/orderhub/remote/jnt').post( remoteJnt.createRemote )
+
+const postcalBangkok = require('../Controllers/deliveryController/bangkok_metropolitan/bangkok')
+router.route('/orderhub/postcal/bangkok/metropolitan').post( postcalBangkok.createRemote )
 
 //order all ทุกขนส่งเพื่อทำ Bill
 const orderAll = require('../Controllers/deliveryController/order_all/order_all')

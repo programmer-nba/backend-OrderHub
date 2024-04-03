@@ -507,8 +507,8 @@ shippopPriceList = async(req, res)=>{
                     }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(obj[ob].price);
-                    let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let price = Math.ceil(cost + p.percent_shop);
+                    let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = Math.ceil(cost + p.costUpcountry);
 
                     let status = null;
                     let cod_amount = 0
@@ -613,8 +613,8 @@ shippopPriceList = async(req, res)=>{
                         }
                         // คำนวนต้นทุนของร้านค้า
                         let cost_hub = Number(obj[ob].price);
-                        let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                        let priceOne = Math.ceil(cost + p.percent_shop)
+                        let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                        let priceOne = Math.ceil(cost + p.costUpcountry)
                         let price = priceOne + cost_plus
             
                         let cod_amount = 0

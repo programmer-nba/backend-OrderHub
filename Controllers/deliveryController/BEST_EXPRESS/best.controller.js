@@ -1178,7 +1178,7 @@ priceList = async (req, res)=>{
         if(upline === 'ICE'){
                 let v = null;
                 let p = findForCost.express.find(element => element.courier_code == 'J&T');
-                        // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                        // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
                             if(p.on_off == false){
                                 console.log(`Skipping 'J&T' because courier is off`)
                                 return res
@@ -1186,15 +1186,15 @@ priceList = async (req, res)=>{
                                         .send({status:true, result: new_data })
                             }else if (!p) {
                                 console.log(`ยังไม่มี courier name: 'J&T'`);
-                            }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                            }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
                                 return res
                                         .status(400)
                                         .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง J&T กรุณาติดต่อ Admin`})
                             }
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = result[0].price;
-                    let cost = Math.ceil(cost_hub + p.percent_orderHUB); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let price = Math.ceil(cost + p.percent_shop);
+                    let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                    let price = Math.ceil(cost + p.costUpcountry);
                     let status = null;
                     let cod_amount = 0
 
@@ -1279,7 +1279,7 @@ priceList = async (req, res)=>{
             const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
                 let v = null;
                 let p = findForCost.express.find(element => element.courier_code == 'J&T');
-                // console.log(p.percent_orderHUB, p.percent_shop, p.on_off)
+                // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
                     if(p.on_off == false){
                         console.log(`Skipping 'J&T' because courier is off`)
                         return res
@@ -1287,15 +1287,15 @@ priceList = async (req, res)=>{
                                 .send({status:true, result: new_data })
                     }else if (!p) {
                         console.log(`ยังไม่มี courier name: 'J&T'`);
-                    }else if(p.percent_orderHUB <= 0 || p.percent_shop <= 0){
+                    }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
                         return res
                                 .status(400)
                                 .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง J&T กรุณาติดต่อ Admin`})
                     }
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub = result[0].price;
-                let cost = Math.ceil(cost_hub + p.percent_orderHUB) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                let priceOne = Math.ceil(cost + p.percent_shop)
+                let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
+                let priceOne = Math.ceil(cost + p.costUpcountry)
                 let price = priceOne + cost_plus
 
                 let cod_amount = 0
@@ -1517,6 +1517,7 @@ async function invoiceBST() {
     console.log(combinedData);
     return combinedData;
 }
+
 module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList, getAll,
                     getById, delend, getMeBooking, getPartnerBooking
                  }
