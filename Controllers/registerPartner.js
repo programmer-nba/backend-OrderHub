@@ -32,7 +32,7 @@ createPartner = async (req, res) => {
                       .send({status: false, message:"หมายเลขบัตรประชาชนนี้ติด Blacklist"})
           }
 
-      const duplicate = await Partner.findOne({ //ตรวจสอบบัตรประชาชนพนักงานว่ามีซ้ำกันหรือไม่
+      const duplicate = await Partner.findOne({ //ตรวจสอบบัตรประชาชนและ username ของพนักงานว่ามีซ้ำกันหรือไม่
           $or: [
             { iden_number: req.body.iden_number },
             { username: req.body.username }
@@ -50,14 +50,7 @@ createPartner = async (req, res) => {
                       .json({status:false, message: 'มีผู้ใช้ยูสเซอร์ไอดีนี้ในระบบแล้ว'});
             }
           }
-      const duplicateID = await Partner.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
-        username: req.body.username
-      })
-          if(duplicateID){
-              return res
-                      .status(401)
-                      .send({ status: false, message: "มีผู้ใช้ User ID นี้แล้ว" });
-          }
+
       const findAdmin = await Admin.findOne({ //ตรวจสอบ userID ของพนักงานว่ามีซ้ำกันหรือไม่
         username: req.body.username
       })

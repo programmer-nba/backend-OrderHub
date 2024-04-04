@@ -341,37 +341,153 @@ cancelBlacklist = async (req, res)=>{
 
 confirmShop = async (req, res)=>{
     try{
-        const shopId = req.params.id
-        const findShop = await shopPartner.findOneAndUpdate(
+      const shopId = req.params.id
+      const findShop = await shopPartner.findOneAndUpdate(
           {shop_number:shopId},
           {status:"อนุมัติแล้ว"},
           {new:true})
-        if(findShop){
-          const newData = {
-              _id: findShop._id,
-              shop_number: findShop.shop_number,
-              shop_name: findShop.shop_name,
-              address: findShop.address,
-              street_address: findShop.street_address,
-              sub_district: findShop.sub_district,
-              district: findShop.district,
-              province: findShop.province,
-              postcode: findShop.postcode,
-              status: findShop.status
-          }
-          const updatedPartner = await Partner.findByIdAndUpdate(
-              findShop.partnerID,
-              { $push: { shop_partner: newData } },
-              { new: true }
-          );      
-          return res
-                  .status(200)
-                  .send({status:true, status:findShop, data:updatedPartner})
-      }else{
-          return res
-                  .status(400)
-                  .send({status:false, message:"ไม่สามารถหา shop ได้"})
-      }
+      const newData = {
+            _id: findShop._id,
+            shop_number: findShop.shop_number,
+            shop_name: findShop.shop_name,
+            address: findShop.address,
+            street_address: findShop.street_address,
+            sub_district: findShop.sub_district,
+            district: findShop.district,
+            province: findShop.province,
+            postcode: findShop.postcode,
+            status: findShop.status,
+            level:findShop.upline.level
+        }
+        if(findShop.upline.level == 1){
+              const updatedPartner = await Partner.findByIdAndUpdate(
+                  findShop.partnerID,
+                  { $push: { shop_me: newData } },
+                  { new: true }
+                );      
+                if(!updatedPartner){
+                  return res
+                          .status(400)
+                          .send({status:false, message:"ไม่สามารถอัพเดทข้อมูล Partner ได้"})
+                }
+            let data = []
+            const newDataMe = updatedPartner.shop_me[updatedPartner.shop_me.length - 1];
+            let one = {
+                my_id:updatedPartner._id,
+                data:newDataMe
+            }
+            data.push(one)
+            return res
+                    .status(200)
+                    .send({status:true, data:data})
+
+        }else if(findShop.upline.level == 2){
+
+            const updatedPartnerMe = await Partner.findByIdAndUpdate(
+                    findShop.partnerID,
+                    { $push: { shop_me: newData } },
+                    { new: true }
+                );    
+                if(!updatedPartnerMe){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทข้อมูล Downline partner ได้"})
+                }
+
+            const updatedPartnerUpline = await Partner.findByIdAndUpdate(
+                    findShop.upline.head_line,
+                    { $push: { shop_partner: newData } },
+                    { new: true }
+                );  
+                if(!updatedPartnerUpline){
+                  return res
+                          .status(400)
+                          .send({status:false, message:"ไม่สามารถอัพเดทข้อมูล Head partner ได้"})
+                }
+
+            let data = []
+            const newDataDownline = updatedPartnerMe.shop_me[updatedPartnerMe.shop_me.length - 1];
+                let one = {
+                    downLine_id:updatedPartnerMe._id,
+                    data:newDataDownline
+                }
+                data.push(one)
+            const newDataUpline = updatedPartnerUpline.shop_partner[updatedPartnerUpline.shop_partner.length - 1];
+                let two = {
+                    upLine_id:updatedPartnerUpline._id,
+                    data:newDataUpline
+                }
+                data.push(two)
+
+            return res
+                    .status(200)
+                    .send({
+                          status:true, 
+                          data:data
+                        })
+        }else if(findShop.upline.level == 3){
+            const updatedPartnerMe = await Partner.findByIdAndUpdate(
+                    findShop.partnerID,
+                    { $push: { shop_me: newData } },
+                    { new: true }
+                  );    
+                  if(!updatedPartnerMe){
+                      return res
+                              .status(400)
+                              .send({status:false, message:"ไม่สามารถอัพเดทข้อมูล Downline partner ได้"})
+                  }
+
+            const updatedPartnerUpline = await Partner.findByIdAndUpdate(
+                    findShop.upline.head_line,
+                    { $push: { shop_partner: newData } },
+                    { new: true }
+                  );  
+                  if(!updatedPartnerUpline){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทข้อมูล Upline partner ได้"})
+                  }
+
+            let head = updatedPartnerUpline.upline.head_line
+
+            const updatePartnerHead = await Partner.findByIdAndUpdate(
+                    head,
+                    { $push: { shop_partner: newData } },
+                    { new: true }
+                  )
+                  if(!updatePartnerHead){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทข้อมูล Head partner ได้"})
+                  }
+
+            const data = []
+            const newDataDownline = updatedPartnerMe.shop_me[updatedPartnerMe.shop_me.length - 1]; //เลือกข้อมูลล่าสุดที่อัพเดทไปใน Array shop_me
+                  let one = {
+                        downLine_id:updatedPartnerMe._id,
+                        data:newDataDownline
+                  }
+                  data.push(one)
+            const newDataUpline = updatedPartnerUpline.shop_partner[updatedPartnerUpline.shop_partner.length - 1]; //เลือกข้อมูลล่าสุดที่อัพเดทไปใน Array shop_partner
+                  let two = {
+                        upLine_id:updatedPartnerUpline._id,
+                        data:newDataUpline
+                  }
+                  data.push(two)
+            const newDataHead = updatePartnerHead.shop_partner[updatePartnerHead.shop_partner.length - 1];
+                  let three = {
+                        head_id:updatePartnerHead._id,
+                        data:newDataHead
+                  }
+                  data.push(three)
+
+            return res
+                    .status(200)
+                    .send({
+                          status:true, 
+                          data:data
+                        })
+        }
     }catch(err){
         console.log(err)
         return res

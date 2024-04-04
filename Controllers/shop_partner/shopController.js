@@ -1,4 +1,6 @@
 const { PercentCourier } = require("../../Models/Delivery/ship_pop/percent");
+const { Admin } = require("../../Models/admin");
+const { Blacklist } = require("../../Models/blacklist");
 const { Partner } = require("../../Models/partner");
 const { memberShop } = require("../../Models/shop/member_shop");
 const { historyWalletShop } = require("../../Models/shop/shop_history");
@@ -21,52 +23,178 @@ create = async (req, res)=>{
               { "tax.taxName": req.body.taxName },
               { "tax.taxNumber": req.body.taxNumber },
               { "commercial.commercialName": req.body.commercialName },
-              { "commercial.commercialNumber": req.body.commercialNumber }
+              { "commercial.commercialNumber": req.body.commercialNumber },
+              { shop_number: req.body.shop_number },
+              { shop_name: req.body.shop_name },
             ]
           });
-        if(taxOrCom){
-            return res
-                    .status(400)
-                    .send({status:false, message:'ชื่อที่จดทะเบียนหรือเลขที่จดทะเบียนมีอยู่แล้วในระบบ',data:taxOrCom})
-        }
-        const createPartner = await Partner.create(
-            {
-                antecedent: req.body.partner_antecedent,
-                firstname: req.body.partner_firstname,
-                lastname: req.body.partner_lastname,
-                username: req.body.partner_email,
-                password: req.body.partner_iden_number,
-                iden_number: req.body.partner_iden_number,
-                tel: req.body.partner_tel,
-                email: req.body.partner_email,
-                address: req.body.partner_address,
-                street_address: req.body.partner_street_address,
-                sub_district: req.body.partner_sub_district,
-                district: req.body.partner_district,
-                province: req.body.partner_province,
-                postcode: req.body.partner_postcode
+            if(taxOrCom){
+                if(taxOrCom.shop_number == req.body.shop_number){
+                    return res
+                        .status(401)
+                        .send({status:false, message:'หมายเลขสาขานี้มีในระบบแล้ว'})
+                }else if(taxOrCom.shop_name == req.body.shop_name){
+                    return res
+                        .status(401)
+                        .send({status:false, message:'มีผู้ใช้ชื่อร้านนี้ไปแล้ว'})
+                }
+                return res
+                        .status(401)
+                        .send({status:false, message:'ชื่อที่จดทะเบียนหรือเลขที่จดทะเบียนมีอยู่แล้วในระบบ'})
             }
-        )
-            if(!createPartner){
+
+        const findPartnerOne = await Partner.findOne({_id:id})
+            if(!findPartnerOne){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่มีพาร์ทเนอร์นี้ในระบบ"})
+            }
+            
+            if(req.body.shop_status != 'owner' && req.body.shop_status != 'downline'){
                 return res
                         .status(400)
-                        .send({status:false, message:"ไม่สามารถสร้างพาร์ทเนอร์ได้"})
+                        .send({status:false, message:"กรุณาระบุสถานะให้ถูกต้อง"})
+            }else if(req.body.shop_status == 'downline'){ //เป็นการสร้างร้านให้พาร์ทเนอร์คนอื่น
+
+                let levelInt = findPartnerOne.upline.level + 1
+                console.log(levelInt)
+                    if(levelInt > 3){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ท่านไม่สามารถสร้างร้านค้าพาร์ทเนอร์ให้ผู้อื่นได้"})
+                    }
+                    const blacklist = await Blacklist.findOne({iden_number: req.body.iden_number})
+                          if (blacklist){
+                              return res
+                                      .status(401)
+                                      .send({status: false, message:"หมายเลขบัตรประชาชนนี้ติด Blacklist"})
+                          }
+                
+                    const duplicate = await Partner.findOne({ //ตรวจสอบบัตรประชาชนและ username ของพนักงานว่ามีซ้ำกันหรือไม่
+                          $or: [
+                            { iden_number: req.body.partner_iden_number },
+                            { username: req.body.partner_email }
+                        ]});
+                          if (duplicate){
+                            if (duplicate.iden_number === req.body.partner_iden_number) {
+                              // ถ้าพบว่า iden_number ซ้ำ
+                              return res
+                                      .status(401)
+                                      .json({status:false, message: 'มีผู้ใช้บัตรประชาชนนี้ในระบบแล้ว'});
+                            } else if (duplicate.username === req.body.partner_email) {
+                              // ถ้าพบว่า userid ซ้ำ
+                              return res
+                                      .status(401)
+                                      .json({status:false, message: 'มีผู้ใช้ E-mail นี้ในระบบแล้ว'});
+                            }
+                          }
+
+                    const [findAdmin, findMemberShop] = await Promise.all([
+                            Admin.findOne({ username: req.body.partner_email }),
+                            memberShop.findOne({ username: req.body.partner_email })
+                        ]);  
+                            if (findAdmin) {
+                                return res.status(401).send({ status: false, message: "มีผู้ใช้ E-mail นี้ในระบบแล้ว" });
+                            }
+                        
+                            if (findMemberShop) {
+                                return res.status(401).send({ status: false, message: "มีผู้ใช้ E-mail นี้ในระบบแล้ว" });
+                            }
+
+                    const createPartner = await Partner.create(
+                        {
+                            antecedent: req.body.partner_antecedent,
+                            firstname: req.body.partner_firstname,
+                            lastname: req.body.partner_lastname,
+                            username: req.body.partner_email,
+                            password: req.body.partner_iden_number,
+                            iden_number: req.body.partner_iden_number,
+                            tel: req.body.partner_tel,
+                            email: req.body.partner_email,
+                            'upline.head_line': id,
+                            'upline.upline_number':findPartnerOne.partnerNumber,
+                            'upline.level':levelInt
+                        })
+                        if(!createPartner){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถสร้างพาร์ทเนอร์ได้"})
+                        }
+                    const createShop = await shopPartner.create(
+                        {
+                                partnerID:createPartner._id,
+                                partner_number:createPartner.partnerNumber,
+                                shop_number:req.body.shop_number,
+                                shop_name:req.body.shop_name,
+                                firstname:createPartner.firstname,
+                                lastname:createPartner.lastname,
+                                address:req.body.address,
+                                street_address:req.body.street_address,
+                                type:req.body.type,
+                                sub_district: req.body.sub_district, //ตำบล
+                                district:req.body.district,
+                                province: req.body.province,
+                                postcode: req.body.postcode,
+                                "tax.taxName":req.body.taxName,
+                                "tax.taxNumber":req.body.taxNumber,
+                                "commercial.commercialName":req.body.commercialName,
+                                "commercial.commercialNumber":req.body.commercialNumber,
+                                shop_status:'downline',
+                                "upline.head_line":id,
+                                "upline.down_line":createPartner._id,
+                                "upline.shop_line":createPartner._id,
+                                'upline.level':levelInt
+                        })
+                        if(!createShop){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถสร้างร้านค้าได้"})
+                        }
+                return res
+                        .status(200)
+                        .send({
+                                status:true, 
+                                data:createShop, 
+                                partner:createPartner
+                            })
+
+            }else if(req.body.shop_status == 'owner'){//เป็นการสร้างร้านของตนเอง
+                    const createShop = await shopPartner.create(
+                        {
+                                partnerID:findPartnerOne._id,
+                                partner_number:findPartnerOne.partnerNumber,
+                                shop_number:req.body.shop_number,
+                                shop_name:req.body.shop_name,
+                                firstname:findPartnerOne.firstname,
+                                lastname:findPartnerOne.lastname,
+                                address:req.body.address,
+                                street_address:req.body.street_address,
+                                type:req.body.type,
+                                sub_district: req.body.sub_district, //ตำบล
+                                district:req.body.district,
+                                province: req.body.province,
+                                postcode: req.body.postcode,
+                                "tax.taxName":req.body.taxName,
+                                "tax.taxNumber":req.body.taxNumber,
+                                "commercial.commercialName":req.body.commercialName,
+                                "commercial.commercialNumber":req.body.commercialNumber,
+                                shop_status:'owner',
+                                "upline.head_line":findPartnerOne.upline.head_line,
+                                "upline.down_line":findPartnerOne._id,
+                                'upline.level':findPartnerOne.upline.level
+                        })
+                        if(!createShop){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถสร้างร้านค้าได้"})
+                        }
+                return res
+                        .status(200)
+                        .send({
+                                status:true, 
+                                data:createShop
+                            })
             }
-        const createShop = await shopPartner.create(
-                {
-                    ...req.body,
-                    "tax.taxName":req.body.taxName,
-                    "tax.taxNumber":req.body.taxNumber,
-                    "commercial.commercialName":req.body.commercialName,
-                    "commercial.commercialNumber":req.body.commercialNumber,
-                    partnerID:id,
-                    partner_number:findId.partnerNumber,
-                    firstname:findId.firstname,
-                    lastname:findId.lastname
-            })
-            return res
-                    .status(200)
-                    .send({status:true, data:createShop})
         
     }catch(err){
         console.log(err)
@@ -129,23 +257,25 @@ updateShop = async (req, res)=>{
 delend = async (req, res)=>{
     try{
         const id = req.params.id
-        const partner_id = req.decoded.userid
         const findShop = await shopPartner.findOneAndDelete({shop_number:id},{new:true}) //ลบข้อมูลร้านค้าในฐานข้อมูล shop_partner
         if(findShop){
-            const delShop_partner = await Partner.updateOne( //ลบข้อมูลร้านค้าในฐานข้อมูลของ partner โดยตรง
-                { _id: partner_id },
-                { $pull: { shop_partner: { _id:findShop._id } } },
-                { multi: false, new: true }
-              );
-            if(delShop_partner){
-                return res 
-                        .status(200)
-                        .send({status:true,data:findShop, del_partner:delShop_partner})
-            }else{
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่สามารถลบข้อมูลได้"})
-            }
+            const delShop_partner = await Partner.updateMany(
+                { 
+                    $pull: { 
+                        "shop_me": { "_id": findShop._id }, 
+                        "shop_partner": { "_id": findShop._id } 
+                    } 
+                }
+            );
+                if(delShop_partner){
+                    return res 
+                            .status(200)
+                            .send({status:true,data:delShop_partner})
+                }else{
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถลบข้อมูลได้"})
+                }
         }else{
             return res
                     .status(400)
@@ -641,7 +771,7 @@ editExpressAll = async (req, res)=>{
     }
 }
 
-pushExpress = async (req, res)=>{
+pushExpress = async (req, res)=>{//ไม่ได้ใช้แล้ว
     try{
         const id_shop = req.params.id_shop
 
@@ -776,4 +906,5 @@ async function invoiceSTP() {
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
                 , editExpressAll ,pushExpress, statusContract}
+
 

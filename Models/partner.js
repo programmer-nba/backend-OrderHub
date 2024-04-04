@@ -15,12 +15,12 @@ const partnerSchema = new Schema({
     iden_number: {type:String, require: true},
     tel: {type:String, require: true},
     email: {type:String, require: true},
-    address: {type:String, require: true},
-    street_address: {type:String, require: true},
-    sub_district: {type:String, require: true},
-    district: {type:String, require: true},
-    province: {type:String, require: true},
-    postcode: {type:String, require: true},
+    address: {type:String, default:"", require: true},
+    street_address: {type:String,default:"", require: true},
+    sub_district: {type:String, default:"", require: true},
+    district: {type:String, default:"", require: true},
+    province: {type:String, default:"", require: true},
+    postcode: {type:String, default:"", require: true},
     picture: {
       picture_iden: {type:String, default: "none", require: false},
       picture_two: {type:String, default: "none", require: false},
@@ -35,7 +35,8 @@ const partnerSchema = new Schema({
         district:  {type:String, require: false},
         province:  {type:String, require: false},
         postcode:  {type:String, require: false},
-        status: {type:String, require: false}
+        status: {type:String, require: false},
+        level: {type:Number, require: false}
       }
     ],
     shop_me:[
@@ -48,13 +49,14 @@ const partnerSchema = new Schema({
         district:  {type:String, require: false},
         province:  {type:String, require: false},
         postcode:  {type:String, require: false},
-        status: {type:String, require: false}
+        status: {type:String, require: false},
+        level: {type:Number, require: false}
       }
     ],
     upline:{
         head_line: {type:String, default:'ICE', require: false},
         upline_number: {type:String, default:'ICE', require: false},
-        level: {type:String, default: 1, require: false}
+        level: {type:Number, default: 1, require: false}
     },
     role: {type:String, default: "partner", require: true},
     type: {type:String, require: false},

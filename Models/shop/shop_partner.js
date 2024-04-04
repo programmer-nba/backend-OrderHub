@@ -29,6 +29,13 @@ const shopSchema = new Schema({
     province: {type:String, require: true},
     postcode: {type:String, require: true},
     picture: {type:String ,default:"", require: false},
+    shop_status: {type:String, require: false},
+    upline:{
+        head_line:{type:String ,default:"", require: false},
+        down_line:{type:String ,default:"", require: false},
+        shop_upline: {type:String ,default:"", require: false},
+        level:{type:Number ,default:"", require: false},
+    },
     express: [{
         express: {type : String, required: false},
         courier_code : {type : String, required: true},

@@ -1,4 +1,5 @@
 const { PercentCourier, validate } = require("../../../Models/Delivery/ship_pop/percent");
+const { shopPartner } = require("../../../Models/shop/shop_partner");
 
 
 create = async(req, res)=>{
@@ -16,15 +17,25 @@ create = async(req, res)=>{
                     .send({message: "รหัสคูเรียนี้มีในระบบแล้ว"})
         }
         const percent = await PercentCourier.create(req.body);
-        if(percent){
-            return res
-                    .status(201)
-                    .send({message: "เพิ่มข้อมูลสำเร็จ"});
-        }else{
-            return res
-                    .status(401)
-                    .send({message : "เพิ่มข้อมูลไม่สำเร็จ กรุณาทำรายอีกครั้ง"})
-        }
+            if(percent){
+                const update = await shopPartner.updateMany(
+                    {
+                        $push:{
+                            express: percent
+                        }
+                    })
+                return res
+                        .status(201)
+                        .send({status:true, 
+                            message: "เพิ่มข้อมูลสำเร็จ", 
+                            data: percent,
+                            update: update
+                        });
+            }else{
+                return res
+                        .status(401)
+                        .send({message : "เพิ่มข้อมูลไม่สำเร็จ กรุณาทำรายอีกครั้ง"})
+            }
     }catch(err){
         console.log(err);
         return res
@@ -104,9 +115,18 @@ delend = async(req, res)=>{
         const id = req.params.id;
         const percent = await PercentCourier.findByIdAndDelete(id);
         if(percent){
+            const update = await shopPartner.updateMany(
+                { "express.express": percent.express }, // ตรวจสอบว่ามีค่า "NOP" ในอาร์เรย์ express หรือไม่
+                { $pull: { "express": { "express": percent.express } } // ลบข้อมูลในอาร์เรย์ที่มีค่า "NOP")
+            }) 
             return res
                     .status(200)
-                    .send({status: true, message: "ลบข้อมูลสำเร็จ"})
+                    .send({
+                        status: true, 
+                        message: "ลบข้อมูลสำเร็จ",
+                        del:percent,
+                        delShop: update
+                    })
         }else{
             return res
                     .status(400)

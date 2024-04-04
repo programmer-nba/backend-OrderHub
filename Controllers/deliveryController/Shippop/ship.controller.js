@@ -12,6 +12,7 @@ const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitTemplate } = require("../../../Models/profit/profit.template");
 const { orderAll } = require('../../../Models/Delivery/order_all');
+const { bangkokMetropolitan } = require('../../../Models/postcal_bangkok/postcal.bangkok');
 
 priceList = async (req, res)=>{
     try{
@@ -42,6 +43,13 @@ priceList = async (req, res)=>{
                         .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
             }
         }
+
+        let priceBangkok = false;
+        const findPostcal = await bangkokMetropolitan.findOne({ Postcode: req.body.to.postcode });
+            if (findPostcal) {
+                priceBangkok = true;
+            }
+
         //ผู้ส่ง
         const sender = formData.from; 
         const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -166,13 +174,20 @@ priceList = async (req, res)=>{
                         if(p.on_off == false){
                             console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
                             continue
-                        }else if (!p) {
-                            console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
+
+                        }else if (p.cancel_contract == true) {
+                            console.log(`PACKAGE ONE ไม่สามารถใช้งานได้ในขณะนี้`)
+                            break
+                            
                         }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
                             return res
                                     .status(400)
                                     .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง ${p.courier_name}(PAGEKAGE ONE) กรุณาติดต่อ Admin`})
+
+                        }else if (!p) {
+                            console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
                         }
+
                     // คำนวนต้นทุนของร้านค้า
                     let cost_hub = Number(obj[ob].price);
                     let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
