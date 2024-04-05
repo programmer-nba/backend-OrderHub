@@ -56,6 +56,7 @@ const partnerSchema = new Schema({
     upline:{
         head_line: {type:String, default:'ICE', require: false},
         upline_number: {type:String, default:'ICE', require: false},
+        shop_upline: {type:String, default:'ICE', require: false},
         level: {type:Number, default: 1, require: false}
     },
     role: {type:String, default: "partner", require: true},

@@ -14,7 +14,7 @@ const FPSign = require('../Controllers/flashPay/generate.signFP')
 const FP = require('../Controllers/flashPay/flash_pay.controller')
 
 //SHOP
-router.route('/orderhub/shop/post').post(auth.checkToken, shop.create)//ใช้กำหนด path
+router.route('/orderhub/shop/post/:id_shop').post(auth.checkToken, shop.create)//ใช้กำหนด path
 router.route('/orderhub/shop/update/:id').put(auth.checkToken, shop.updateShop)//ใช้กำหนด path
 router.route('/orderhub/shop/del/:id').delete(auth.checkToken, shop.delend)//ใช้กำหนด path
 router.route('/orderhub/shop/getMe').get(auth.checkToken, shop.getShopPartner )

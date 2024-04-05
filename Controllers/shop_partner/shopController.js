@@ -7,6 +7,7 @@ const { historyWalletShop } = require("../../Models/shop/shop_history");
 const { shopPartner, validate } = require("../../Models/shop/shop_partner");
 const { historyWallet } = require("../../Models/topUp/history_topup");
 const { uploadFileCreate, deleteFile } = require("../../functions/uploadfilecreate");
+const mongoose = require('mongoose');
 const multer = require("multer");
 const storage = multer.diskStorage({
     filename: function (req, file, cb) {
@@ -16,10 +17,20 @@ const storage = multer.diskStorage({
 
 create = async (req, res)=>{
     try{
+        const id_shop = req.params.id_shop
         const id = req.decoded.userid
-        console.log(id)
+        console.log(id_shop)
+            if(req.body.shop_status != 'owner' && req.body.shop_status != 'downline'){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุสถานะให้ถูกต้อง"})
+            }else if(!id_shop || id_shop == ':id_shop' && req.body.shop_status == 'downline'){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุสาขาหลักที่ท่านต้องการอ้างอิงราคา"})
+            }
         const taxOrCom = await shopPartner.findOne({
-            $or: [ //$or ใช้เพื่อเช็คถ้าเข้าเงื่อนไขใดเงื่อนไขหนึ่งให้เก็บ ducument ของคนๆนั้นไว้(กรณีด้านล่างมี 4 เงื่อนไข)
+            $or: [ //$or ใช้เพื่อเช็คถ้าเข้าเงื่อนไขใดเงื่อนไขหนึ่งให้เก็บ ducument ของคนๆนั้นไว้(กรณีด้านล่างมี 7 เงื่อนไข)
               { "tax.taxName": req.body.taxName },
               { "tax.taxNumber": req.body.taxNumber },
               { "commercial.commercialName": req.body.commercialName },
@@ -42,7 +53,7 @@ create = async (req, res)=>{
                         .status(401)
                         .send({status:false, message:'ชื่อที่จดทะเบียนหรือเลขที่จดทะเบียนมีอยู่แล้วในระบบ'})
             }
-
+        
         const findPartnerOne = await Partner.findOne({_id:id})
             if(!findPartnerOne){
                 return res
@@ -50,19 +61,24 @@ create = async (req, res)=>{
                         .send({status:false, message:"ไม่มีพาร์ทเนอร์นี้ในระบบ"})
             }
             
-            if(req.body.shop_status != 'owner' && req.body.shop_status != 'downline'){
-                return res
-                        .status(400)
-                        .send({status:false, message:"กรุณาระบุสถานะให้ถูกต้อง"})
-            }else if(req.body.shop_status == 'downline'){ //เป็นการสร้างร้านให้พาร์ทเนอร์คนอื่น
+            if(req.body.shop_status == 'downline'){ //เป็นการสร้างร้านให้พาร์ทเนอร์คนอื่น
+
+                const findShop = await shopPartner.findOne({_id:id_shop})
+                    if(!findShop){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่พบร้านค้าของท่านในระบบ"})
+                    }
 
                 let levelInt = findPartnerOne.upline.level + 1
                 console.log(levelInt)
+
                     if(levelInt > 3){
                         return res
                                 .status(400)
                                 .send({status:false, message:"ท่านไม่สามารถสร้างร้านค้าพาร์ทเนอร์ให้ผู้อื่นได้"})
                     }
+
                     const blacklist = await Blacklist.findOne({iden_number: req.body.iden_number})
                           if (blacklist){
                               return res
@@ -76,12 +92,12 @@ create = async (req, res)=>{
                             { username: req.body.partner_email }
                         ]});
                           if (duplicate){
-                            if (duplicate.iden_number === req.body.partner_iden_number) {
+                            if (duplicate.iden_number == req.body.partner_iden_number) {
                               // ถ้าพบว่า iden_number ซ้ำ
                               return res
                                       .status(401)
                                       .json({status:false, message: 'มีผู้ใช้บัตรประชาชนนี้ในระบบแล้ว'});
-                            } else if (duplicate.username === req.body.partner_email) {
+                            } else if (duplicate.username == req.body.partner_email) {
                               // ถ้าพบว่า userid ซ้ำ
                               return res
                                       .status(401)
@@ -113,6 +129,7 @@ create = async (req, res)=>{
                             email: req.body.partner_email,
                             'upline.head_line': id,
                             'upline.upline_number':findPartnerOne.partnerNumber,
+                            'upline.shop_upline':id_shop,
                             'upline.level':levelInt
                         })
                         if(!createPartner){
@@ -142,7 +159,7 @@ create = async (req, res)=>{
                                 shop_status:'downline',
                                 "upline.head_line":id,
                                 "upline.down_line":createPartner._id,
-                                "upline.shop_line":createPartner._id,
+                                "upline.shop_line":id_shop,
                                 'upline.level':levelInt
                         })
                         if(!createShop){
@@ -181,6 +198,7 @@ create = async (req, res)=>{
                                 shop_status:'owner',
                                 "upline.head_line":findPartnerOne.upline.head_line,
                                 "upline.down_line":findPartnerOne._id,
+                                "upline.shop_line":findPartnerOne.upline.shop_upline,
                                 'upline.level':findPartnerOne.upline.level
                         })
                         if(!createShop){

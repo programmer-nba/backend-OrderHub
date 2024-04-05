@@ -33,7 +33,7 @@ const shopSchema = new Schema({
     upline:{
         head_line:{type:String ,default:"", require: false},
         down_line:{type:String ,default:"", require: false},
-        shop_upline: {type:String ,default:"", require: false},
+        shop_line: {type:String ,default:"", require: false},
         level:{type:Number ,default:"", require: false},
     },
     express: [{
