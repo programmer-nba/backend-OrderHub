@@ -187,120 +187,173 @@ priceList = async (req, res)=>{
         }
         const obj = resp.data.data[0];
         const new_data = [];
-
+        
         // if(upline === 'ICE'){
-        //     for (const ob of Object.keys(obj)) {
-        //         if (obj[ob].available) {
-        //             if (reqCod > 0 && obj[ob].courier_code == 'ECP') {
-        //                 console.log('Encountered "ECP". Skipping this iteration.');
-        //                 continue; // ข้ามไปยังรอบถัดไป
-        //             }
-        //             // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
-        //             let v = null;
-        //             let p = findForCost.express.find(element => element.courier_code == obj[ob].courier_code);
-        //             // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
-        //                 if(p.on_off == false){
-        //                     console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
-        //                     continue
+            for (const ob of Object.keys(obj)) {
+                if (obj[ob].available) {
+                    if (reqCod > 0 && obj[ob].courier_code == 'ECP') {
+                        console.log('Encountered "ECP". Skipping this iteration.');
+                        continue; // ข้ามไปยังรอบถัดไป
+                    }
+                    // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
+                    let v = null;
+                    let p = line[0].express.find(element => element.courier_code == obj[ob].courier_code);
+                    // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
+                        if(p.on_off == false){
+                            console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
+                            continue
 
-        //                 }else if (p.cancel_contract == true) {
-        //                     console.log(`PACKAGE ONE ไม่สามารถใช้งานได้ในขณะนี้`)
-        //                     break
-                            
-        //                 }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
-        //                     return res
-        //                             .status(400)
-        //                             .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง ${p.courier_name}(PAGEKAGE ONE) กรุณาติดต่อ Admin`})
+                        }else if (p.cancel_contract == true) {
+                            console.log(`PACKAGE ONE ไม่สามารถใช้งานได้ในขณะนี้`)
+                            break
 
-        //                 }else if (!p) {
-        //                     console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
-        //                 }
+                        }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง ${p.courier_name}(PAGEKAGE ONE) กรุณาติดต่อ Admin`})
 
-        //             // คำนวนต้นทุนของร้านค้า
-        //             let cost_hub = Number(obj[ob].price);
-        //             let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-        //             let price = Math.ceil(cost + p.costUpcountry);
-
-        //             let status = null;
-        //             let cod_amount = 0
+                        }else if (!p) {
+                            console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
+                        }
                     
-        //             try {
-        //                 await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-        //                 if (findForCost.credit < price) {
-        //                     status = 'จำนวนเงินของท่านไม่เพียงพอ';
-        //                 } else {
-        //                     status = 'พร้อมใช้บริการ';
-        //                 }
-        //             } catch (error) {
-        //                 console.error('เกิดข้อผิดพลาดในการรอรับค่า');
-        //                 console.error(error);
-        //             }
-        //             v = {
-        //                 ...obj[ob],
-        //                 price_remote_area: 0,
-        //                 cost_hub: cost_hub,
-        //                 cost: cost,
-        //                 cod_amount: Number(cod_amount.toFixed()),
-        //                 fee_cod: 0,
-        //                 profitPartner: 0,
-        //                 priceOne: 0,
-        //                 price: Number(price.toFixed()),
-        //                 total: 0,
-        //                 cut_partner: 0,
-        //                 declared_value: declared_value,
-        //                 insuranceFee: 0,
-        //                 status: status
-        //             };
-        //             if(declared_value > 0){
-        //                 let insuredFee = (declared_value * 3)/100
-        //                 v.insuranceFee = insuredFee
-        //             }
-        //             if (cod !== undefined) {
-        //                 let fee = (reqCod * percentCod)/100
-        //                 let formattedFee = parseFloat(fee.toFixed(2));
-        //                 let profitPartner = price - cost
-        //                 let total = price + formattedFee
-        //                 let cut_partner = total - profitPartner
-        //                     v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-        //                     v.fee_cod = formattedFee
-        //                     v.profitPartner = profitPartner
-        //                         if(obj[ob].hasOwnProperty("price_remote_area")){
-        //                             let total1 = total + obj[ob].price_remote_area
-        //                                 v.total = total1
-        //                                 v.cut_partner = total1 - profitPartner
-        //                                 v.price_remote_area = obj[ob].price_remote_area
-        //                                     // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
-        //                                     //     new_data.push(v);
-        //                                     // }
-        //                         }else{
-        //                             v.cut_partner = cut_partner
-        //                             v.total = total
-        //                                 // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
-        //                                 //     new_data.push(v);
-        //                                 // }
-        //                         }
-        //                     new_data.push(v);
-        //             }else{
-        //                 let profitPartner = price - cost
-        //                 if(obj[ob].hasOwnProperty("price_remote_area")){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
-        //                     let total = price + obj[ob].price_remote_area
-        //                         v.price_remote_area = obj[ob].price_remote_area
-        //                         v.total = total
-        //                         v.cut_partner = total - profitPartner
-        //                         v.profitPartner = profitPartner
-        //                 }else{
-        //                     v.profitPartner = profitPartner
-        //                     v.total = price
-        //                     v.cut_partner = price - profitPartner
-        //                 }
-        //                 new_data.push(v);
-        //             }
-        //             // console.log(new_data);
-        //         } else {
-        //             // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
-        //             console.log(`Skipping ${obj[ob].courier_code} because available is false`);
-        //         }
-        //     }
+                    // คำนวนต้นทุนของร้านค้า
+                    let cost_hub = Number(obj[ob].price);
+                    let price
+                    let profit_partner
+                    let profit = []
+                    if (priceBangkok) {
+                            let price1 = cost_hub + p.salesBangkok_metropolitan;
+                            price = price1 + p.costBangkok_metropolitan;
+                            profit_partner = p.salesBangkok_metropolitan
+
+                            let dataOne = {
+                                id: line[0].down_line,
+                                profit: p.salesBangkok_metropolitan,
+                            }
+                            let dataTwo = {
+                                id: line[0].head_line,
+                                profit: p.costBangkok_metropolitan,
+                            }
+                            profit.push(dataOne)
+                            profit.push(dataTwo)
+                    } else {
+                            let price1 = cost_hub + p.salesUpcountry;
+                            price = price1 + p.costUpcountry
+                            profit_partner = p.salesUpcountry
+
+                            let dataOne = {
+                                id: line[0].down_line,
+                                profit: p.salesUpcountry,
+                            }
+                            let dataTwo = {
+                                id: line[0].head_line,
+                                profit: p.costUpcountry,
+                            }
+                            profit.push(dataOne)
+                            profit.push(dataTwo)
+                    }
+                    
+                    // บวก total กับ cost ของ array ที่เหลือ
+                    for (let i = 1; i < line.length; i++) {
+                        if (priceBangkok) {
+                            price += line[i].express[0].costBangkok_metropolitan;
+                            let dataOne = {
+                                id: line[i].head_line,
+                                profit: line[i].express[0].costBangkok_metropolitan
+                            }
+                            profit.push(dataOne)
+                        } else {
+                            price += line[i].express[0].costUpcountry;
+                            let dataOne = {
+                                id: line[i].head_line,
+                                profit: line[i].express[0].costUpcountry
+                            }
+                            profit.push(dataOne)
+                        }
+                    }
+                    // return res
+                    //         .status(200)
+                    //         .send({status:true , 
+                    //             data:profit, 
+                    //             cost_hub:cost_hub,
+                    //             price:price,
+                    //             // line:line
+                    //         })
+
+                    let status = null;
+                    let cod_amount = 0
+                    
+                    try {
+                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                        if (findForCost.credit < price) {
+                            status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                        } else {
+                            status = 'พร้อมใช้บริการ';
+                        }
+                    } catch (error) {
+                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                        console.error(error);
+                    }
+                    v = {
+                        ...obj[ob],
+                        price_remote_area: 0,
+                        cost_hub: cost_hub,
+                        cod_amount: Number(cod_amount.toFixed()),
+                        fee_cod: 0,
+                        profitPartner: 0,
+                        price: Number(price.toFixed()),
+                        total: 0,
+                        cut_partner: 0,
+                        declared_value: declared_value,
+                        insuranceFee: 0,
+                        status: status,
+                        profitAll: profit
+                    };
+
+                    if (cod !== undefined) {
+                        let fee = (reqCod * percentCod)/100
+                        let formattedFee = parseFloat(fee.toFixed(2));
+                        let total = price + formattedFee
+                        let cut_partner = total - profit_partner
+                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            v.fee_cod = formattedFee
+                            v.profitPartner = profit_partner
+                                if(obj[ob].hasOwnProperty("price_remote_area")){
+                                    let total1 = total + obj[ob].price_remote_area
+                                        v.total = total1
+                                        v.cut_partner = total1 - profit_partner
+                                        v.price_remote_area = obj[ob].price_remote_area
+                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
+                                            //     new_data.push(v);
+                                            // }
+                                }else{
+                                    v.cut_partner = cut_partner
+                                    v.total = total
+                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
+                                        //     new_data.push(v);
+                                        // }
+                                }
+                            new_data.push(v);
+                    }else{
+                        if(obj[ob].hasOwnProperty("price_remote_area")){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                            let total = price + obj[ob].price_remote_area
+                                v.price_remote_area = obj[ob].price_remote_area
+                                v.total = total
+                                v.cut_partner = total - profit_partner
+                                v.profitPartner = profit_partner
+                        }else{
+                            v.profitPartner = profit_partner
+                            v.total = price
+                            v.cut_partner = price - profit_partner
+                        }
+                        new_data.push(v);
+                    }
+                    // console.log(new_data);
+                } else {
+                    // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
+                    console.log(`Skipping ${obj[ob].courier_code} because available is false`);
+                }
+            }
         // }else {
         //         const costFind = await costPlus.findOne(
         //             {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
@@ -422,14 +475,14 @@ priceList = async (req, res)=>{
         //             }
         //         }
         // }
-        // return res
-        //         .status(200)
-        //         .send({ 
-        //             status: true, 
-        //             origin_data: req.body, 
-        //             new: new_data,
-        //             sender: infoSender
-        //         });
+        return res
+                .status(200)
+                .send({ 
+                    status: true, 
+                    origin_data: req.body, 
+                    new: new_data,
+                    sender: infoSender
+                });
     }catch(err){
         console.log(err)
         return res

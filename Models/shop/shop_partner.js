@@ -3,7 +3,6 @@ const Schema = mongoose.Schema
 const Joi = require("joi");
 const { PercentCourier } = require("../Delivery/ship_pop/percent");
 
-
 const shopSchema = new Schema({
     partnerID:{type:String, require: false},
     partner_number:{type:String, require: false},
