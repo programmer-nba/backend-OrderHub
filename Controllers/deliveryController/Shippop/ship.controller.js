@@ -13,7 +13,7 @@ const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitTemplate } = require("../../../Models/profit/profit.template");
 const { orderAll } = require('../../../Models/Delivery/order_all');
 const { bangkokMetropolitan } = require('../../../Models/postcal_bangkok/postcal.bangkok');
-const { LegacyContentInstance } = require('twilio/lib/rest/content/v1/legacyContent');
+const { insuredExpress } = require('../../../Models/Delivery/insured/insured');
 
 priceList = async (req, res)=>{
     try{
@@ -187,7 +187,20 @@ priceList = async (req, res)=>{
         }
         const obj = resp.data.data[0];
         const new_data = [];
-        
+
+        const findinsured = await insuredExpress.findOne({express:"SHIPPOP"})
+        let insuranceFee = 0
+            if(findinsured){
+                    // console.log(findinsured.product_value)
+                    let product_value = findinsured.product_value
+                    for (let i = 0; i < product_value.length; i++){
+                        if (declared_value >= product_value[i].valueStart && declared_value <= product_value[i].valueEnd){
+                            insuranceFee = product_value[i].insurance_fee
+                            break;
+                        }
+                    }
+            }
+        console.log(insuranceFee)
         // if(upline === 'ICE'){
             for (const ob of Object.keys(obj)) {
                 if (obj[ob].available) {
@@ -198,7 +211,7 @@ priceList = async (req, res)=>{
                     // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
                     let v = null;
                     let p = line[0].express.find(element => element.courier_code == obj[ob].courier_code);
-                    // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
+                    // console.log(p)
                         if(p.on_off == false){
                             console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
                             continue
@@ -221,7 +234,7 @@ priceList = async (req, res)=>{
                     let price
                     let profit_partner
                     let profit = []
-                    if (priceBangkok) {
+                    if (priceBangkok) { //กรณีผู้รับอยู่ กรุงเทพ/ปริมณฑล
                             let price1 = cost_hub + p.salesBangkok_metropolitan;
                             price = price1 + p.costBangkok_metropolitan;
                             profit_partner = p.salesBangkok_metropolitan
@@ -236,7 +249,7 @@ priceList = async (req, res)=>{
                             }
                             profit.push(dataOne)
                             profit.push(dataTwo)
-                    } else {
+                    } else {//กรณีผู้รับอยู่ ต่างจังหวัด
                             let price1 = cost_hub + p.salesUpcountry;
                             price = price1 + p.costUpcountry
                             profit_partner = p.salesUpcountry
@@ -256,17 +269,19 @@ priceList = async (req, res)=>{
                     // บวก total กับ cost ของ array ที่เหลือ
                     for (let i = 1; i < line.length; i++) {
                         if (priceBangkok) {
-                            price += line[i].express[0].costBangkok_metropolitan;
+                            let findExpress = line[i].express.find(element => element.courier_code == obj[ob].courier_code)
+                            price += findExpress.costBangkok_metropolitan;
                             let dataOne = {
                                 id: line[i].head_line,
-                                profit: line[i].express[0].costBangkok_metropolitan
+                                profit: findExpress.costBangkok_metropolitan
                             }
                             profit.push(dataOne)
                         } else {
-                            price += line[i].express[0].costUpcountry;
+                            let findExpress = line[i].express.find(element => element.courier_code == obj[ob].courier_code)
+                            price += findExpress.costUpcountry;
                             let dataOne = {
                                 id: line[i].head_line,
-                                profit: line[i].express[0].costUpcountry
+                                profit: findExpress.costUpcountry
                             }
                             profit.push(dataOne)
                         }
@@ -277,7 +292,7 @@ priceList = async (req, res)=>{
                     //             data:profit, 
                     //             cost_hub:cost_hub,
                     //             price:price,
-                    //             // line:line
+                    //             line:line
                     //         })
 
                     let status = null;
@@ -305,7 +320,7 @@ priceList = async (req, res)=>{
                         total: 0,
                         cut_partner: 0,
                         declared_value: declared_value,
-                        insuranceFee: 0,
+                        insuranceFee: insuranceFee,
                         status: status,
                         profitAll: profit
                     };
@@ -313,7 +328,7 @@ priceList = async (req, res)=>{
                     if (cod !== undefined) {
                         let fee = (reqCod * percentCod)/100
                         let formattedFee = parseFloat(fee.toFixed(2));
-                        let total = price + formattedFee
+                        let total = price + formattedFee + insuranceFee
                         let cut_partner = total - profit_partner
                             v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                             v.fee_cod = formattedFee
@@ -334,17 +349,19 @@ priceList = async (req, res)=>{
                                         // }
                                 }
                             new_data.push(v);
+
                     }else{
                         if(obj[ob].hasOwnProperty("price_remote_area")){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
-                            let total = price + obj[ob].price_remote_area
+                            let total = price + obj[ob].price_remote_area + insuranceFee
                                 v.price_remote_area = obj[ob].price_remote_area
-                                v.total = total
+                                v.total = total 
                                 v.cut_partner = total - profit_partner
                                 v.profitPartner = profit_partner
                         }else{
+                            let total = price + insuranceFee
                             v.profitPartner = profit_partner
-                            v.total = price
-                            v.cut_partner = price - profit_partner
+                            v.total = total
+                            v.cut_partner = total - profit_partner
                         }
                         new_data.push(v);
                     }
@@ -354,127 +371,7 @@ priceList = async (req, res)=>{
                     console.log(`Skipping ${obj[ob].courier_code} because available is false`);
                 }
             }
-        // }else {
-        //         const costFind = await costPlus.findOne(
-        //             {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
-        //             { _id: 0, 'cost_level.$': 1 })
-        //         if(!costFind){
-        //             return res
-        //                     .status(400)
-        //                     .send({status:false, message:"ค้นหาหมายเลขแนะนำไม่เจอ"})
-        //         }else if(costFind.cost_level[0].cost_plus === ""){
-        //             return res
-        //                     .status(400)
-        //                     .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่ทำการแนะนำระบุส่วนต่าง"})
-        //         }
-        //         const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
-        //         for (const ob of Object.keys(obj)) {
-        //             if (obj[ob].available) {
-        //                 if (reqCod > 0 && obj[ob].courier_code == 'ECP') {
-        //                     console.log('Encountered "ECP". Skipping this iteration.');
-        //                     continue; // ข้ามไปยังรอบถัดไป
-        //                 }
-        //                 // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
-        //                 let v = null;
-        //                 let p = findForCost.express.find(element => element.courier_code == obj[ob].courier_code);
-        //                 // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
-        //                     if(p.on_off == false){
-        //                         console.log(`Skipping ${obj[ob].courier_code} because courier is off`)
-        //                         continue
-        //                     }else if (!p) {
-        //                         console.log(`ยังไม่มี courier name: ${obj[ob].courier_code}`);
-        //                     }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
-        //                         return res
-        //                                 .status(400)
-        //                                 .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง ${p.courier_name}(PAGEKAGE ONE) กรุณาติดต่อ Admin`})
-        //                     }
-        //                 // คำนวนต้นทุนของร้านค้า
-        //                 let cost_hub = Number(obj[ob].price);
-        //                 let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-        //                 let priceOne = Math.ceil(cost + p.costUpcountry)
-        //                 let price = priceOne + cost_plus
-            
-        //                 let cod_amount = 0
-        //                 let status = null;
-                        
-        //                 try {
-        //                     await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-        //                     if (findForCost.credit < price) {
-        //                         status = 'จำนวนเงินของท่านไม่เพียงพอ';
-        //                     } else {
-        //                         status = 'พร้อมใช้บริการ';
-        //                     }
-        //                 } catch (error) {
-        //                     console.error('เกิดข้อผิดพลาดในการรอรับค่า');
-        //                 }
-        //                 v = {
-        //                     ...obj[ob],
-        //                     price_remote_area: 0,
-        //                     cost_hub: cost_hub,
-        //                     cost: cost,
-        //                     cod_amount: Number(cod_amount.toFixed()),
-        //                     fee_cod: 0,
-        //                     profitPartner: 0,
-        //                     priceOne: priceOne,
-        //                     price: Number(price.toFixed()),
-        //                     total: 0,
-        //                     cut_partner: 0,
-        //                     declared_value: declared_value,
-        //                     insuranceFee: 0,
-        //                     status: status
-        //                 };
-        //                 let insuredFee = 0
-        //                 if(declared_value > 0){
-        //                     insuredFee = (declared_value * 3)/100
-        //                     v.insuranceFee = insuredFee
-        //                 }
-        //                 if (cod !== undefined) {
-        //                     let fee = (reqCod * percentCod)/100
-        //                     let formattedFee = parseFloat(fee.toFixed(2));
-        //                     let profitPartner = price - priceOne
-        //                     let total = price + formattedFee 
-        //                     let cut_partner = total - profitPartner
-        //                         v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-        //                         v.fee_cod = formattedFee
-        //                         v.profitPartner = profitPartner
-        //                             if(obj[ob].hasOwnProperty("price_remote_area")){
-        //                                 let total1 = total + obj[ob].price_remote_area
-        //                                 v.price_remote_area = obj[ob].price_remote_area
-        //                                 v.total = total1
-        //                                 v.cut_partner = total1 - profitPartner
-        //                                     // if(reqCod > total1){
-        //                                     //     new_data.push(v);
-        //                                     // }
-        //                             }else{
-        //                                 v.cut_partner = cut_partner
-        //                                 v.total = total
-        //                                     // if(reqCod > total){
-        //                                     //     new_data.push(v);
-        //                                     // }
-        //                             }
-        //                         new_data.push(v);
-        //                 }else{
-        //                     let profitPartner = price - priceOne
-        //                     if(obj[ob].hasOwnProperty("price_remote_area")){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
-        //                         let total = price + obj[ob].price_remote_area
-        //                             v.price_remote_area = obj[ob].price_remote_area
-        //                             v.total = total
-        //                             v.cut_partner = total - profitPartner
-        //                             v.profitPartner = profitPartner
-        //                     }else{
-        //                         v.profitPartner = profitPartner
-        //                         v.total = price
-        //                         v.cut_partner = price - profitPartner
-        //                     }
-        //                     new_data.push(v);
-        //                 }
-        //                 // console.log(new_data);
-        //             } else {
-        //                 // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
-        //                 console.log(`Skipping ${obj[ob].courier_code} because available is false`);
-        //             }
-        //         }
-        // }
+
         return res
                 .status(200)
                 .send({ 

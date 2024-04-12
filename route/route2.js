@@ -27,6 +27,7 @@ router.route('/orderhub/shop/update/express/:id_shop').put( auth.checkToken, sho
 router.route('/orderhub/shop/update/expressAll/:id_shop').put( auth.checkToken, shop.editExpressAll )
 // router.route('/orderhub/shop/update/pushExpress/:id_shop').put( auth.checkToken, shop.pushExpress )
 router.route('/orderhub/shop/updateContract').put( authAdmin.checkToken, shop.statusContract )
+router.route('/orderhub/shop/edit/weight/jnt/:id').put( auth.checkToken, shop.editWeightJnt )
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
@@ -153,7 +154,7 @@ const priceWeight = require('../Controllers/deliveryController/J&T/priceWeight.c
 router.route('/orderhub/weight/post/:id_shop').post( authAdmin.checkToken, priceWeight.createWeight )
 router.route('/orderhub/weight/edit/:id_weight').put( authAdmin.checkToken, priceWeight.editWeight )
 router.route('/orderhub/weight/getAll/').get( authAdmin.checkToken, priceWeight.getAll )
-router.route('/orderhub/weight/get/weight/:id_shop').get( auth.checkToken,priceWeight.getWeightShop )
+router.route('/orderhub/weight/get/weight').put( auth.checkToken,priceWeight.getWeightShop )
 router.route('/orderhub/weight/del/:id').delete( authAdmin.checkToken, priceWeight.delend )
 
 //best express

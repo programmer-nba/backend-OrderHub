@@ -346,6 +346,23 @@ confirmShop = async (req, res)=>{
           {shop_number:shopId},
           {status:"อนุมัติแล้ว"},
           {new:true})
+        if(!findShop){
+          return res
+                  .status(400)
+                  .send({status:false,message:"ไม่สามารถแก้ไขได้"})
+        }
+      let shop_line = findShop.upline.shop_line
+      let findLine
+            while (shop_line != 'ICE') {
+              findLine = await shopPartner.findOneAndUpdate(
+                  {_id:shop_line},
+                  {
+                      $push: { "upline.shop_downline": findShop._id }
+                  },{new:true})
+                shop_line = findLine.upline.shop_line; // อัปเดตค่าของ findForCost สำหรับการวนลูปต่อไป
+                      // console.log(shop_line)
+            }
+      
       const newData = {
             _id: findShop._id,
             shop_number: findShop.shop_number,

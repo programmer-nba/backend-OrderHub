@@ -752,7 +752,7 @@ priceList = async (req, res)=>{
                 percentCod = findCod.percent
             }
         const cod = percentCod
-        
+
         const findPartner = await Partner.findOne({partnerNumber:findForCost.partner_number}) //เช็คว่ามี partner เจ้าของ shop จริงหรือเปล่า
             if(!findPartner){
                 return res
@@ -761,6 +761,40 @@ priceList = async (req, res)=>{
             }
         const upline = findPartner.upline.head_line
         // console.log(upline)
+        const line = []
+        const findUpline = await shopPartner.findOne({shop_number:shop})
+            if(findUpline){
+                line.push({
+                    shop_id:findUpline._id,
+                    head_line:findUpline.upline.head_line,
+                    down_line:findUpline.upline.down_line,
+                    shop_line:findUpline.upline.shop_line,
+                    level:findUpline.upline.level,
+                    express:findUpline.express
+                })
+                let shop_line = findUpline.upline.shop_line
+                while (shop_line != 'ICE') {
+                    const findLine = await shopPartner.findOne({_id:shop_line})
+                        if(findLine){
+                            line.push({
+                                shop_id:findLine._id,
+                                head_line:findLine.upline.head_line,
+                                down_line:findLine.upline.down_line,
+                                shop_line:findLine.upline.shop_line,
+                                level:findLine.upline.level,
+                                express:findLine.express})
+                        }
+                        shop_line = findLine.upline.shop_line; // อัปเดตค่าของ findForCost สำหรับการวนลูปต่อไป
+                }
+                // return res
+                //         .status(200)
+                //         .send({status:false, data:line})
+            }else if(!findUpline){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
+            }
+
         const findPostCode = await jntRemoteArea.findOne({postcode:formData.to.postcode})
             if(findPostCode){
                 if(findPostCode.type == 'remoteArea'){

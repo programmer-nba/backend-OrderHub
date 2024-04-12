@@ -1,53 +1,106 @@
 const { priceWeight } = require("../../../Models/Delivery/J&T/priceWeight");
+const { shopPartner } = require("../../../Models/shop/shop_partner");
 
 createWeight = async(req, res)=>{
     try{
-        const id_shop = req.params.id_shop
-        const weight = req.body.weight
-        const price = req.body.price
-        const findWeight = await priceWeight.findOne(
-            {
-                id_shop: id_shop,
-                weight: weight
-            })
-            if(findWeight){
-                return res
-                        .status(400)
-                        .send({status:false, message:"มีน้ำหนักนี้ในระบบแล้ว"})
+        let data = {
+            weightStart: 0.01,
+            weightEnd:0.50,
+        }
+        let createShow = []
+        while (data.weightEnd != 101){
+            const create = await priceWeight.create(data)
+                if(!create){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถสร้างได้"})
+                }
+            createShow.push(create)
+
+            if(data.weightStart < 0.5){
+                data.weightStart = Math.round((data.weightStart + 0.5) * 100) / 100;
+                data.weightEnd = Math.round((data.weightEnd + 0.5) * 100) / 100;
+                
+            }else if(data.weightEnd == 1){
+                data.weightStart = 1.01
+                data.weightEnd = 2
+            }else{
+                data.weightStart = Math.round((data.weightStart + 1) * 100) / 100;
+                data.weightEnd = Math.round((data.weightEnd + 1) * 100) / 100;
             }
-        const create = await priceWeight.create(
-            {   
-                id_shop: id_shop,
-                weight: weight,
-                price: price
-            }
-        )
-            if(!create){
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
-            }
+        }
         return res
                 .status(200)
-                .send({status:true, data: create})
+                .send({status:true, data:createShow})
+        // const id = req.params.id_shop
+        // const data = req.body.data
+        // // console.log(data)
+        // let result
+        // const findWeight = await shopPartner.findOne({_id:id})
+        //     if(!findWeight){
+        //         return res
+        //                 .status(400)
+        //                 .send({status:false, message:"ค้นหาร้านไม่เจอ"})
+        //     }
+        // const createWeight = await shopPartner.findOneAndUpdate(
+        //     {_id:id},
+        //     {
+        //         jnt: data
+        //     },
+        //     {new:true})
+        //     if(createWeight){
+        //         let dataTwo = [];
+        //         let bulkOps = [];
+        //         let jnt = createWeight.jnt;
+                
+        //         for (let i = 0; i < jnt.length; i++){
+        //             let dataObject = {
+        //                 weightStart: jnt[i].weightStart,
+        //                 weightEnd: jnt[i].weightEnd,
+        //                 _id: jnt[i]._id // เพิ่ม _id ให้กับ dataObject
+        //             };
+        //             dataTwo.push(dataObject);
+        //         }
+        //         // console.log(dataTwo)
+        //         const shopDownlineIds = createWeight.upline.shop_downline;
+
+                
+        //         bulkOps = shopDownlineIds.map(shopDownlineId => ({
+        //                 updateOne: {
+        //                     filter: { _id: shopDownlineId },
+        //                     update: { jnt: dataTwo }
+        //                 }
+        //             }));
+
+        //         // ทำ bulkWrite
+        //         const result = await shopPartner.bulkWrite(bulkOps);
+        //         return res
+        //             .status(200)
+        //             .send({ status: true, data: result });
+                
+        //     }else if(!createWeight){
+        //         return res
+        //                 .status(400)
+        //                 .send({status:false, message:"ไม่สามารถอัพเอทข้อมูลได้"})
+        //     }
+    
     }catch(err){
+        console.log(err)
         return res
                 .status(500)
-                .send({status:false, message:err})
+                .send({status:false, message:err.message})
     }
 }
 
 editWeight = async (req, res)=>{
     try{
         const id_weight = req.params.id_weight
-        const { weight, price} = req.body
         const edit = await priceWeight.findOneAndUpdate(
             {
                 _id: id_weight
             },
             {
-                weight:weight,
-                price:price
+                ...req.body
             },
             {new:true})
             if(!edit){
@@ -85,16 +138,15 @@ getAll = async(req, res)=>{
 
 getWeightShop = async(req, res)=>{
     try{
-        const id_shop = req.params.id_shop
-        const findWeight = await priceWeight.find({id_shop:id_shop})
-            if(!findWeight){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่สามารถค้นหาน้ำหนักของร้านค้านี้เจอ"})
+        const findWeight = await priceWeight.find()
+        const update = await shopPartner.updateMany({
+            $push:{
+                jnt:findWeight
             }
+        })
         return res
                 .status(200)
-                .send({status:true, data:findWeight})
+                .send({status:true, data:update})
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res
@@ -102,6 +154,7 @@ getWeightShop = async(req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
 delend = async (req, res)=>{
     try{
         const id = req.params.id

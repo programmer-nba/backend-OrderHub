@@ -7,6 +7,7 @@ const { historyWalletShop } = require("../../Models/shop/shop_history");
 const { shopPartner, validate } = require("../../Models/shop/shop_partner");
 const { historyWallet } = require("../../Models/topUp/history_topup");
 const { uploadFileCreate, deleteFile } = require("../../functions/uploadfilecreate");
+const { ObjectId } = require('mongodb');
 const mongoose = require('mongoose');
 const multer = require("multer");
 const storage = multer.diskStorage({
@@ -30,7 +31,7 @@ create = async (req, res)=>{
                         .send({status:false, message:"กรุณาระบุสาขาหลักที่ท่านต้องการอ้างอิงราคา"})
             }
         const taxOrCom = await shopPartner.findOne({
-            $or: [ //$or ใช้เพื่อเช็คถ้าเข้าเงื่อนไขใดเงื่อนไขหนึ่งให้เก็บ ducument ของคนๆนั้นไว้(กรณีด้านล่างมี 7 เงื่อนไข)
+            $or: [ //$or ใช้เพื่อเช็คถ้าเข้าเงื่อนไขใดเงื่อนไขหนึ่งให้เก็บ ducument ของคนๆนั้นไว้(กรณีด้านล่างมี 6 เงื่อนไข)
               { "tax.taxName": req.body.taxName },
               { "tax.taxNumber": req.body.taxNumber },
               { "commercial.commercialName": req.body.commercialName },
@@ -38,7 +39,7 @@ create = async (req, res)=>{
               { shop_number: req.body.shop_number },
               { shop_name: req.body.shop_name },
             ]
-          });
+          })
             if(taxOrCom){
                 if(taxOrCom.shop_number == req.body.shop_number){
                     return res
@@ -60,10 +61,10 @@ create = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่มีพาร์ทเนอร์นี้ในระบบ"})
             }
-            
+
             if(req.body.shop_status == 'downline'){ //เป็นการสร้างร้านให้พาร์ทเนอร์คนอื่น
 
-                const findShop = await shopPartner.findOne({_id:id_shop})
+                let findShop = await shopPartner.findOne({_id:id_shop})
                     if(!findShop){
                         return res
                                 .status(400)
@@ -160,13 +161,17 @@ create = async (req, res)=>{
                                 "upline.head_line":id,
                                 "upline.down_line":createPartner._id,
                                 "upline.shop_line":id_shop,
-                                'upline.level':levelInt
+                                'upline.level':levelInt,
+                                
                         })
                         if(!createShop){
                             return res
                                     .status(400)
                                     .send({status:false, message:"ไม่สามารถสร้างร้านค้าได้"})
                         }
+                    
+            
+                    // console.log(findLine)
                 return res
                         .status(200)
                         .send({
@@ -176,6 +181,7 @@ create = async (req, res)=>{
                             })
 
             }else if(req.body.shop_status == 'owner'){//เป็นการสร้างร้านของตนเอง
+                    
                     const createShop = await shopPartner.create(
                         {
                                 partnerID:findPartnerOne._id,
@@ -199,8 +205,9 @@ create = async (req, res)=>{
                                 "upline.head_line":findPartnerOne.upline.head_line,
                                 "upline.down_line":findPartnerOne._id,
                                 "upline.shop_line":findPartnerOne.upline.shop_upline,
-                                'upline.level':findPartnerOne.upline.level
+                                'upline.level':findPartnerOne.upline.level,
                         })
+                        
                         if(!createShop){
                             return res
                                     .status(400)
@@ -277,6 +284,13 @@ delend = async (req, res)=>{
         const id = req.params.id
         const findShop = await shopPartner.findOneAndDelete({shop_number:id},{new:true}) //ลบข้อมูลร้านค้าในฐานข้อมูล shop_partner
         if(findShop){
+            const delShop_downline = await shopPartner.updateMany(
+                {
+                    $pull: {
+                        "upline.shop_downline":findShop._id
+                    }
+                }
+            )
             const delShop_partner = await Partner.updateMany(
                 { 
                     $pull: { 
@@ -288,7 +302,7 @@ delend = async (req, res)=>{
                 if(delShop_partner){
                     return res 
                             .status(200)
-                            .send({status:true,data:delShop_partner})
+                            .send({status:true, message:"ลบข้อมูลสำเร็จ",data:delShop_partner, del_downline:delShop_downline})
                 }else{
                     return res
                             .status(400)
@@ -884,6 +898,46 @@ statusContract = async (req, res)=>{
     }
 }
 
+editWeightJnt = async (req, res)=>{
+    try{
+        const id = req.params.id
+        console.log(id)
+        const dataInput = req.body.data
+        
+        try {
+            const result = await shopPartner.bulkWrite(dataInput.map(data => ({
+                updateOne: {
+                    filter: { _id: id },
+                    update: { 
+                        $set: {
+                            'jnt.$[element].costBangkok_metropolitan': data.costBangkok_metropolitan,
+                            'jnt.$[element].costUpcountry': data.costUpcountry,
+                            'jnt.$[element].salesBangkok_metropolitan': data.salesBangkok_metropolitan,
+                            'jnt.$[element].salesUpcountry': data.salesUpcountry
+                        }
+                    },
+                    arrayFilters: [{ 'element._id': new ObjectId(data._id) }],
+                }
+            })));
+            // console.log(JSON.stringify(result, null, 2))
+            // const updatedData = await shopPartner.findOne({ _id: id });
+                // console.log(updatedData.jnt[0],updatedData.jnt[1],updatedData.jnt[2],updatedData.jnt[3]);
+            return res
+                    .status(200)
+                    .send({ status: true, data: result });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).send({ status: false, message: "มีข้อผิดพลาดในการประมวลผลคำขอ" });
+        }
+    }catch(err){
+        // console.log(err.massage)
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoicePTS() {
     let data = `PTS`
     let random = Math.floor(Math.random() * 10000000000)
@@ -923,6 +977,6 @@ async function invoiceSTP() {
 }
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
-                , editExpressAll ,pushExpress, statusContract}
+                , editExpressAll ,pushExpress, statusContract, editWeightJnt}
 
 
