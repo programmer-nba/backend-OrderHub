@@ -1,11 +1,11 @@
-const { priceWeightBest } = require("../../../Models/Delivery/best_express/priceWeightBest")
+const { weightAll } = require("../../../Models/Delivery/weight/weightAll")
 
 createWeight = async(req, res)=>{
     try{
         const id_shop = req.params.id_shop
         const weight = req.body.weight
         const price = req.body.price
-        const findWeight = await priceWeightBest.findOne(
+        const findWeight = await weightAll.findOne(
             {
                 id_shop: id_shop,
                 weight: weight
@@ -15,7 +15,7 @@ createWeight = async(req, res)=>{
                         .status(400)
                         .send({status:false, message:"มีน้ำหนักนี้ในระบบแล้ว"})
             }
-        const create = await priceWeightBest.create(
+        const create = await weightAll.create(
             {   
                 id_shop: id_shop,
                 weight: weight,
@@ -41,7 +41,7 @@ editWeight = async (req, res)=>{
     try{
         const id_weight = req.params.id_weight
         const { weight, price} = req.body
-        const edit = await priceWeightBest.findOneAndUpdate(
+        const edit = await weightAll.findOneAndUpdate(
             {
                 _id: id_weight
             },
@@ -67,7 +67,7 @@ editWeight = async (req, res)=>{
 
 getAll = async(req, res)=>{
     try{
-        const findAll = await priceWeightBest.find()
+        const findAll = await weightAll.find()
             if(!findAll){
                 return res
                         .status(400)
@@ -86,7 +86,7 @@ getAll = async(req, res)=>{
 getWeightShop = async(req, res)=>{
     try{
         const id_shop = req.params.id_shop
-        const findWeight = await priceWeightBest.find({id_shop:id_shop})
+        const findWeight = await weightAll.find({id_shop:id_shop})
             if(!findWeight){
                 return res
                         .status(404)
@@ -106,7 +106,7 @@ getWeightShop = async(req, res)=>{
 delend = async (req, res)=>{
     try{
         const id = req.params.id
-        const del = await priceWeightBest.findByIdAndDelete({_id:id})
+        const del = await weightAll.findByIdAndDelete({_id:id})
             if(!del){
                 return res
                         .status(400)

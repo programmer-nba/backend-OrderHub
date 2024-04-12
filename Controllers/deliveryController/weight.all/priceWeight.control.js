@@ -1,4 +1,4 @@
-const { priceWeight } = require("../../../Models/Delivery/J&T/priceWeight");
+const { priceWeight } = require("../../../Models/Delivery/weight/priceWeight");
 const { shopPartner } = require("../../../Models/shop/shop_partner");
 
 createWeight = async(req, res)=>{

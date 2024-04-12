@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema
 const Joi = require("joi");
 const { PercentCourier } = require("../Delivery/ship_pop/percent");
-const { priceWeight } = require("../Delivery/J&T/priceWeight");
+const { priceWeight } = require("../Delivery/weight/priceWeight");
 
 const shopSchema = new Schema({
     partnerID:{type:String, require: false},

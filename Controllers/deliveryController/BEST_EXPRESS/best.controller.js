@@ -3,7 +3,7 @@ const axios = require('axios')
 const dayjs = require('dayjs');
 const fs = require('fs');
 const { bestOrder } = require('../../../Models/Delivery/best_express/order')
-const { priceWeightBest } = require('../../../Models/Delivery/best_express/priceWeightBest');
+const { weightAll } = require('../../../Models/Delivery/weight/weight.all.express');
 const { PercentCourier } = require('../../../Models/Delivery/ship_pop/percent');
 const { codExpress } = require('../../../Models/COD/cod.model');
 const { shopPartner } = require('../../../Models/shop/shop_partner');
@@ -1140,7 +1140,7 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
-        const result  = await priceWeightBest.find(
+        const result  = await weightAll.find(
             {
                 id_shop: findForCost._id,
                 weight: {$gte: weight}

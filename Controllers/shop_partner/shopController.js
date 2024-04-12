@@ -901,9 +901,63 @@ statusContract = async (req, res)=>{
 editWeightJnt = async (req, res)=>{
     try{
         const id = req.params.id
-        console.log(id)
+        // console.log(id)
+        const partner_id = req.decoded.userid
+        const role = req.decoded.role
         const dataInput = req.body.data
+        console.log(partner_id, role)
+        const findShop = await shopPartner.findOne({_id:id})
+            if(!findShop){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่พบร้านค้า"})
+            }
+        let shop_downline
+            if(partner_id == findShop.upline.down_line){
+                shop_downline = 'downline'
+            }else if(partner_id == findShop.upline.head_line){
+                shop_downline = 'upline'
+            }else if(role == 'admin'){
+                shop_downline = 'admin'
+            }else{
+                return res
+                        .status(400)
+                        .send({status:false, message:"คุณไม่มีสิทธิ์แก้ไขรายการนี้"})
+            }
         
+        for (const data of dataInput) {
+            if(shop_downline == 'upline' || shop_downline == 'admin'){
+                if(data.salesBangkok_metropolitan < data.costBangkok_metropolitan){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`กรุณาอย่าตั้งราคาขายหน้าร้านกรุงเทพ/ปริมณฑล น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าราคาทุนที่ได้รับ`})
+                }else if(data.salesUpcountry < data.costUpcountry){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`กรุณาอย่าตั้งราคาขายหน้าร้านต่างจังหวัด น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าต้นทุนที่ได้รับ`})
+                }else if(data.costBangkok_metropolitan == 0 || data.costUpcountry == 0){
+                    return res 
+                            .status(400)
+                            .send({status:false, message:`น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ยังไม่มีการกำหนดราคาต้นทุน`})
+                }
+
+            }else if(shop_downline == 'downline'){ //เช็คว่าเป็น พาร์ทเนอร์ลูกมาเปลี่ยนราคาหรือเปล่า
+                if(data.salesBangkok_metropolitan < data.costBangkok_metropolitan){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`กรุณาอย่าตั้งราคาขายหน้าร้านกรุงเทพ/ปริมณฑล น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าราคาทุนที่ได้รับ`})
+                }else if(data.salesUpcountry < data.costUpcountry){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`กรุณาอย่าตั้งราคาขายหน้าร้านต่างจังหวัด น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าต้นทุนที่ได้รับ`})
+                }else if(data.costBangkok_metropolitan == 0 || data.costUpcountry == 0){
+                    return res 
+                            .status(400)
+                            .send({status:false, message:`น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ยังไม่มีการกำหนดราคาต้นทุนกรุณารอ`})
+                }
+            }
+        }
+
         try {
             const result = await shopPartner.bulkWrite(dataInput.map(data => ({
                 updateOne: {
@@ -921,7 +975,7 @@ editWeightJnt = async (req, res)=>{
             })));
             // console.log(JSON.stringify(result, null, 2))
             // const updatedData = await shopPartner.findOne({ _id: id });
-                // console.log(updatedData.jnt[0],updatedData.jnt[1],updatedData.jnt[2],updatedData.jnt[3]);
+            // console.log(updatedData.jnt[0],updatedData.jnt[1],updatedData.jnt[2],updatedData.jnt[3]);
             return res
                     .status(200)
                     .send({ status: true, data: result });
