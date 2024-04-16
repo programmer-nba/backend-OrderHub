@@ -1,4 +1,5 @@
 const { PercentCourier, validate } = require("../../../Models/Delivery/ship_pop/percent");
+const { priceBase } = require("../../../Models/Delivery/weight/priceBase.express");
 const { shopPartner } = require("../../../Models/shop/shop_partner");
 
 
@@ -24,12 +25,23 @@ create = async(req, res)=>{
                             express: percent
                         }
                     })
+                const updatePriceBase = await priceBase.create({
+                    express:req.body.express,
+                    courier_code: req.body.courier_code,
+                    courier_name: req.body.courier_name
+                })
+                    if(!updatePriceBase){
+                        return res  
+                                .status(400)
+                                .send({status:false, message:"สร้างข้อมูลราคาพื้นฐานไม่ได้"})
+                    }
                 return res
                         .status(201)
                         .send({status:true, 
                             message: "เพิ่มข้อมูลสำเร็จ", 
                             data: percent,
-                            update: update
+                            update: update,
+                            pricebase: updatePriceBase
                         });
             }else{
                 return res

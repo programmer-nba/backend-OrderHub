@@ -1,9 +1,14 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema
 
-const priceWeightBestSchema = new Schema({
-    id_shop: {type:String, required: false},
+const weightAllExpressSchema = new Schema({
+    shop_id: {type:String, required: false},
+    owner_id: {type:String, required: false}, //down_line กับ owner_id ใน schema shopPartner คือคนเดียวกัน
+    head_line: {type:String, required: false},
+    shop_line: {type:String, required: false},
+    weightMax: {type:Number, default: 0, required: false},
     express: {type:String, required: false},
+    level: {type:Number, required: false},
     weight: [{
         weightStart: { type: Number },
         weightEnd: { type: Number },
@@ -14,6 +19,6 @@ const priceWeightBestSchema = new Schema({
     }]
 },{timestamps: true});
 
-const weightAll = mongoose.model("weight_all_express", priceWeightBestSchema);
+const weightAll = mongoose.model("weight_all_express", weightAllExpressSchema);
 
 module.exports = { weightAll };

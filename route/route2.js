@@ -27,7 +27,6 @@ router.route('/orderhub/shop/update/express/:id_shop').put( auth.checkToken, sho
 router.route('/orderhub/shop/update/expressAll/:id_shop').put( auth.checkToken, shop.editExpressAll )
 // router.route('/orderhub/shop/update/pushExpress/:id_shop').put( auth.checkToken, shop.pushExpress )
 router.route('/orderhub/shop/updateContract').put( authAdmin.checkToken, shop.statusContract )
-router.route('/orderhub/shop/edit/weight/jnt/:id').put( auth.checkToken, shop.editWeightJnt )
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
@@ -167,13 +166,7 @@ router.route('/orderhub/best/cancel').delete( auth.checkToken, best.cancelOrder 
 router.route('/orderhub/best/priceList').post( auth.checkToken, best.priceList )
 router.route('/orderhub/best/getme').get( auth.checkToken, best.getMeBooking )
 router.route('/orderhub/best/getById/:txLogisticId').get( auth.checkToken, best.getById )
-//กำหนดราคา/น้ำหนัก best express
-// const bestWeight = require('../Controllers/deliveryController/BEST_EXPRESS/weightAll')
-// router.route('/orderhub/weightBest/post/:id_shop').post( authAdmin.checkToken, bestWeight.createWeight )
-// router.route('/orderhub/weightBest/edit/:id_weight').put( authAdmin.checkToken, bestWeight.editWeight )
-// router.route('/orderhub/weightBest/getAll').get( authAdmin.checkToken, bestWeight.getAll )
-// router.route('/orderhub/weightBest/get/weight/:id_shop').get( auth.checkToken,bestWeight.getWeightShop )
-// router.route('/orderhub/weightBest/del/:id').delete( authAdmin.checkToken, bestWeight.delend )
+
 //best Admin
 router.route('/orderhub/best/getAll').get( authAdmin.checkToken, best.getAll )
 router.route('/orderhub/best/getOne/:txLogisticId').get( authAdmin.checkToken, best.getById )
@@ -252,5 +245,19 @@ router.route('/orderhub/insured/del/:id').delete( authAdmin.checkToken, insured.
 router.route('/orderhub/insured/del_value/:id').delete( authAdmin.checkToken, insured.del_value )
 router.route('/orderhub/insured/push_value/:id').put( authAdmin.checkToken, insured.push_value )
 router.route('/orderhub/insured/get/express/:id').get( authAdmin.checkToken, insured.getExpress )
+
+//ราคาขายหน้าร้าน กรุงเทพ กับ ต่างจังหวัด แบบมาตรฐาน
+const base = require('../Controllers/deliveryController/weight.all/price.base')
+router.route('/orderhub/price/base/getAll').get( auth.checkToken, base.getAll )
+router.route('/orderhub/price/base/express/:id').get( auth.checkToken, base.getByExpress )
+router.route('/orderhub/price/base/edit/:id').put( auth.checkToken, base.editPrice )
+
+//กำหนดราคา/น้ำหนัก ทุก SHOP
+const weightAll = require('../Controllers/deliveryController/weight.all/weightAll')
+router.route('/orderhub/weight/all/edit/:id').put( auth.checkToken, weightAll.editWeight )
+router.route('/orderhub/weight/all/getAll').get( auth.checkToken, weightAll.getAll )
+router.route('/orderhub/weight/all/get/weight/:id_shop').get( auth.checkToken,weightAll.getWeightShop )
+router.route('/orderhub/weight/all/del/:id').delete( auth.checkToken, weightAll.delend )
+router.route('/orderhub/weight/all/edit/weightMax/:id').put( auth.checkToken, weightAll.editWeightMax )
 
 module.exports = router;

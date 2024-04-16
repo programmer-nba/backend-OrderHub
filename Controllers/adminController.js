@@ -9,6 +9,9 @@ const { Blacklist } = require("../Models/blacklist");
 const { shopPartner } = require("../Models/shop/shop_partner");
 const { memberShop } = require("../Models/shop/member_shop");
 const { historyWalletShop } = require("../Models/shop/shop_history");
+const { priceBase } = require("../Models/Delivery/weight/priceBase.express");
+const { weightAll } = require("../Models/Delivery/weight/weight.all.express");
+const { priceWeight } = require("../Models/Delivery/weight/priceWeight");
 
 createAdmin = async (req, res) => {
   try {
@@ -362,7 +365,27 @@ confirmShop = async (req, res)=>{
                 shop_line = findLine.upline.shop_line; // อัปเดตค่าของ findForCost สำหรับการวนลูปต่อไป
                       // console.log(shop_line)
             }
-      
+      const createBase = await priceBase.find()
+
+        createBase.forEach(async (data) =>{
+              let v = {
+                    shop_id:findShop._id,
+                    owner_id:findShop.partnerID,
+                    head_line:findShop.upline.head_line,
+                    shop_line:findShop.upline.shop_line,
+                    express: data.express,
+                    level:findShop.upline.level,
+              }
+              const baseWeight = data.weight.map(({ weightStart, weightEnd }) => ({ weightStart, weightEnd }));
+              v.weight = baseWeight
+              // console.log(v)
+              const createWeight = await weightAll.create(v)
+                // console.log(data.weight)
+                    if(!createWeight){
+                        console.log("ไม่สามารถสร้างน้ำหนักให้กับร้านค้าได้")
+                    }
+            })
+
       const newData = {
             _id: findShop._id,
             shop_number: findShop.shop_number,

@@ -90,7 +90,7 @@ QRCreate = async (req, res)=>{
         //         console.log('QR Code created and saved successfully:', qrCodeFilePath);
         //     }
         // });
- 
+
         const new_data = {
             partnerID:findPartner._id,
             shop_number: '-',

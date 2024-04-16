@@ -1,4 +1,6 @@
 const { PercentCourier } = require("../../Models/Delivery/ship_pop/percent");
+const { priceBase } = require("../../Models/Delivery/weight/priceBase.express");
+const { weightAll } = require("../../Models/Delivery/weight/weight.all.express");
 const { Admin } = require("../../Models/admin");
 const { Blacklist } = require("../../Models/blacklist");
 const { Partner } = require("../../Models/partner");
@@ -117,7 +119,7 @@ create = async (req, res)=>{
                             if (findMemberShop) {
                                 return res.status(401).send({ status: false, message: "มีผู้ใช้ E-mail นี้ในระบบแล้ว" });
                             }
-
+                    
                     const createPartner = await Partner.create(
                         {
                             antecedent: req.body.partner_antecedent,
@@ -169,7 +171,6 @@ create = async (req, res)=>{
                                     .status(400)
                                     .send({status:false, message:"ไม่สามารถสร้างร้านค้าได้"})
                         }
-                    
             
                     // console.log(findLine)
                 return res
@@ -299,15 +300,13 @@ delend = async (req, res)=>{
                     } 
                 }
             );
-                if(delShop_partner){
-                    return res 
-                            .status(200)
-                            .send({status:true, message:"ลบข้อมูลสำเร็จ",data:delShop_partner, del_downline:delShop_downline})
-                }else{
-                    return res
-                            .status(400)
-                            .send({status:false, message:"ไม่สามารถลบข้อมูลได้"})
-                }
+            
+            const delWeight = await weightAll.deleteMany({shop_id:findShop._id})
+
+            return res 
+                    .status(200)
+                    .send({status:true, message:"ลบข้อมูลสำเร็จ",data:delShop_partner, del_downline:delShop_downline, delWeight:delWeight})
+
         }else{
             return res
                     .status(400)
@@ -898,100 +897,6 @@ statusContract = async (req, res)=>{
     }
 }
 
-editWeightJnt = async (req, res)=>{
-    try{
-        const id = req.params.id
-        // console.log(id)
-        const partner_id = req.decoded.userid
-        const role = req.decoded.role
-        const dataInput = req.body.data
-        console.log(partner_id, role)
-        const findShop = await shopPartner.findOne({_id:id})
-            if(!findShop){
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่พบร้านค้า"})
-            }
-        let shop_downline
-            if(partner_id == findShop.upline.down_line){
-                shop_downline = 'downline'
-            }else if(partner_id == findShop.upline.head_line){
-                shop_downline = 'upline'
-            }else if(role == 'admin'){
-                shop_downline = 'admin'
-            }else{
-                return res
-                        .status(400)
-                        .send({status:false, message:"คุณไม่มีสิทธิ์แก้ไขรายการนี้"})
-            }
-        
-        for (const data of dataInput) {
-            if(shop_downline == 'upline' || shop_downline == 'admin'){
-                if(data.salesBangkok_metropolitan < data.costBangkok_metropolitan){
-                    return res
-                            .status(400)
-                            .send({status:false, message:`กรุณาอย่าตั้งราคาขายหน้าร้านกรุงเทพ/ปริมณฑล น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าราคาทุนที่ได้รับ`})
-                }else if(data.salesUpcountry < data.costUpcountry){
-                    return res
-                            .status(400)
-                            .send({status:false, message:`กรุณาอย่าตั้งราคาขายหน้าร้านต่างจังหวัด น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าต้นทุนที่ได้รับ`})
-                }else if(data.costBangkok_metropolitan == 0 || data.costUpcountry == 0){
-                    return res 
-                            .status(400)
-                            .send({status:false, message:`น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ยังไม่มีการกำหนดราคาต้นทุน`})
-                }
-
-            }else if(shop_downline == 'downline'){ //เช็คว่าเป็น พาร์ทเนอร์ลูกมาเปลี่ยนราคาหรือเปล่า
-                if(data.salesBangkok_metropolitan < data.costBangkok_metropolitan){
-                    return res
-                            .status(400)
-                            .send({status:false, message:`กรุณาอย่าตั้งราคาขายหน้าร้านกรุงเทพ/ปริมณฑล น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าราคาทุนที่ได้รับ`})
-                }else if(data.salesUpcountry < data.costUpcountry){
-                    return res
-                            .status(400)
-                            .send({status:false, message:`กรุณาอย่าตั้งราคาขายหน้าร้านต่างจังหวัด น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าต้นทุนที่ได้รับ`})
-                }else if(data.costBangkok_metropolitan == 0 || data.costUpcountry == 0){
-                    return res 
-                            .status(400)
-                            .send({status:false, message:`น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ยังไม่มีการกำหนดราคาต้นทุนกรุณารอ`})
-                }
-            }
-        }
-
-        try {
-            const result = await shopPartner.bulkWrite(dataInput.map(data => ({
-                updateOne: {
-                    filter: { _id: id },
-                    update: { 
-                        $set: {
-                            'jnt.$[element].costBangkok_metropolitan': data.costBangkok_metropolitan,
-                            'jnt.$[element].costUpcountry': data.costUpcountry,
-                            'jnt.$[element].salesBangkok_metropolitan': data.salesBangkok_metropolitan,
-                            'jnt.$[element].salesUpcountry': data.salesUpcountry
-                        }
-                    },
-                    arrayFilters: [{ 'element._id': new ObjectId(data._id) }],
-                }
-            })));
-            // console.log(JSON.stringify(result, null, 2))
-            // const updatedData = await shopPartner.findOne({ _id: id });
-            // console.log(updatedData.jnt[0],updatedData.jnt[1],updatedData.jnt[2],updatedData.jnt[3]);
-            return res
-                    .status(200)
-                    .send({ status: true, data: result });
-
-        } catch (error) {
-            console.error(error);
-            return res.status(500).send({ status: false, message: "มีข้อผิดพลาดในการประมวลผลคำขอ" });
-        }
-    }catch(err){
-        // console.log(err.massage)
-        return res
-                .status(500)
-                .send({status:false, message:err})
-    }
-}
-
 async function invoicePTS() {
     let data = `PTS`
     let random = Math.floor(Math.random() * 10000000000)
@@ -1031,6 +936,6 @@ async function invoiceSTP() {
 }
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
-                , editExpressAll ,pushExpress, statusContract, editWeightJnt}
+                , editExpressAll ,pushExpress, statusContract}
 
 

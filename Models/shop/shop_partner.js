@@ -32,7 +32,7 @@ const shopSchema = new Schema({
     shop_status: {type:String, require: false},
     upline:{
         head_line:{type: String ,default:"", require: false},
-        down_line:{type: String ,default:"", require: false},
+        down_line:{type: String ,default:"", require: false}, //down_line กับ owner_id ใน schema weightAll คือคนเดียวกัน
         shop_line: {type: String ,default:"", require: false},
         shop_downline: {type: Array, require:false},
         level:{type: Number ,default:"", require: false},
@@ -47,14 +47,6 @@ const shopSchema = new Schema({
         salesUpcountry : {type : Number, default: 0, required : false},
         on_off : {type : Boolean, default: true, required : false },
         cancel_contract : {type : Boolean, default: false, required : false }
-    }],
-    jnt:[{
-        weightStart: { type: Number, required: false },
-        weightEnd: { type: Number, required: false },
-        costBangkok_metropolitan : { type : Number, default:0, required : true },
-        costUpcountry : { type : Number, default:0, required : true },
-        salesBangkok_metropolitan : { type : Number, default:0, required :false },
-        salesUpcountry : { type : Number, default:0, required : false },
     }]
 },{timestamps:true});
 
@@ -77,19 +69,6 @@ shopSchema.pre('save',async function(next){
                         salesUpcountry: percent.salesUpcountry,
                         on_off: percent.on_off,
                         cancel_contract : percent.cancel_contract
-                    });
-                });
-            }
-        priceWeight
-        const findWeightJnt = await priceWeight.find()
-            if(!findWeightJnt){
-                console.log("ไม่สามารถค้นหาน้ำหนักของ JNT ได้")
-            }else {
-                // เพิ่มข้อมูลจาก findPercent ลงใน this.jnt
-                findWeightJnt.forEach(weight => {
-                    Shop.jnt.push({
-                        weightStart: weight.weightStart,
-                        weightEnd: weight.weightEnd,
                     });
                 });
             }
