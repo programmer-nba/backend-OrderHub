@@ -127,6 +127,10 @@ createOrder = async (req, res)=>{
                 return res
                         .status(404)
                         .send({status:false, message:"กรุณาใส่หมายเลขโทรศัพท์ให้ถูกต้อง(10 หลัก)"})
+            }else if(response.data.responseitems[0].success == 'false'){
+                return res
+                        .status(404)
+                        .send({status:false, message:`ไม่สามารถสร้างออเดอร์ได้เนื่องจากมีความผิดพลาด กรุณาตรวจสอบ น้ำหนัก,ที่อยู่ของ ผู้รับ, ผู้ส่ง และ เบอร์โทร ว่าท่านได้กรอกถูกต้องหรือไม่(${response.data.responseitems[0].reason})`})
             }
         const new_data = response.data.responseitems[0]
         // const createOrder = await jntOrder.create(
@@ -333,7 +337,6 @@ createOrder = async (req, res)=>{
                         }
                 }
         if(cod_amount != 0){
-
             const pfIceCOD = {
                             Orderer: id,
                             role: role,
@@ -522,6 +525,7 @@ createOrder = async (req, res)=>{
                 .status(200)
                 .send({
                     status:true, 
+                    res: response.data,
                     order: createOrderAll,
                     // shop: findShop,
                     profitAll: allProfit
@@ -768,12 +772,20 @@ label = async (req, res)=>{
 priceList = async (req, res)=>{
     // console.log(req.body)
     try{
+        const no = req.body.no
         const formData = req.body
         const shop = formData.shop_number
         const weight = formData.parcel.weight
         const declared_value = formData.declared_value
-        let reqCod = req.body.cod
+        let reqCod = req.body.cod_amount
         let percentCod 
+        if (!Number.isInteger(reqCod)||
+            !Number.isInteger(declared_value)) {
+                    return res.status(400).send({
+                        status: false,
+                        message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`
+                    });
+                }
         const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
             if(!findForCost){
                 return res
@@ -806,7 +818,7 @@ priceList = async (req, res)=>{
                 }
                 return res
                         .status(400)
-                        .send({status: false, message:`น้ำหนักของคุณที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`})
+                        .send({status: false, message:`น้ำหนักของร้านค้า ${req.body.shop_number} ที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`})
             }else if(reqCod > 0){
                 const findCod = await codExpress.findOne({express:"J&T"})
                 percentCod = findCod.percent
@@ -870,19 +882,19 @@ priceList = async (req, res)=>{
                     if(resultP.costUpcountry == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                     }else if(resultP.costBangkok_metropolitan == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                     }else if(resultP.salesBangkok_metropolitan == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                     }else if(resultP.salesUpcountry == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                     }
                 let resultBase
                 let base = findPriceBase.weight
@@ -896,29 +908,29 @@ priceList = async (req, res)=>{
                     if(resultBase.costUpcountry == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }else if(resultBase.costBangkok_metropolitan == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }else if(resultBase.salesBangkok_metropolitan == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }else if(resultBase.salesUpcountry == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }
 
                     if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
                         return res
                                 .status(400)
-                                .send({status:false, message:`ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาแก้ไข`})
+                                .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาแก้ไข`})
                     }else if(resultP.costUpcountry > resultBase.salesUpcountry){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาแก้ไข`})
+                                .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาแก้ไข`})
                     }
 
                 // คำนวนต้นทุนของร้านค้า
@@ -927,17 +939,16 @@ priceList = async (req, res)=>{
                 let profit_partner
                 let profit = []
                 let status = null;
-                let cod_amount = 0
                 let cut_partner 
                 if(priceBangkok){
                     cost_hub = resultP.costBangkok_metropolitan
                     price = resultP.salesBangkok_metropolitan
                     profit_partner = resultBase.salesBangkok_metropolitan - cost_hub
                     cut_partner = resultBase.salesBangkok_metropolitan
-                    let dataOne = {
-                        id: result.owner_id,
-                        profit: profit_partner
-                    }
+                        let dataOne = {
+                            id: result.owner_id,
+                            profit: profit_partner
+                        }
                     profit.push(dataOne)
                 }else{
                     cost_hub = resultP.costUpcountry
@@ -996,10 +1007,10 @@ priceList = async (req, res)=>{
                 }
                     
                     v = {
+                        ...req.body,
                         express: "J&T",
                         price_remote_area: 0,
                         cost_hub: cost_hub,
-                        cod_amount: Number(cod_amount.toFixed()),
                         fee_cod: 0,
                         profitPartner: profit_partner,
                         price: Number(price.toFixed()),
@@ -1017,7 +1028,7 @@ priceList = async (req, res)=>{
                         let total = price + formattedFee + insuranceFee
                         // let profitPartner = price - cost
                         // let cut_partner = total - profitPartner
-                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
+                            // v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                             v.fee_cod = formattedFee
                             // v.profitPartner = profitPartner
                                 if(price_remote_area != undefined){
