@@ -248,9 +248,9 @@ router.route('/orderhub/insured/get/express/:id').get( authAdmin.checkToken, ins
 
 //ราคาขายหน้าร้าน กรุงเทพ กับ ต่างจังหวัด แบบมาตรฐาน
 const base = require('../Controllers/deliveryController/weight.all/price.base')
-router.route('/orderhub/price/base/getAll').get( auth.checkToken, base.getAll )
-router.route('/orderhub/price/base/express/:id').get( auth.checkToken, base.getByExpress )
-router.route('/orderhub/price/base/edit/:id').put( auth.checkToken, base.editPrice )
+router.route('/orderhub/price/base/getAll').get( authAdmin.checkToken, base.getAll )
+router.route('/orderhub/price/base/express/:id').get( authAdmin.checkToken, base.getByExpress )
+router.route('/orderhub/price/base/edit/:id').put( authAdmin.checkToken, base.editPrice )
 
 //กำหนดราคา/น้ำหนัก ทุก SHOP
 const weightAll = require('../Controllers/deliveryController/weight.all/weightAll')

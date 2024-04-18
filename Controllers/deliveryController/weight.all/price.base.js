@@ -79,8 +79,7 @@ getAll = async(req, res)=>{
 getByExpress = async(req, res)=>{
     try{
         const id = req.params.id
-        const express = req.body.express
-        const get = await priceBase.findOne({shop_id:id,express:express})
+        const get = await priceBase.findOne({_id:id})
             if(!get){
                 return res
                         .status(400)
