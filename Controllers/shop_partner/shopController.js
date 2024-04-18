@@ -897,6 +897,37 @@ statusContract = async (req, res)=>{
     }
 }
 
+fixNameExpress = async (req, res)=>{
+    try{
+        const percent = await PercentCourier.find()
+        const baseWeight = percent.map(({ _id, express, courier_code, courier_name, costBangkok_metropolitan, costUpcountry }) => ({
+            express,
+            courier_code,
+            courier_name,
+            costBangkok_metropolitan,
+            costUpcountry
+        }));
+        // const update = await shopPartner.updateMany(
+        //     { "express.express": "shippop" },
+        //     { $set: { "express.$[elem].express": "SHIPPOP" } }, // เซ็ตค่า "express" เป็น "SHIPPOP" ในตำแหน่งที่ตรงกับเงื่อนไขการค้นหา
+        //     { arrayFilters: [{ "elem.express": "shippop" }] } // ตัวกรองอาร์เรย์เพื่อกำหนดเงื่อนไขการค้นหาในอาร์เรย์
+        // );
+        const update = await shopPartner.updateMany(
+            { $push:{ express : baseWeight }}
+        )
+        if (update) {
+            // มีการอัพเดท
+            return res.status(200).send({ status: true, data: update });
+        } else {
+            // ไม่มีการอัพเดท
+            return res.status(404).send({ status: false, message: "ไม่สามารถอัพเดทได้" });
+        }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
 async function invoicePTS() {
     let data = `PTS`
     let random = Math.floor(Math.random() * 10000000000)
@@ -936,6 +967,6 @@ async function invoiceSTP() {
 }
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
-                , editExpressAll ,pushExpress, statusContract}
+                , editExpressAll ,pushExpress, statusContract, fixNameExpress}
 
 
