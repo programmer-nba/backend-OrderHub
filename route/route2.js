@@ -251,6 +251,7 @@ const base = require('../Controllers/deliveryController/weight.all/price.base')
 router.route('/orderhub/price/base/getAll').get( authAdmin.checkToken, base.getAll )
 router.route('/orderhub/price/base/express/:id').get( authAdmin.checkToken, base.getByExpress )
 router.route('/orderhub/price/base/edit/:id').put( authAdmin.checkToken, base.editPrice )
+router.route('/orderhub/price/base/add/weight/:id').put( authAdmin.checkToken, base.addWeight )
 
 //กำหนดราคา/น้ำหนัก ทุก SHOP
 const weightAll = require('../Controllers/deliveryController/weight.all/weightAll')

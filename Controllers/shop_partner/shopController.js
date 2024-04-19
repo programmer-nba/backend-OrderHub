@@ -375,10 +375,10 @@ getShopPartner = async (req, res)=>{
 
 getShopOne = async (req, res)=>{
     try{
-        const shopNumber = req.params.id
-        const findShop = await shopPartner.findOne({shop_number:shopNumber})
+        const id = req.params.id
+        const findShop = await shopPartner.findOne({_id:id})
         if(findShop){
-            const findMember = await memberShop.find({shop_number:shopNumber})
+            const findMember = await memberShop.find({shop_number:findShop.shop_number})
             const memberCount = findMember.length
             return res
                     .status(200)

@@ -1117,62 +1117,102 @@ cancelOrder = async (req, res)=>{
 priceList = async (req, res)=>{
     // console.log(req.body)
     try{
+        const no = req.body.no
         const formData = req.body
+        const id = req.decoded.userid
         const shop = formData.shop_number
         const declared_value = req.body.declared_value
         const weight = formData.parcel.weight
-        let reqCod = req.body.cod
+        let reqCod = req.body.cod_amount
         let percentCod
         let price_remote_area
+        let insuranceFee
         if(reqCod > 50000){ //เอามาจาก PDF best knowledge
             return res
                     .status(400)
                     .send({status:false, meessage:"บริการ COD ต้องไม่เกิน 50,000 บาท/ชิ้น"})
-        }
-        if(weight == 0){
+        }else if (!Number.isInteger(reqCod)||
+                    !Number.isInteger(declared_value)) {
             return res
                     .status(400)
-                    .send({status:false, message:"กรุณาระบุน้ำหนัก"})
+                    .send({
+                        status: false,
+                        message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`});
         }
+
+        if(weight <= 50){
+            insuranceFee = ((declared_value * 0.4)/100) 
+        }
+
+        //ผู้ส่ง
+        const sender = formData.from; 
+        const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+       
+           const data_sender = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
+               ...sender,
+               ID: id,
+               status: 'ผู้ส่ง',
+               shop_id: shop,
+               postcode: String(sender.postcode),
+           };
+
+        const optionsSender = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
+       
+        const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
+           if (resultSender.upsertedCount > 0) {
+               console.log('สร้างข้อมูลผู้ส่งคนใหม่');
+           } else {
+               console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+           }
+       
+        const infoSender = await dropOffs.findOne(filterSender)
+            if(!infoSender){
+               console.log('ไม่มีข้อมูลผู้ส่ง')
+            }
+
         const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
             if(!findForCost){
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
-        const result  = await weightAll.find(
-            {
-                id_shop: findForCost._id,
-                weight: {$gte: weight}
-            })
-            .sort({weight:1})
-            .limit(1)
-            .exec()
-
-            if(result.length == 0){
+        const checkSwitch = findForCost.express.find(item => item.express == 'BEST')
+            if(checkSwitch.on_off == false || checkSwitch.cancel_contract == true){
                 return res
                         .status(400)
-                        .send({status: false, message:"น้ำหนักของคุณมากเกินไป"})
+                        .send({status:false, message:"ท่านไม่สามารถใช้งานระบบขนส่งนี้ได้"})
             }
-            if(reqCod > 0){
+        
+        const result  = await weightAll.findOne(
+            {
+                shop_id: findForCost._id,
+                express:"BEST"
+            })
+            if(!result){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีร้านค้านี้ในระบบ"})
+            }
+
+            if(result.weightMax < weight){
+                if(result.weightMax == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณารอการระบุน้ำหนักที่สามารถใช้งานได้"})
+                }
+                return res
+                        .status(400)
+                        .send({status: false, message:`น้ำหนักของร้านค้า ${req.body.shop_number} ที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`})
+            }else if(reqCod > 0){
                 const findCod = await codExpress.findOne({express:"BEST"})
                 percentCod = findCod.percent
             }
-        
         const cod = percentCod
-        
-        const findPartner = await Partner.findOne({partnerNumber:findForCost.partner_number}) //เช็คว่ามี partner เจ้าของ shop จริงหรือเปล่า
-            if(!findPartner){
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่มีหมายเลขพาร์ทเนอร์ของท่าน"})
-            }
-        
-        const upline = findPartner.upline.head_line
 
-        const findPostCode = await bestRemoteArea.findOne({Postcode:formData.to.postcode})
-            if(findPostCode){
-                price_remote_area = findPostCode.Price
+        let priceBangkok = false;
+        const findPostcal = await bangkokMetropolitan.findOne({ Postcode: req.body.to.postcode });
+            if (findPostcal) {
+                priceBangkok = true;
             }
         let new_data = []
         if(upline === 'ICE'){

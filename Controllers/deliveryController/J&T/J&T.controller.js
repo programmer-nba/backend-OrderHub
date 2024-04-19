@@ -32,6 +32,7 @@ createOrder = async (req, res)=>{
     try{
         const id = req.decoded.userid
         const role = req.decoded.role
+        const no = req.body.no
         const data = req.body
         const cod_amount = req.body.cod_amount
         const price = req.body.price
@@ -97,15 +98,16 @@ createOrder = async (req, res)=>{
         // }
          //ผู้ส่ง
         const senderTel = data.from.tel;
-        //  console.log(senderTel)
+         //  console.log(senderTel)
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
- 
+  
         const updatedDocument = await dropOffs.findOne(filterSender);
-            if(!updatedDocument){
-                return res 
-                        .status(404)
-                        .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
-            }
+             if(!updatedDocument){
+                 return res 
+                         .status(404)
+                         .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
+             }
+
         // console.log(updatedDocument)
         const newData = await generateJT(fromData)
             // console.log(newData)
@@ -130,7 +132,7 @@ createOrder = async (req, res)=>{
             }else if(response.data.responseitems[0].success == 'false'){
                 return res
                         .status(404)
-                        .send({status:false, message:`ไม่สามารถสร้างออเดอร์ได้เนื่องจากมีความผิดพลาด กรุณาตรวจสอบ น้ำหนัก,ที่อยู่ของ ผู้รับ, ผู้ส่ง และ เบอร์โทร ว่าท่านได้กรอกถูกต้องหรือไม่(${response.data.responseitems[0].reason})`})
+                        .send({status:false, message:`ลำดับ ${no} ไม่สามารถสร้างออเดอร์ได้เนื่องจากมีความผิดพลาด กรุณาตรวจสอบ น้ำหนัก,ที่อยู่ของ ผู้รับ, ผู้ส่ง และ เบอร์โทร ว่าท่านได้กรอกถูกต้องหรือไม่(${response.data.responseitems[0].reason})`})
             }
         const new_data = response.data.responseitems[0]
         // const createOrder = await jntOrder.create(
@@ -192,7 +194,7 @@ createOrder = async (req, res)=>{
                 price: price,
                 declared_value: declared_value,
                 insuranceFee: insuranceFee,
-                express: "JNT",
+                express: "J&T",
                 ...new_data //mailno อยู่ในนี้แล้ว ไม่ต้องประกาศ
             })
             if(!createOrderAll){
@@ -302,7 +304,6 @@ createOrder = async (req, res)=>{
                                                         .send({status:false,message:"ไม่สามารถบันทึกกำไรคุณไอซ์ได้"})
                                         }
                             allProfit.push(profit_ice)
-                            allProfit.push(proficICE)
                         }else{
                             const pf = {
                                         wallet_owner: profitAll[i].id,
@@ -322,10 +323,12 @@ createOrder = async (req, res)=>{
                                 }
                             profitP = await Partner.findOneAndUpdate(
                                         { _id: profitAll[i].id },
-                                        { $inc: { 
-                                            profit: +profitAll[i].profit,
-                                            credits: +profitAll[i].profit
-                                        } },
+                                        { 
+                                            $inc: { 
+                                                    profit: +profitAll[i].profit,
+                                                    credits: +profitAll[i].profit
+                                            } 
+                                        },
                                         {new:true, projection: { profit: 1, credits: 1 }})
                                         if(!profitP){
                                                 return res
@@ -353,7 +356,15 @@ createOrder = async (req, res)=>{
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
                         
                 }
-                
+            let showProfitCOD = await Admin.findOneAndUpdate(
+                    { username:'admin' },
+                    { $inc: { profit: +fee_cod } },
+                    {new:true, projection: { profit: 1 } })
+                    if(!showProfitCOD){
+                            return res
+                                    .status(400)
+                                    .send({status:false,message:"ไม่สามารถบันทึกกำไร COD คุณไอซ์ได้"})
+                    }
             const pfSenderTemplate = {
                     orderid: new_data.txlogisticid,
                     Orderer: id,
@@ -376,150 +387,9 @@ createOrder = async (req, res)=>{
                             .send({status:false, message:"ไม่สามารถสร้างรายการ COD ของผู้ส่งได้"})
                 }
             allProfit.push(profit_iceCOD)
+            allProfit.push(showProfitCOD)
             allProfit.push(createTemplate)
         }
-        // }else{
-        //     const findShopTwo = await shopPartner.findOneAndUpdate(
-        //         {shop_number:shop},
-        //         { $inc: { credit: -cut_partner } },
-        //         {new:true})
-        //         if(!findShopTwo){
-        //             return res
-        //                     .status(400)
-        //                     .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
-        //         }
-        //     console.log(findShopTwo.credit)
-    
-        //     const plus = findShopTwo.credit + cut_partner
-        //     const historytwo = {
-        //             ID: id,
-        //             role: role,
-        //             shop_number: shop,
-        //             orderid: new_data.txlogisticid,
-        //             amount: cut_partner,
-        //             before: plus,
-        //             after: findShopTwo.credit,
-        //             type: 'J&T',
-        //             remark: "ขนส่งสินค้าแบบ COD(J&T)"
-        //     }
-        //     // console.log(history)
-        //     historyShop = await historyWalletShop.create(historytwo)
-        //         if(!historyShop){
-        //             console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-        //         }
-
-        //     const pf = {
-        //             wallet_owner: findShopTwo.partnerID,
-        //             Orderer: id,
-        //             role: role,
-        //             shop_number: shop,
-        //             orderid: new_data.txlogisticid,
-        //             profit: profitsPartner,
-        //             express: 'J&T',
-        //             type: 'COD',
-        //     }
-        //     profit_partner = await profitPartner.create(pf)
-        //         if(!profit_partner){
-        //             return  res
-        //                     .status(400)
-        //                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
-        //         }
-        //     profitPlus = await Partner.findOneAndUpdate( //เก็บกำไรที่ทำได้
-        //             {_id:findShopTwo.partnerID},
-        //             { $inc: { profit: +profitsPartner } },
-        //             {new:true, projection: { profit: 1 }})
-        //             if(!profitPlus){
-        //                 return res
-        //                         .status(400)
-        //                         .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
-        //             } 
-        //     const pfICE = {
-        //             Orderer: id,
-        //             role: role,
-        //             shop_number: shop,
-        //             orderid: new_data.txlogisticid,
-        //             profit: profitsICE,
-        //             express: 'J&T',
-        //             type: 'กำไรจากต้นทุน',
-        //     }
-        //     profit_ice = await profitIce.create(pfICE)
-        //         if(!profit_ice){
-        //             return res
-        //                     .status(400)
-        //                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
-        //         }
-        //     const pfIceCOD = {
-        //             Orderer: id,
-        //             role: role,
-        //             shop_number: shop,
-        //             orderid: new_data.txlogisticid,
-        //             profit: fee_cod,
-        //             express: 'J&T',
-        //             type: 'COD',
-        //     }
-        //     profit_iceCOD = await profitIce.create(pfIceCOD)
-        //         if(!profit_iceCOD){
-        //             return res
-        //                     .status(400)
-        //                     .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
-        //         }
-         
-        //     const pfSenderTemplate = {
-        //             orderid: new_data.txlogisticid,
-        //             Orderer: id,
-        //             role: role,
-        //             shop_number: shop,
-        //             type: 'COD(SENDER)',
-        //             'template.partner_number': new_data.txlogisticid,
-        //             'template.account_name':updatedDocument.flash_pay.name,
-        //             'template.account_number':updatedDocument.flash_pay.card_number,
-        //             'template.bank':updatedDocument.flash_pay.aka,
-        //             'template.amount':cod_amount,
-        //             'template.phone_number': updatedDocument.tel,
-        //             'template.email':updatedDocument.email,
-        //             status:"กำลังขนส่งสินค้า"
-        //     }
-        //     createTemplate = await profitTemplate.create(pfSenderTemplate)
-        //         if(!createTemplate){
-        //             return res
-        //                     .status(400)
-        //                     .send({status:false, message:"ไม่สามารถสร้างรายการ COD ของผู้ส่งได้"})
-        //         }
-        //     if(priceOne != 0){
-        //             const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
-        //             const headLine = findUpline.upline.head_line
-
-        //             const pfPartnerOne = {
-        //                     wallet_owner: headLine,
-        //                     Orderer: id,
-        //                     role: role,
-        //                     shop_number: shop,
-        //                     orderid: new_data.txlogisticid,
-        //                     profit: profitsPartnerOne,
-        //                     express: 'J&T',
-        //                     type: 'Partner downline',
-        //                 }
-        //             profit_partnerOne = await profitPartner.create(pfPartnerOne)
-        //                 if(!profit_partnerOne){
-        //                     return  res
-        //                             .status(400)
-        //                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
-        //                 }
-        //             profitPlusOne = await Partner.findOneAndUpdate(
-        //                     {_id:headLine},
-        //                     { $inc: { 
-        //                             profit: +profitsPartnerOne,
-        //                             credits: +profitsPartnerOne
-        //                         } 
-        //                     },
-        //                     {new:true, projection: { profit: 1, credits: 1 }})
-        //                     if(!profitPlusOne){
-        //                         return res
-        //                                 .status(400)
-        //                                 .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
-        //                     }
-        //         }
-        // }
         
         return res
                 .status(200)
@@ -618,9 +488,9 @@ cancelOrder = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่สามารถทำการยกเลิกออเดอร์นี้ได้"})
         }else{
-                const findPno = await jntOrder.findOneAndUpdate(
-                    {txlogisticid:txlogisticid},
-                    {status:"cancel"},
+                const findPno = await orderAll.findOneAndUpdate(
+                    {tracking_code:txlogisticid},
+                    {order_status:"cancel"},
                     {new:true})
                     if(!findPno){
                         return res
@@ -631,6 +501,7 @@ cancelOrder = async (req, res)=>{
                         .status(200)
                         .send({status:false, data:findPno})
         }
+        
             //     if(findPno.cod_amount == 0){
             //         const findShop = await shopPartner.findOneAndUpdate(
             //             {shop_number:findPno.shop_number},
@@ -774,6 +645,7 @@ priceList = async (req, res)=>{
     try{
         const no = req.body.no
         const formData = req.body
+        const id = req.decoded.userid
         const shop = formData.shop_number
         const weight = formData.parcel.weight
         const declared_value = formData.declared_value
@@ -786,6 +658,32 @@ priceList = async (req, res)=>{
                         message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`
                     });
                 }
+        //ผู้ส่ง
+        const sender = formData.from; 
+        const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
+        
+            const data_sender = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
+                ...sender,
+                ID: id,
+                status: 'ผู้ส่ง',
+                shop_id: shop,
+                postcode: String(sender.postcode),
+            };
+
+        const optionsSender = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
+        
+        const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
+            if (resultSender.upsertedCount > 0) {
+                console.log('สร้างข้อมูลผู้ส่งคนใหม่');
+            } else {
+                console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+            }
+        
+        const infoSender = await dropOffs.findOne(filterSender)
+            if(!infoSender){
+                console.log('ไม่มีข้อมูลผู้ส่ง')
+            }
+
         const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
             if(!findForCost){
                 return res
@@ -861,6 +759,7 @@ priceList = async (req, res)=>{
                         }
                     }
             }
+        // console.log(insuranceFee)
         const findPriceBase = await priceBase.findOne({express:"J&T"})
             if(!findPriceBase){
                 return res
@@ -1021,7 +920,7 @@ priceList = async (req, res)=>{
                         status: status,
                         profitAll: profit
                     };
-                    
+                    // console.log(v)
                     if (cod !== undefined) {
                         let fee = (reqCod * percentCod)/100
                         let formattedFee = parseFloat(fee.toFixed(2));
@@ -1070,7 +969,7 @@ priceList = async (req, res)=>{
         
         return res
                 .status(200)
-                .send({ status: true, new:new_data });
+                .send({ status: true, new:new_data, sender:infoSender});
     }catch(err){
         return res
                 .status(500)
@@ -1142,15 +1041,16 @@ getMeBooking = async (req, res)=>{
         const today = new Date();
         console.log(today)
             today.setHours(23, 59, 59, 0); // ตั้งเวลาเป็นเที่ยงคืนของวันปัจจุบัน
-        const findMe = await jntOrder.find({
+        const findMe = await orderAll.find({
             ID:id,
+            express:"JNT",
             createdAt: { $lt: today }
           }).sort({ createdAt: -1 }); // -1 หมายถึงเรียงจากมากไปหาน้อย (ล่าสุดไปยังเก่า)
-        if(!findMe){
-            return res
-                    .status(404)
-                    .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
-        }
+            if(!findMe){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+            }
         return res
                 .status(200)
                 .send({status:true, data:findMe})

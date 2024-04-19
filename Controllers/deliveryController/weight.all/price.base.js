@@ -3,11 +3,12 @@ const { ObjectId } = require('mongodb');
 const mongoose = require('mongoose');
 const { shopPartner } = require("../../../Models/shop/shop_partner");
 const { weightAll } = require("../../../Models/Delivery/weight/weight.all.express");
+const { PercentCourier } = require("../../../Models/Delivery/ship_pop/percent");
+const { priceWeight } = require("../../../Models/Delivery/weight/priceWeight");
 
 editPrice = async(req, res)=>{
     try{
         const id = req.params.id
-        const express = req.body.express
         const weight = req.body.weight
         
         const findExpress = await priceBase.findOneAndUpdate(
@@ -95,4 +96,31 @@ getByExpress = async(req, res)=>{
     }
 }
 
-module.exports = {editPrice, getAll, getByExpress}
+addWeight = async(req, res)=>{
+    try{
+        const id = req.params.id
+        const percent = await priceWeight.find()
+            if(!percent){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีข้อมูล"})
+            }
+        const add = await priceBase.findOneAndUpdate(
+            { _id:id},
+            {
+                $push:{
+                    weight: percent
+                }
+            },{new:true}
+        )
+        return res
+                .status(200)
+                .send({status:true, data:add})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+module.exports = {editPrice, getAll, getByExpress, addWeight}
