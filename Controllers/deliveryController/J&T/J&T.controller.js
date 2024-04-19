@@ -220,6 +220,7 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
                 }
+                
             console.log(findShop.credit)
                 
             const plus = findShop.credit + cut_partner
@@ -846,6 +847,7 @@ priceList = async (req, res)=>{
                     cut_partner = resultBase.salesBangkok_metropolitan
                         let dataOne = {
                             id: result.owner_id,
+                            cost: resultP.costBangkok_metropolitan,
                             profit: profit_partner
                         }
                     profit.push(dataOne)
@@ -857,6 +859,7 @@ priceList = async (req, res)=>{
                     cut_partner = resultBase.salesUpcountry
                     let dataOne = {
                         id: result.owner_id,
+                        cost: resultP.costUpcountry,
                         profit: profit_partner
                     }
                     profit.push(dataOne)
@@ -871,13 +874,17 @@ priceList = async (req, res)=>{
                                 })
                         let findWeight = findHead.weight.find((item)=> item.weightEnd == resultP.weightEnd )
                         let profitOne 
+                        let cost 
                             if(priceBangkok){
                                 profitOne = cost_hub - findWeight.costBangkok_metropolitan
+                                cost = findWeight.costBangkok_metropolitan
                             }else{
                                 profitOne = cost_hub - findWeight.costUpcountry
+                                cost = findWeight.costUpcountry
                             }
                         let data = {
                                     id: findHead.owner_id,
+                                    cost: cost,
                                     profit: profitOne
                             }
                         profit.push(data)
@@ -890,6 +897,7 @@ priceList = async (req, res)=>{
                     let profitTwo = cost_hub - resultBase.costBangkok_metropolitan
                     let dataICE = {
                         id:"ICE",
+                        cost: resultBase.costBangkok_metropolitan,
                         profit: profitTwo
                     }
                     profit.push(dataICE)
@@ -898,6 +906,7 @@ priceList = async (req, res)=>{
                     let profitTwo = cost_hub - resultBase.costUpcountry
                     let dataICE = {
                         id:"ICE",
+                        cost: resultBase.costUpcountry,
                         profit: profitTwo
                     }
                     profit.push(dataICE)

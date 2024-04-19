@@ -257,7 +257,7 @@ router.route('/orderhub/price/base/add/weight/:id').put( authAdmin.checkToken, b
 const weightAll = require('../Controllers/deliveryController/weight.all/weightAll')
 router.route('/orderhub/weight/all/edit/:id').put( auth.checkToken, weightAll.editWeight )
 router.route('/orderhub/weight/all/getAll').get( auth.checkToken, weightAll.getAll )
-router.route('/orderhub/weight/all/get/weight/:id_shop').get( auth.checkToken,weightAll.getWeightShop )
+router.route('/orderhub/weight/all/get/weight/:id_shop').post( auth.checkToken,weightAll.getWeightShop )
 router.route('/orderhub/weight/all/del/:id').delete( auth.checkToken, weightAll.delend )
 router.route('/orderhub/weight/all/edit/weightMax/:id').put( auth.checkToken, weightAll.editWeightMax )
 
