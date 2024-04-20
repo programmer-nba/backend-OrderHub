@@ -12,6 +12,8 @@ const { historyWalletShop } = require("../Models/shop/shop_history");
 const { priceBase } = require("../Models/Delivery/weight/priceBase.express");
 const { weightAll } = require("../Models/Delivery/weight/weight.all.express");
 const { priceWeight } = require("../Models/Delivery/weight/priceWeight");
+const { codExpress } = require("../Models/COD/cod.model");
+const { codPercent } = require("../Models/COD/cod.shop.model");
 
 createAdmin = async (req, res) => {
   try {
@@ -385,6 +387,26 @@ confirmShop = async (req, res)=>{
                         console.log("ไม่สามารถสร้างน้ำหนักให้กับร้านค้าได้")
                     }
             })
+      const codBase = await codExpress.find()
+            if(codBase.length === 0){
+              return res
+                      .status(400)
+                      .send({status:false, message:"ค้นหาข้อมูล cod base ไม่เจอ"})
+            }
+        let b = {
+                  shop_id:findShop._id,
+                  owner_id:findShop.partnerID,
+                  head_line:findShop.upline.head_line,
+                  shop_line:findShop.upline.shop_line,
+                  level:findShop.upline.level,
+                  express: codBase
+            }
+      const createCodShop = await codPercent.create(b)
+            if(!createCodShop){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถสร้าง cod shop ได้"})
+           }  
 
       const newData = {
             _id: findShop._id,
@@ -397,6 +419,7 @@ confirmShop = async (req, res)=>{
             province: findShop.province,
             postcode: findShop.postcode,
             status: findShop.status,
+            shop_line: findShop.upline.shop_line,
             level:findShop.upline.level
         }
         if(findShop.upline.level == 1){

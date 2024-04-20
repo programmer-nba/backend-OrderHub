@@ -15,7 +15,8 @@ const profitIceSchema = new Schema({
     role:{type:String, require: false},
     shop_number:{type:String, require: false},
     orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
-    profit:{type:Number, require: false},
+    cost: {type:Number, require: false},
+    profit: {type:Number, require: false},
     express: {type:String, require: false},
     type:{type:String, require: false},
     day: {

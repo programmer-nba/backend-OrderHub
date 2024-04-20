@@ -36,6 +36,7 @@ const partnerSchema = new Schema({
         province:  {type:String, require: false},
         postcode:  {type:String, require: false},
         status: {type:String, require: false},
+        shop_line : {type:String, require: false},
         level: {type:Number, require: false}
       }
     ],
@@ -50,6 +51,7 @@ const partnerSchema = new Schema({
         province:  {type:String, require: false},
         postcode:  {type:String, require: false},
         status: {type:String, require: false},
+        shop_line : {type:String, require: false},
         level: {type:Number, require: false}
       }
     ],

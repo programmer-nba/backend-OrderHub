@@ -1,3 +1,4 @@
+const { codPercent } = require("../../../Models/COD/cod.shop.model");
 const { PercentCourier, validate } = require("../../../Models/Delivery/ship_pop/percent");
 const { priceBase } = require("../../../Models/Delivery/weight/priceBase.express");
 const { shopPartner } = require("../../../Models/shop/shop_partner");
@@ -35,13 +36,29 @@ create = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message:"สร้างข้อมูลราคาพื้นฐานไม่ได้"})
                     }
+                
+                const updateCod = await codPercent.updateMany(
+                    {
+                        $push:{
+                            express: { 
+                                express : percent.express,
+                                percent : 0
+                            }
+                        }
+                    })
+                    if(!updateCod){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                    }
                 return res
                         .status(201)
                         .send({status:true, 
                             message: "เพิ่มข้อมูลสำเร็จ", 
                             data: percent,
                             update: update,
-                            pricebase: updatePriceBase
+                            pricebase: updatePriceBase,
+                            updateCod: updateCod
                         });
             }else{
                 return res
@@ -131,13 +148,25 @@ delend = async(req, res)=>{
                 { "express.express": percent.express }, // ตรวจสอบว่ามีค่า "NOP" ในอาร์เรย์ express หรือไม่
                 { $pull: { "express": { "express": percent.express } } // ลบข้อมูลในอาร์เรย์ที่มีค่า "NOP")
             }) 
+            const delCod = await codPercent.updateMany(
+                {},
+                {
+                    $pull: { "express": { "express": percent.express }}
+                }
+            )
+            const delWeight = await priceBase.findOneAndDelete(
+                {
+                    express: percent.express
+                })
             return res
                     .status(200)
                     .send({
                         status: true, 
                         message: "ลบข้อมูลสำเร็จ",
                         del:percent,
-                        delShop: update
+                        delShop: update,
+                        delCOD: delCod,
+                        delWeightBase: delWeight
                     })
         }else{
             return res

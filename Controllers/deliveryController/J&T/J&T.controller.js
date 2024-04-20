@@ -220,7 +220,7 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
                 }
-                
+
             console.log(findShop.credit)
                 
             const plus = findShop.credit + cut_partner
@@ -247,6 +247,7 @@ createOrder = async (req, res)=>{
                     role: role,
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
+                    cost: profitAll[0].cost,
                     profit: profit_Partner,
                     express: 'J&T',
                     type: 'โอนเงิน',
@@ -285,6 +286,7 @@ createOrder = async (req, res)=>{
                                         shop_number: shop,
                                         orderid: new_data.txlogisticid,
                                         profit: profitAll[i].profit,
+                                        cost: profitAll[i].cost,
                                         express: 'J&T',
                                         type: 'กำไรจากต้นทุน',
                                     }
@@ -312,6 +314,7 @@ createOrder = async (req, res)=>{
                                         role: role,
                                         shop_number: shop,
                                         orderid: new_data.txlogisticid,
+                                        cost: profitAll[i].cost,
                                         profit: profitAll[i].profit,
                                         express: 'J&T',
                                         type: 'โอนเงิน',

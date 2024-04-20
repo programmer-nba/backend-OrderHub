@@ -141,12 +141,16 @@ router.route('/orderhub/JT/getOne/:txlogisticid').get( authAdmin.checkToken, JT.
 router.route('/orderhub/JT/del/:txlogisticid').delete( authAdmin.checkToken, JT.delend )
 router.route('/orderhub/JT/getPartner/:id').get( authAdmin.checkToken, JT.getPartnerBooking )
 
-//COD(คุณไอซ์กำหนด)
+//COD(Base)
 const cod = require('../Controllers/deliveryController/COD/cod.controller')
 router.route('/orderhub/cod/post').post( cod.createCOD )
 router.route('/orderhub/cod/getAll').get( cod.getAll )
 router.route('/orderhub/cod/edit/:id').put( cod.editCOD )
 router.route('/orderhub/cod/del/:id').delete( cod.delend )
+
+//COD(for Shop)
+const codShop = require('../Controllers/deliveryController/COD/cod.shop.controller')
+router.route('/orderhub/cod/shop/post').post( codShop.createCod )
 
 //กำหนักราคา/น้ำหนัก J&T
 const priceWeight = require('../Controllers/deliveryController/weight.all/priceWeight.control')
@@ -248,7 +252,7 @@ router.route('/orderhub/insured/get/express/:id').get( authAdmin.checkToken, ins
 
 //ราคาขายหน้าร้าน กรุงเทพ กับ ต่างจังหวัด แบบมาตรฐาน
 const base = require('../Controllers/deliveryController/weight.all/price.base')
-router.route('/orderhub/price/base/getAll').get( authAdmin.checkToken, base.getAll )
+router.route('/orderhub/price/base/getAll').get( auth.checkToken, base.getAll )
 router.route('/orderhub/price/base/express/:id').get( authAdmin.checkToken, base.getByExpress )
 router.route('/orderhub/price/base/edit/:id').put( authAdmin.checkToken, base.editPrice )
 router.route('/orderhub/price/base/add/weight/:id').put( authAdmin.checkToken, base.addWeight )
