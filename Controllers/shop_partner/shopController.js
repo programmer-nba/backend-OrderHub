@@ -1,3 +1,4 @@
+const { codPercent } = require("../../Models/COD/cod.shop.model");
 const { PercentCourier } = require("../../Models/Delivery/ship_pop/percent");
 const { priceBase } = require("../../Models/Delivery/weight/priceBase.express");
 const { weightAll } = require("../../Models/Delivery/weight/weight.all.express");
@@ -303,9 +304,22 @@ delend = async (req, res)=>{
             
             const delWeight = await weightAll.deleteMany({shop_id:findShop._id})
 
+            const delCod = await codPercent.findOneAndDelete({shop_id:findShop._id})
+                if(!delCod){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถลบ COD ของร้านค้าได้"})
+                }
             return res 
                     .status(200)
-                    .send({status:true, message:"ลบข้อมูลสำเร็จ",data:delShop_partner, del_downline:delShop_downline, delWeight:delWeight})
+                    .send({
+                        status:true, 
+                        message:"ลบข้อมูลสำเร็จ",
+                        data:delShop_partner, 
+                        del_downline:delShop_downline, 
+                        delWeight:delWeight,
+                        delCod: delCod
+                    })
 
         }else{
             return res

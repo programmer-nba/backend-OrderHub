@@ -58,8 +58,43 @@ create = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message:"ไม่มีข้อมูลร้านค้า"})
                     }
+                const findShopWeight = await weightAll.find()
+                    if(findShopWeight == 0){
+                        return res  
+                                .status(400)
+                                .send({status:false, message:"ไม่มีร้านค้าที่ท่านต้องการหา"})
+                    }
+
+                //ในแต่ละ object เราใช้ Object Destructuring เพื่อดึง _id ออกและใช้ Spread Operator (...rest) เพื่อรวม key ที่เหลืออยู่ใน object ทั้งหมดเข้าไปในตัวแปร rest
+                const newWeightData = updatePriceBase.weight.map(({ _id, ...rest }) => rest);
+                let new_data = []
                 for(const shop of findShop){
-                    
+                        let found = false;
+                        for (const weight of findShopWeight) {
+                            if (weight.shop_id == shop._id && weight.express == percent.express) {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if(!found){
+                            let v = {
+                                shop_id:shop._id,
+                                owner_id:shop.partnerID,
+                                head_line:shop.upline.head_line,
+                                shop_line:shop.upline.shop_line,
+                                express: percent.express,
+                                level:shop.upline.level,
+                                weight: newWeightData
+                            }
+                            const createWeight = await weightAll.create(v)
+                                if(!createWeight){
+                                    return res
+                                            .status(400)
+                                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
+                                }
+                            new_data.push(createWeight)
+                        }
                 }
                 return res
                         .status(201)
@@ -68,7 +103,8 @@ create = async(req, res)=>{
                             data: percent,
                             update: update,
                             pricebase: updatePriceBase,
-                            updateCod: updateCod
+                            updateCod: updateCod,
+                            new: new_data
                         });
             }else{
                 return res

@@ -21,6 +21,7 @@ const { insuredExpress } = require("../../../Models/Delivery/insured/insured");
 const { priceBase } = require("../../../Models/Delivery/weight/priceBase.express");
 const { bangkokMetropolitan } = require("../../../Models/postcal_bangkok/postcal.bangkok");
 const { Admin } = require("../../../Models/admin");
+const { codPercent } = require("../../../Models/COD/cod.shop.model");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -694,6 +695,71 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
+        let cod_percent = []
+        if(reqCod != 0){
+            const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
+                if(findShopCod){
+                    let fee_cod = 0
+                    let percentCOD = req.body.percentCOD 
+                    
+                    // สร้าง regular expression เพื่อตรวจสอบทศนิยมไม่เกิน 2 ตำแหน่ง
+                    const regex = /^\d+(\.\d{1,2})?$/;
+
+                    let pFirst = findShopCod.express.find((item)=> item.express == "J&T")
+
+                    if(pFirst.percent == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่แนะนำท่านกรอกเปอร์เซ็น COD ที่ต้องการ"})
+                    }else if(!regex.test(percentCOD)){
+                        return res
+                                .status(400)
+                                .send({ status: false, message: "ค่าเปอร์เซ็น COD ต้องเป็นทศนิยมไม่เกิน 2 ตำแหน่ง" });
+                    }else if(percentCOD < pFirst.percent){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"กรุณาอย่าตั้ง COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
+                    }
+                    // console.log(percentCOD)
+                        if(percentCOD != 0){
+                            let feeOne = (reqCod * percentCOD)/100
+                            fee_cod = (reqCod * pFirst.percent)/100
+                            let profit = fee_cod - feeOne
+                                let v = {
+                                    id:findShopCod.owner_id,
+                                    cod_profit:profit
+                                }
+                            cod_percent.push(v)
+                        }else{
+                            fee_cod = ((reqCod * pFirst.percent)/100)
+                        }
+                // console.log(pFirst)
+                let shop_line = findShopCod.shop_line
+                // console.log(shop_line)
+                    do{
+                            const findShopLine = await codPercent.findOne({shop_id:shop_line})
+                            const p = findShopLine.express.find((item)=> item.express == "J&T")
+                            let feeOne = (reqCod * p.percent)/100
+                            let profit = fee_cod - feeOne
+                            fee_cod -= profit
+                                let v = {
+                                    id:findShopLine.owner_id,
+                                    cod_profit:profit
+                                }
+                            cod_percent.push(v)
+                                if(findShopLine.shop_line == 'ICE'){
+                                    let b = {
+                                            id:'ICE',
+                                            cod_profit:fee_cod
+                                        }
+                                    cod_percent.push(b)
+                                }
+                            shop_line = findShopLine.shop_line
+                        
+                    }while(shop_line != "ICE")
+                }
+        }
+        console.log(cod_percent)
         const checkSwitch = findForCost.express.find(item => item.express == 'J&T')
             if(checkSwitch.on_off == false || checkSwitch.cancel_contract == true){
                 return res
@@ -721,11 +787,9 @@ priceList = async (req, res)=>{
                 return res
                         .status(400)
                         .send({status: false, message:`น้ำหนักของร้านค้า ${req.body.shop_number} ที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`})
-            }else if(reqCod > 0){
-                const findCod = await codExpress.findOne({express:"J&T"})
-                percentCod = findCod.percent
             }
-        const cod = percentCod
+
+        const cod = 6.5
 
         let priceBangkok = false;
         const findPostcal = await bangkokMetropolitan.findOne({ Postcode: req.body.to.postcode });
@@ -829,13 +893,13 @@ priceList = async (req, res)=>{
                     if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาแก้ไข`})
+                                .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
                     }else if(resultP.costUpcountry > resultBase.salesUpcountry){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาแก้ไข`})
+                                .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
                     }
-
+                
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub
                 let price
