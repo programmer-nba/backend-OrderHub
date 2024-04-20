@@ -696,6 +696,7 @@ priceList = async (req, res)=>{
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
         let cod_percent = []
+        let fee_cod_total = 0
         if(reqCod != 0){
             const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
                 if(findShopCod){
@@ -715,16 +716,17 @@ priceList = async (req, res)=>{
                         return res
                                 .status(400)
                                 .send({ status: false, message: "ค่าเปอร์เซ็น COD ต้องเป็นทศนิยมไม่เกิน 2 ตำแหน่ง" });
-                    }else if(percentCOD < pFirst.percent){
+                    }else if(percentCOD != 0 && percentCOD < pFirst.percent){
                         return res
                                 .status(400)
-                                .send({status:false, message:"กรุณาอย่าตั้ง COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
+                                .send({status:false, message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
                     }
                     // console.log(percentCOD)
                         if(percentCOD != 0){
                             let feeOne = (reqCod * percentCOD)/100
+                            fee_cod_total = feeOne
                             fee_cod = (reqCod * pFirst.percent)/100
-                            let profit = fee_cod - feeOne
+                            let profit = feeOne - fee_cod
                                 let v = {
                                     id:findShopCod.owner_id,
                                     cod_profit:profit
@@ -907,6 +909,14 @@ priceList = async (req, res)=>{
                 let profit = []
                 let status = null;
                 let cut_partner 
+                let cod_profit
+                let findOwner = cod_percent.find((item)=> item.id == result.owner_id)
+                    if(!findOwner){
+                        cod_profit = 0
+                    }else{
+                        cod_profit = findOwner.cod_profit
+                    }
+                // console.log(findOwner)
                 if(priceBangkok){
                     cost_hub = resultP.costBangkok_metropolitan
                     price = resultP.salesBangkok_metropolitan
@@ -915,8 +925,11 @@ priceList = async (req, res)=>{
                         let dataOne = {
                             id: result.owner_id,
                             cost: resultP.costBangkok_metropolitan,
-                            profit: profit_partner
+                            cod_profit: cod_profit,
+                            profit: profit_partner,
+                            total: profit_partner + cod_profit
                         }
+                    
                     profit.push(dataOne)
                 }else{
                     cost_hub = resultP.costUpcountry
@@ -927,7 +940,9 @@ priceList = async (req, res)=>{
                     let dataOne = {
                         id: result.owner_id,
                         cost: resultP.costUpcountry,
-                        profit: profit_partner
+                        cod_profit: cod_profit,
+                        profit: profit_partner,
+                        total: profit_partner + cod_profit
                     }
                     profit.push(dataOne)
                 }
@@ -941,6 +956,14 @@ priceList = async (req, res)=>{
                                 })
                         let findWeight = findHead.weight.find((item)=> item.weightEnd == resultP.weightEnd )
                         let profitOne 
+                        let cod_profit
+                        let findOwner = cod_percent.find((item)=> item.id == findHead.owner_id)  
+                            if(!findOwner){
+                                cod_profit = 0
+                            }else{
+                                cod_profit = findOwner.cod_profit
+                            }
+                            // console.log(findOwner)
                         let cost 
                             if(priceBangkok){
                                 profitOne = cost_hub - findWeight.costBangkok_metropolitan
@@ -951,21 +974,33 @@ priceList = async (req, res)=>{
                             }
                         let data = {
                                     id: findHead.owner_id,
+                                    cod_profit: cod_profit,
                                     cost: cost,
-                                    profit: profitOne
+                                    profit: profitOne,
+                                    total: profitOne + cod_profit
                             }
                         profit.push(data)
                         shop_line = findHead.shop_line
                         cost_hub -= profitOne
                     }while(shop_line != 'ICE')
-                    
+                
+                let cod_iceprofit
+                let findIce = cod_percent.find((item)=> item.id == "ICE")
+                    if(!findIce){
+                        cod_iceprofit = 0
+                    }else{
+                        cod_iceprofit = findIce.cod_profit
+                    }
+
                 if(priceBangkok){
                     // console.log(cost_hub)
                     let profitTwo = cost_hub - resultBase.costBangkok_metropolitan
                     let dataICE = {
                         id:"ICE",
+                        cod_profit: cod_iceprofit,
                         cost: resultBase.costBangkok_metropolitan,
-                        profit: profitTwo
+                        profit: profitTwo,
+                        total: profitTwo + cod_iceprofit
                     }
                     profit.push(dataICE)
                     cost_hub -= profitTwo
@@ -974,13 +1009,15 @@ priceList = async (req, res)=>{
                     let dataICE = {
                         id:"ICE",
                         cost: resultBase.costUpcountry,
-                        profit: profitTwo
+                        cod_profit: cod_iceprofit,
+                        profit: profitTwo,
+                        total: profitTwo + cod_iceprofit
                     }
                     profit.push(dataICE)
                     cost_hub -= profitTwo
                     // console.log(cost_hub)
                 }
-                    
+                console.log(profit)
                     v = {
                         ...req.body,
                         express: "J&T",
@@ -997,13 +1034,9 @@ priceList = async (req, res)=>{
                         profitAll: profit
                     };
                     // console.log(v)
-                    if (cod !== undefined) {
-                        let fee = (reqCod * percentCod)/100
-                        let formattedFee = parseFloat(fee.toFixed(2));
+                    // if (cod !== undefined) {
+                        let formattedFee = parseFloat(fee_cod_total.toFixed(2));
                         let total = price + formattedFee + insuranceFee
-                        // let profitPartner = price - cost
-                        // let cut_partner = total - profitPartner
-                            // v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
                             v.fee_cod = formattedFee
                             // v.profitPartner = profitPartner
                                 if(price_remote_area != undefined){
@@ -1016,21 +1049,21 @@ priceList = async (req, res)=>{
                                     v.total = total
                                 }
                             new_data.push(v);
-                    }else{
-                        // let profitPartner = price - cost
-                        if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
-                            let total = price + price_remote_area + insuranceFee
-                                v.price_remote_area = price_remote_area
-                                v.total = total
-                                v.cut_partner = cut_partner + price_remote_area + insuranceFee
-                                // v.profitPartner = profitPartner
-                        }else{
-                            // v.profitPartner = profitPartner
-                            v.total = price + insuranceFee
-                            v.cut_partner = cut_partner + insuranceFee
-                        }
-                        new_data.push(v);
-                    }
+                    // }else{
+                    //     // let profitPartner = price - cost
+                    //     if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
+                    //         let total = price + price_remote_area + insuranceFee
+                    //             v.price_remote_area = price_remote_area
+                    //             v.total = total
+                    //             v.cut_partner = cut_partner + price_remote_area + insuranceFee
+                    //             // v.profitPartner = profitPartner
+                    //     }else{
+                    //         // v.profitPartner = profitPartner
+                    //         v.total = price + insuranceFee
+                    //         v.cut_partner = cut_partner + insuranceFee
+                    //     }
+                    //     new_data.push(v);
+                    // }
                     
                     try {
                         await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
