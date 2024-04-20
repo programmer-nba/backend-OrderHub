@@ -1,6 +1,7 @@
 const { codPercent } = require("../../../Models/COD/cod.shop.model");
 const { PercentCourier, validate } = require("../../../Models/Delivery/ship_pop/percent");
 const { priceBase } = require("../../../Models/Delivery/weight/priceBase.express");
+const { weightAll } = require("../../../Models/Delivery/weight/weight.all.express");
 const { shopPartner } = require("../../../Models/shop/shop_partner");
 
 
@@ -51,6 +52,15 @@ create = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message:"ไม่สามารถอัพเดทได้"})
                     }
+                const findShop = await shopPartner.find()
+                    if(findShop.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีข้อมูลร้านค้า"})
+                    }
+                for(const shop of findShop){
+                    
+                }
                 return res
                         .status(201)
                         .send({status:true, 
@@ -154,10 +164,28 @@ delend = async(req, res)=>{
                     $pull: { "express": { "express": percent.express }}
                 }
             )
+                if(!delCod){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถลบขนส่งได้"})
+                }
             const delWeight = await priceBase.findOneAndDelete(
                 {
                     express: percent.express
                 })
+                if(!delWeight){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถลบราคามาตรฐานได้"})
+                }
+
+            const delWeightAll = await weightAll.deleteMany({express:percent.express})
+                if(!delWeightAll){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามาลบขนส่ง(all)ได้"})
+                }
+
             return res
                     .status(200)
                     .send({
@@ -166,7 +194,8 @@ delend = async(req, res)=>{
                         del:percent,
                         delShop: update,
                         delCOD: delCod,
-                        delWeightBase: delWeight
+                        delWeightBase: delWeight,
+                        delWeightAll: delWeightAll
                     })
         }else{
             return res
