@@ -34,7 +34,9 @@ const orderAllSchema = new Schema({
         fee_cod: {type: Number , required: false},
         cost_hub : {type: Number, required : false},
         cost : {type: Number ,required : false},
+        cost_base: {type: Number ,required : false},
         price_remote_area: {type: Number ,required : false},
+        profitSaleMartket: {type: Number ,required : false},
         total: {type: Number , required: false},
         cut_partner: {type: Number , required: false},
         express: {type : String, required : false},
@@ -49,7 +51,8 @@ const orderAllSchema = new Schema({
                     // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
                     return currentTime;
                 }
-            }
+            },
+        profitAll: {type: Array, required: false}
 },{timestamps:true})
 
 const orderAll = mongoose.model("order_all", orderAllSchema);

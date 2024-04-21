@@ -150,7 +150,10 @@ router.route('/orderhub/cod/del/:id').delete( cod.delend )
 
 //COD(for Shop)
 const codShop = require('../Controllers/deliveryController/COD/cod.shop.controller')
-router.route('/orderhub/cod/shop/post').post( codShop.createCod )
+// router.route('/orderhub/cod/shop/post').post( codShop.createCod )
+router.route('/orderhub/cod/shop/update/:id').put( codShop.updateCod )
+router.route('/orderhub/cod/shop/get/:id').get( codShop.getShopById )
+router.route('/orderhub/cod/shop/del/:id').delete( codShop.delById )
 
 //กำหนักราคา/น้ำหนัก J&T
 const priceWeight = require('../Controllers/deliveryController/weight.all/priceWeight.control')

@@ -8,7 +8,7 @@ require('dayjs/plugin/utc');
 dayjs.extend(require('dayjs/plugin/timezone'));
 dayjs.extend(require('dayjs/plugin/utc'));
 
-const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DDTHH:mm:ssZ');
+const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DDTHH:mm:ssZ')
 
 const profitPartnerSchema = new Schema({
     wallet_owner: {type:String, require: false},
@@ -17,6 +17,8 @@ const profitPartnerSchema = new Schema({
     shop_number:{type:String, require: false},
     orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
     cost:{type:Number, require: false},
+    profitCost: {type:Number, require: false},
+    profitCOD: {type:Number, require: false},
     profit:{type:Number, require: false},
     express: {type:String, require: false},
     type:{type:String, require: false},

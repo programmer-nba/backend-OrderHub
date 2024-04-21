@@ -744,8 +744,23 @@ tranfersShopToPartner = async (req, res)=>{
 editExpress = async (req, res)=>{
     try{
         const id_shop = req.params.id_shop
-        const {id_express, costBangkok_metropolitan, costUpcountry, salesBangkok_metropolitan, salesUpcountry, on_off} = req.body
-        console.log(req.body)
+        const id_user = req.decoded.userid
+        const findShopOne = await shopPartner.findById(id_shop)
+            if(!findShopOne){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถค้นหาร้านค้าได้"})
+            }
+        
+        const findPartner = await Partner.findById(id_user)
+            if(!findPartner){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์เจอ"})
+            }
+
+        const {id_express, costBangkok_metropolitan, costUpcountry, salesBangkok_metropolitan, salesUpcountry, on_off, level} = req.body
+
         const findShop = await shopPartner.findByIdAndUpdate(
             id_shop,
             { 
@@ -754,8 +769,9 @@ editExpress = async (req, res)=>{
                     "express.$[element].costUpcountry": costUpcountry,
                     "express.$[element].salesBangkok_metropolitan": salesBangkok_metropolitan,
                     "express.$[element].salesUpcountry": salesUpcountry,
-                    "express.$[element].on_off": on_off
-                } 
+                    "express.$[element].on_off": on_off,
+                    "express.$[element].on_off": level,
+                }
             },
             {
                 new: true, 
@@ -767,7 +783,7 @@ editExpress = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถค้นหาร้านได้"})
             }
-        const filteredResult = findShop.express.find(element => element._id.toString() == id_express.toString());
+        const filteredResult = findShop.express.find((element) => element._id.toString() == id_express.toString());
         return res.status(200).send({
                 status: true,
                 message: "อัพเดตข้อมูลร้านสำเร็จ",
@@ -913,35 +929,50 @@ statusContract = async (req, res)=>{
 
 fixNameExpress = async (req, res)=>{
     try{
-        const percent = await PercentCourier.find()
-        const baseWeight = percent.map(({ _id, express, courier_code, courier_name, costBangkok_metropolitan, costUpcountry }) => ({
-            express,
-            courier_code,
-            courier_name,
-            costBangkok_metropolitan,
-            costUpcountry
-        }));
-        // const update = await shopPartner.updateMany(
-        //     { "express.express": "shippop" },
-        //     { $set: { "express.$[elem].express": "SHIPPOP" } }, // เซ็ตค่า "express" เป็น "SHIPPOP" ในตำแหน่งที่ตรงกับเงื่อนไขการค้นหา
-        //     { arrayFilters: [{ "elem.express": "shippop" }] } // ตัวกรองอาร์เรย์เพื่อกำหนดเงื่อนไขการค้นหาในอาร์เรย์
-        // );
         const update = await shopPartner.updateMany(
-            { $push:{ express : baseWeight }}
-        )
-        if (update) {
-            // มีการอัพเดท
-            return res.status(200).send({ status: true, data: update });
-        } else {
-            // ไม่มีการอัพเดท
-            return res.status(404).send({ status: false, message: "ไม่สามารถอัพเดทได้" });
-        }
+            {}, // ตัวกรอง (ในที่นี้เป็นเงื่อนไขว่าจะให้แก้ทุก Object)
+            { $set: { "express.$[].level": 3 } } // การปรับปรุง (ในที่นี้เป็นการเพิ่มฟิลด์ "newValue" ในทุก Object ในอาร์เรย์ "express")
+         )
+         if(!update){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+         }else{
+            return res
+                    .status(200)
+                    .send({status:true, data:update})
+         }
+        
+        // const percent = await PercentCourier.find()
+        // const baseWeight = percent.map(({ _id, express, courier_code, courier_name, costBangkok_metropolitan, costUpcountry }) => ({
+        //     express,
+        //     courier_code,
+        //     courier_name,
+        //     costBangkok_metropolitan,
+        //     costUpcountry
+        // }));
+        // // const update = await shopPartner.updateMany(
+        // //     { "express.express": "shippop" },
+        // //     { $set: { "express.$[elem].express": "SHIPPOP" } }, // เซ็ตค่า "express" เป็น "SHIPPOP" ในตำแหน่งที่ตรงกับเงื่อนไขการค้นหา
+        // //     { arrayFilters: [{ "elem.express": "shippop" }] } // ตัวกรองอาร์เรย์เพื่อกำหนดเงื่อนไขการค้นหาในอาร์เรย์
+        // // );
+        // const update = await shopPartner.updateMany(
+        //     { $push:{ express : baseWeight }}
+        // )
+        // if (update) {
+        //     // มีการอัพเดท
+        //     return res.status(200).send({ status: true, data: update });
+        // } else {
+        //     // ไม่มีการอัพเดท
+        //     return res.status(404).send({ status: false, message: "ไม่สามารถอัพเดทได้" });
+        // }
     }catch(err){
         return res
                 .status(500)
                 .send({status:false, message:err})
     }
 }
+
 async function invoicePTS() {
     let data = `PTS`
     let random = Math.floor(Math.random() * 10000000000)

@@ -46,7 +46,8 @@ const shopSchema = new Schema({
         salesBangkok_metropolitan : {type : Number, default: 0, required :false},
         salesUpcountry : {type : Number, default: 0, required : false},
         on_off : {type : Boolean, default: true, required : false },
-        cancel_contract : {type : Boolean, default: false, required : false }
+        cancel_contract : {type : Boolean, default: false, required : false },
+        level: {type : Number, required: false},
     }]
 },{timestamps:true});
 
@@ -68,7 +69,8 @@ shopSchema.pre('save',async function(next){
                         salesBangkok_metropolitan: percent.salesBangkok_metropolitan,
                         salesUpcountry: percent.salesUpcountry,
                         on_off: percent.on_off,
-                        cancel_contract : percent.cancel_contract
+                        cancel_contract : percent.cancel_contract,
+                        level: percent.level
                     });
                 });
             }

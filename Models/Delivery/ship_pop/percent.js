@@ -10,7 +10,8 @@ const PercentCourierSchema = new mongoose.Schema({
     salesBangkok_metropolitan : {type : Number, default: 0, required :false},
     salesUpcountry : {type : Number, default: 0, required : false},
     on_off : {type : Boolean, default: true, required : false },
-    cancel_contract : {type : Boolean, default: false, required : false }
+    cancel_contract : {type : Boolean, default: false, required : false },
+    level: {type : Number, default: 3, required: false},
 })
 
 const PercentCourier = mongoose.model("percent_courier", PercentCourierSchema);
