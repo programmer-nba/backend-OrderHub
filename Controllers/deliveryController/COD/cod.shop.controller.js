@@ -65,7 +65,22 @@ updateCod = async(req, res)=>{
         const express_id = req.body.express_id
         const express = req.body.express
         const percent = req.body.percent
-
+        const role = req.decoded.role
+        const partner_id = req.decoded.userid
+        const findShop = await codPercent.findOne({shop_id:id})
+            if(!findShop){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่มีร้านค้าที่ท่านต้องการ"})
+            }
+            if (role != 'admin') {
+                if(partner_id != findShop.head_line){
+                    return res.status(400).send({
+                        status: false,
+                        message: "คุณไม่มีสิทธิ์แก้ไขราคาของร้านค้านี้"
+                    });
+                }
+            }
         const update = await codPercent.findOneAndUpdate(
             {
                 shop_id:id

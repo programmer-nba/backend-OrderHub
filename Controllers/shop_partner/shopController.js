@@ -752,13 +752,13 @@ editExpress = async (req, res)=>{
                         .send({status:false, message:"ไม่สามารถค้นหาร้านค้าได้"})
             }
         
-        const findPartner = await Partner.findById(id_user)
+        const findPartner = await Partner.findOne({_id:id_user})
             if(!findPartner){
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์เจอ"})
             }
-
+    
         const {id_express, costBangkok_metropolitan, costUpcountry, salesBangkok_metropolitan, salesUpcountry, on_off, level} = req.body
 
         const findShop = await shopPartner.findByIdAndUpdate(
@@ -770,13 +770,14 @@ editExpress = async (req, res)=>{
                     "express.$[element].salesBangkok_metropolitan": salesBangkok_metropolitan,
                     "express.$[element].salesUpcountry": salesUpcountry,
                     "express.$[element].on_off": on_off,
-                    "express.$[element].on_off": level,
+                    "express.$[element].level": level,
                 }
             },
             {
                 new: true, 
                 arrayFilters: [{ "element._id": id_express }],
-            })
+            }
+        );
             // console.log(findShop)
             if(!findShop){
                 return res
@@ -784,13 +785,15 @@ editExpress = async (req, res)=>{
                         .send({status:false, message:"ไม่สามารถค้นหาร้านได้"})
             }
         const filteredResult = findShop.express.find((element) => element._id.toString() == id_express.toString());
-        return res.status(200).send({
-                status: true,
-                message: "อัพเดตข้อมูลร้านสำเร็จ",
-                data: filteredResult
+        return res
+                .status(200)
+                .send({
+                    status: true,
+                    message: "อัพเดตข้อมูลร้านสำเร็จ",
+                    data: filteredResult
             });
     }catch(err){
-        console.log("มีบางอย่างผิดพลาด")
+        console.log(err)
         return res
                 .status(500)
                 .send({status:false, message:err})
