@@ -97,7 +97,7 @@ updateCod = async(req, res)=>{
 getShopById = async (req, res)=>{
     try{
         const id = req.params.id
-        const findShop = await codPercent.findOne({_id:id})
+        const findShop = await codPercent.findOne({shop_id:id})
             if(!findShop){
                 return res
                         .status(400)
