@@ -61,12 +61,14 @@ createCod = async(req, res)=>{//create ทุกร้านค้าที่�
 
 updateCod = async(req, res)=>{
     try{
+        console.log(req.body)
         const id = req.params.id
         const express_id = req.body.express_id
-        const express = req.body.express
+        // const express = req.body.express
         const percent = req.body.percent
         const role = req.decoded.role
         const partner_id = req.decoded.userid
+        console.log(role, partner_id)
         const findShop = await codPercent.findOne({shop_id:id})
             if(!findShop){
                 return res
@@ -81,12 +83,36 @@ updateCod = async(req, res)=>{
                     });
                 }
             }
+        // console.log(findShop)
+        if(findShop.shop_line != 'ICE'){
+            const p = findShop.express.find((item)=> item._id.toString() == express_id.toString())
+            // console.log(p)
+            const findCod = await codPercent.findOne({shop_id:findShop.shop_line})
+                if(!findCod){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่พบร้านค้าพ่อข่ายที่ท่านต้องการหา"})
+                }
+            const findC = findCod.express.find((item)=> item.express == p.express)
+            // console.log(findC)
+            console.log(findCod)
+                if(findC.percent == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`กรุณารอพาร์ทเนอร์ที่แนะนำท่านกรอก %COD ที่ต้องการก่อน`})
+                }else if(findC.percent > percent){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
+                }
+        }
+        
         const update = await codPercent.findOneAndUpdate(
             {
                 shop_id:id
             },
             {
-                "express.$[element].express":express,
+                // "express.$[element].express":express,
                 "express.$[element].percent":percent
             },
             {

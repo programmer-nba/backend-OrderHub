@@ -1,6 +1,8 @@
 const { generateJT } = require("./generate.signJ&T")
 const { jntOrder } = require("../../../Models/Delivery/J&T/orderJT");
 const dayjs = require('dayjs')
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
 const axios = require('axios');
 const { priceWeight } = require("../../../Models/Delivery/weight/priceWeight");
 const { Partner } = require("../../../Models/partner");
@@ -27,6 +29,9 @@ const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 apiUrl = process.env.JT_URL
 ecom_id = process.env.ECOMPANY_ID
 customer_id = process.env.CUSTOMER_ID
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 createOrder = async (req, res)=>{
     try{
@@ -1143,7 +1148,7 @@ getAll = async (req, res)=>{
 getById = async(req, res)=>{
     try{
         const txlogisticid = req.params.txlogisticid
-        const findTC = await jntOrder.findOne({txlogisticid:txlogisticid})
+        const findTC = await orderAll.findOne({tracking_code:txlogisticid})
             if(!findTC){
                 return res
                         .status(400)
@@ -1208,7 +1213,7 @@ getMeBooking = async (req, res)=>{
 getPartnerBooking = async (req, res)=>{
     try{
         const id = req.params.id
-        const findMe = await jntOrder.find({ID:id})
+        const findMe = await orderAll.findOne({tracking_code:id})
         if(!findMe){
             return res
                     .status(404)
