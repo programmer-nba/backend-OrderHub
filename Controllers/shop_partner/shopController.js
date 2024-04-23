@@ -516,7 +516,7 @@ tranfersCreditsToShop = async (req, res)=>{
         const findPartner = await Partner.findOne(
             {
                 _id:partner_id,
-                shop_partner:{
+                shop_me:{
                     $elemMatch: { _id: id_shop } //การหา _id ที่ตรงกับ id_shop ที่ user ส่งมา
                 }
             }
