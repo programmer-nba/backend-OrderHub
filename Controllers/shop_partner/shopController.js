@@ -745,53 +745,171 @@ editExpress = async (req, res)=>{
     try{
         const id_shop = req.params.id_shop
         const id_user = req.decoded.userid
+        const role = req.decoded.role
+        const {id_express, cancel_contract, on_off} = req.body
         const findShopOne = await shopPartner.findById(id_shop)
             if(!findShopOne){
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่สามารถค้นหาร้านค้าได้"})
             }
-        
-        const findPartner = await Partner.findOne({_id:id_user})
-            if(!findPartner){
+            if (role != 'admin') {
+                if(id_user != findShopOne.upline.head_line){
+                    return res.status(400).send({
+                        status: false,
+                        message: "คุณไม่มีสิทธิ์แก้สถานะของร้านค้านี้"
+                    });
+                }
+            }
+
+        let level_partner 
+        if(role == 'admin'){
+            level_partner = 0
+        }else{
+            const findUser = await Partner.findOne({_id:id_user})
+            if(!findUser){
                 return res
                         .status(400)
-                        .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์เจอ"})
+                        .send({status:false, message:"ไม่พบข้อมูลพาร์ทเนอร์"})
             }
-    
-        const {id_express, costBangkok_metropolitan, costUpcountry, salesBangkok_metropolitan, salesUpcountry, on_off, level} = req.body
-
-        const findShop = await shopPartner.findByIdAndUpdate(
-            id_shop,
-            { 
-                $set: { 
-                    "express.$[element].costBangkok_metropolitan": costBangkok_metropolitan,
-                    "express.$[element].costUpcountry": costUpcountry,
-                    "express.$[element].salesBangkok_metropolitan": salesBangkok_metropolitan,
-                    "express.$[element].salesUpcountry": salesUpcountry,
-                    "express.$[element].on_off": on_off,
-                    "express.$[element].level": level,
-                }
-            },
-            {
-                new: true, 
-                arrayFilters: [{ "element._id": id_express }],
-            }
-        );
-            // console.log(findShop)
-            if(!findShop){
+            level_partner = findUser.upline.level
+        }
+        console.log(level_partner)
+        if(on_off == false){
+            const p = findShopOne.express.find((item)=> item._id.toString() == id_express.toString())
+            console.log(p)
+            if(level_partner > p.level){
                 return res
-                        .status(404)
-                        .send({status:false, message:"ไม่สามารถค้นหาร้านได้"})
+                        .status(400)
+                        .send({status:false, message:"คุณไม่มีสิทธิ์ เปิด-ปิด ขนส่งนี้"})
+            }else{
+                try {
+                    let id_express_object = new mongoose.Types.ObjectId(id_express)
+                    let bulkPush = []
+                    const changLevel = {
+                            updateOne: {
+                                filter: { _id: id_shop },
+                                update: { 
+                                    $set: {
+                                        'express.$[element].on_off': on_off,
+                                        'express.$[element].level': level_partner,
+                                    }
+                                },
+                                arrayFilters: [{ 'element._id': id_express_object }],
+                            }
+                        }
+                    
+                    const bulk = findShopOne.upline.shop_downline.map(data => ({
+                            updateOne: {
+                                filter: { _id: data._id },
+                                update: { 
+                                    $set: {
+                                        'express.$[element].on_off': on_off,
+                                        'express.$[element].level': level_partner,
+                                    }
+                                },
+                                arrayFilters: [{ 'element.courier_code': p.courier_code }],
+                            }
+                    }))
+                    bulkPush = bulkPush.concat(changLevel, bulk);
+
+                    const result = await shopPartner.bulkWrite(bulkPush);
+
+                    return res
+                            .status(200)
+                            .send({ 
+                                status: true, 
+                                message:"อัพเดทข้อมูลสำเร็จ",
+                                data: result });
+        
+                } catch (error) {
+                    console.error(error);
+                    return res.status(500).send({ status: false, message: "มีข้อผิดพลาดในการประมวลผลคำขอ" });
+                }
             }
-        const filteredResult = findShop.express.find((element) => element._id.toString() == id_express.toString());
-        return res
-                .status(200)
-                .send({
-                    status: true,
-                    message: "อัพเดตข้อมูลร้านสำเร็จ",
-                    data: filteredResult
-            });
+        }else if(on_off == true){
+            const p = findShopOne.express.find((item)=> item._id.toString() == id_express.toString())
+            if(level_partner > p.level){
+                return res
+                        .status(400)
+                        .send({status:false, message:"คุณไม่มีสิทธิ์ เปิด-ปิด ขนส่งนี้"})
+            }else{
+                try {
+                    let id_express_object = new mongoose.Types.ObjectId(id_express)
+                    let bulkPush = []
+                    const changLevel = {
+                            updateOne: {
+                                filter: { _id: id_shop },
+                                update: { 
+                                    $set: {
+                                        'express.$[element].on_off': on_off,
+                                        'express.$[element].level': 2,
+                                    }
+                                },
+                                arrayFilters: [{ 'element._id': id_express_object }],
+                            }
+                        }
+                    
+                    const bulk = findShopOne.upline.shop_downline.map(data => ({
+                            updateOne: {
+                                filter: { _id: data._id },
+                                update: { 
+                                    $set: {
+                                        'express.$[element].level': 2,
+                                    }
+                                },
+                                arrayFilters: [{ 'element.courier_code': p.courier_code }],
+                            }
+                    }))
+                    bulkPush = bulkPush.concat(changLevel, bulk);
+
+                    const result = await shopPartner.bulkWrite(bulkPush);
+
+                    return res
+                            .status(200)
+                            .send({ 
+                                status: true, 
+                                message:"อัพเดทข้อมูลสำเร็จ",
+                                data: result });
+        
+                } catch (error) {
+                    console.error(error);
+                    return res.status(500).send({ status: false, message: "มีข้อผิดพลาดในการประมวลผลคำขอ" });
+                }
+            }
+        }
+ 
+        // const findShop = await shopPartner.findByIdAndUpdate(
+        //     id_shop,
+        //     { 
+        //         $set: { 
+        //             // "express.$[element].costBangkok_metropolitan": costBangkok_metropolitan,
+        //             // "express.$[element].costUpcountry": costUpcountry,
+        //             // "express.$[element].salesBangkok_metropolitan": salesBangkok_metropolitan,
+        //             // "express.$[element].salesUpcountry": salesUpcountry,
+        //             "express.$[element].on_off": on_off,
+        //             "express.$[element].level": level,
+        //         }
+        //     },
+        //     {
+        //         new: true, 
+        //         arrayFilters: [{ "element._id": id_express }],
+        //     }
+        // );
+        //     // console.log(findShop)
+        //     if(!findShop){
+        //         return res
+        //                 .status(404)
+        //                 .send({status:false, message:"ไม่สามารถค้นหาร้านได้"})
+        //     }
+        // const filteredResult = findShop.express.find((element) => element._id.toString() == id_express.toString());
+        // return res
+        //         .status(200)
+        //         .send({
+        //             status: true,
+        //             message: "อัพเดตข้อมูลร้านสำเร็จ",
+        //             data: filteredResult
+        //     });
     }catch(err){
         console.log(err)
         return res
@@ -969,6 +1087,24 @@ fixNameExpress = async (req, res)=>{
         //     // ไม่มีการอัพเดท
         //     return res.status(404).send({ status: false, message: "ไม่สามารถอัพเดทได้" });
         // }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+findShopDownLine = async (req, res)=>{
+    try{
+        const id = req.params.id
+        const findShop = await shopPartner.findOne({_id:id})
+            if(!findShop){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่พบร้านค้าที่ต้องการ"})
+            }
+        const level = findShop.upline.level
+        
     }catch(err){
         return res
                 .status(500)
