@@ -27,6 +27,7 @@ router.route('/orderhub/shop/update/express/:id_shop').put( auth.checkToken, sho
 router.route('/orderhub/shop/update/expressAll/:id_shop').put( auth.checkToken, shop.editExpressAll )
 router.route('/orderhub/shop/edit/weight/').put( auth.checkToken, shop.fixNameExpress )
 router.route('/orderhub/shop/updateContract').put( authAdmin.checkToken, shop.statusContract )
+router.route('/orderhub/shop/find/downline/:id').get( auth.checkToken, shop.findShopDownLine )
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน

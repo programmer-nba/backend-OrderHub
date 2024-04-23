@@ -972,17 +972,18 @@ priceList = async (req, res)=>{
                     }
                     profit.push(dataOne)
                 }
-
+                console.log(profit)
                 let shop_line = result.shop_line
+                if(shop_line != 'ICE'){
                     do{
                         const findHead = await weightAll.findOne(
                                 {
                                     shop_id: shop_line,
                                     express:"J&T"
                                 })
-                        let findWeight = findHead.weight.find((item)=> item.weightEnd == resultP.weightEnd )
                         let profitOne 
                         let cod_profit
+                        let findWeight = findHead.weight.find((item)=> item.weightEnd == resultP.weightEnd )
                         let findOwner = cod_percent.find((item)=> item.id == findHead.owner_id)  
                             if(!findOwner){
                                 cod_profit = 0
@@ -1010,6 +1011,7 @@ priceList = async (req, res)=>{
                         shop_line = findHead.shop_line
                         cost_hub -= profitOne
                     }while(shop_line != 'ICE')
+                }
                 
                 let cod_iceprofit
                 let findIce = cod_percent.find((item)=> item.id == "ICE")

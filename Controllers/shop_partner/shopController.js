@@ -879,37 +879,6 @@ editExpress = async (req, res)=>{
             }
         }
  
-        // const findShop = await shopPartner.findByIdAndUpdate(
-        //     id_shop,
-        //     { 
-        //         $set: { 
-        //             // "express.$[element].costBangkok_metropolitan": costBangkok_metropolitan,
-        //             // "express.$[element].costUpcountry": costUpcountry,
-        //             // "express.$[element].salesBangkok_metropolitan": salesBangkok_metropolitan,
-        //             // "express.$[element].salesUpcountry": salesUpcountry,
-        //             "express.$[element].on_off": on_off,
-        //             "express.$[element].level": level,
-        //         }
-        //     },
-        //     {
-        //         new: true, 
-        //         arrayFilters: [{ "element._id": id_express }],
-        //     }
-        // );
-        //     // console.log(findShop)
-        //     if(!findShop){
-        //         return res
-        //                 .status(404)
-        //                 .send({status:false, message:"ไม่สามารถค้นหาร้านได้"})
-        //     }
-        // const filteredResult = findShop.express.find((element) => element._id.toString() == id_express.toString());
-        // return res
-        //         .status(200)
-        //         .send({
-        //             status: true,
-        //             message: "อัพเดตข้อมูลร้านสำเร็จ",
-        //             data: filteredResult
-        //     });
     }catch(err){
         console.log(err)
         return res
@@ -1097,14 +1066,28 @@ fixNameExpress = async (req, res)=>{
 findShopDownLine = async (req, res)=>{
     try{
         const id = req.params.id
-        const findShop = await shopPartner.findOne({_id:id})
+        const findShop = await shopPartner.findById(id)
             if(!findShop){
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่พบร้านค้าที่ต้องการ"})
             }
-        const level = findShop.upline.level
+        const level = findShop.upline.level + 1
         
+        const findDownline = findShop.upline.shop_downline.map(async (item)=>{
+            const find = await shopPartner.findById(item._id)
+                if(!find){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่มีข้อมูลร้านค้าในระบบ"})
+                }else if(find.upline.level == level){
+                    return find
+                }
+        })
+        const downlines = (await Promise.all(findDownline)).filter(item => item != undefined);
+        return res
+                .status(200)
+                .send({status:true, data:downlines})
     }catch(err){
         return res
                 .status(500)
@@ -1151,6 +1134,6 @@ async function invoiceSTP() {
 }
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
-                , editExpressAll ,pushExpress, statusContract, fixNameExpress}
+                , editExpressAll ,pushExpress, statusContract, fixNameExpress, findShopDownLine}
 
 
