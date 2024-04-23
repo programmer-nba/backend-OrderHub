@@ -305,8 +305,8 @@ getMeFP = async (req, res)=>{
         const findAka = await bankRecord.findOne({ID:id})
             if(!findAka){
                 return res
-                        .status(404)
-                        .send({status:false, message:"ไม่พบข้อมูลธนาคารที่ท่านต้องการ"})
+                        .status(200)
+                        .send({status:false, data:[]})
             }
         return res
                 .status(200)
