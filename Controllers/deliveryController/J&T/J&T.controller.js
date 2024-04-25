@@ -44,6 +44,7 @@ createOrder = async (req, res)=>{
         const cost_hub = req.body.cost_hub
         const fee_cod = req.body.fee_cod
         const total = req.body.total
+        const remark = req.body.remark
         const profitSaleMartket = req.body.profitSaleMartket
         const declared_value = req.body.declared_value
         const insuranceFee = req.body.insuranceFee
@@ -89,6 +90,7 @@ createOrder = async (req, res)=>{
                 "width": data.parcel.width,
                 "height": data.parcel.height,
                 "isinsured": "1",
+                "remark": remark
                 // "offerfee": "2000"
             },
             "msg_type": "ORDERCREATE",
@@ -204,6 +206,7 @@ createOrder = async (req, res)=>{
                 insuranceFee: insuranceFee,
                 profitAll: profitAll,
                 express: "J&T",
+                remark: remark,
                 ...new_data //mailno อยู่ในนี้แล้ว ไม่ต้องประกาศ
             })
             if(!createOrderAll){
@@ -671,6 +674,7 @@ priceList = async (req, res)=>{
         const shop = formData.shop_number
         const weight = formData.parcel.weight
         const declared_value = formData.declared_value
+        const remark = req.body.remark
         let reqCod = req.body.cod_amount
         let percentCod 
         if (!Number.isInteger(reqCod)||
@@ -1070,6 +1074,7 @@ priceList = async (req, res)=>{
                         total: 0,
                         cut_partner: 0,
                         status: status,
+                        remark: remark,
                         profitAll: profit
                     };
                     // console.log(v)

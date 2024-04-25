@@ -23,7 +23,6 @@ const orderAllSchema = new Schema({
         to : {type: Object, required : false},
         parcel : {type: Object, required : false},
         courier_code : {type: String, required: false},
-        priceOne : {type : Number , required : false},
         price : {type : Number , required : false},
         insurance_code : {type: String, required: false},
         declared_value: {type: Number ,required : false},
@@ -44,6 +43,7 @@ const orderAllSchema = new Schema({
         pdfStream: {type : String, required : false},
         bill_status : {type : String, default: "พักบิล", required : false},
         order_status : {type: String, default: "booking", required: false},
+        remark: {type : String, required : false},
         day: {
                 type: String,
                 required: false,
