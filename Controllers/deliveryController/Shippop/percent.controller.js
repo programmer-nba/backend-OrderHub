@@ -1,3 +1,4 @@
+const { codExpress } = require("../../../Models/COD/cod.model");
 const { codPercent } = require("../../../Models/COD/cod.shop.model");
 const { PercentCourier, validate } = require("../../../Models/Delivery/ship_pop/percent");
 const { priceBase } = require("../../../Models/Delivery/weight/priceBase.express");
@@ -13,12 +14,12 @@ create = async(req, res)=>{
                     .status(400)
                     .send({message : error.details[0].message, status : false});
         }
-        const check_courier = await PercentCourier.findOne({courier_code:req.body.courier_code});
-        if(check_courier){
-            return res
-                    .status(400)
-                    .send({message: "รหัสคูเรียนี้มีในระบบแล้ว"})
-        }
+        // const check_courier = await PercentCourier.findOne({courier_code:req.body.courier_code});
+        // if(check_courier){
+        //     return res
+        //             .status(400)
+        //             .send({message: "รหัสคูเรียนี้มีในระบบแล้ว"})
+        // }
         const percent = await PercentCourier.create(req.body);
             if(percent){
                 const update = await shopPartner.updateMany(
@@ -37,7 +38,16 @@ create = async(req, res)=>{
                                 .status(400)
                                 .send({status:false, message:"สร้างข้อมูลราคาพื้นฐานไม่ได้"})
                     }
-                
+                const createCod = await codExpress.create({
+                        express : req.body.express,
+                        percent : 0,
+                        on_off : false
+                    })
+                    if(!createCod){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถสร้าง COD Base ได้"})
+                    }
                 const updateCod = await codPercent.updateMany(
                     {
                         $push:{
@@ -69,6 +79,9 @@ create = async(req, res)=>{
                 const newWeightData = updatePriceBase.weight.map(({ _id, ...rest }) => rest);
                 let new_data = []
                 for(const shop of findShop){
+                        if(shop.status == "รอแอดมินอนุมัติ"){
+                            continue;
+                        }
                         let found = false;
                         for (const weight of findShopWeight) {
                             if (weight.shop_id == shop._id && weight.express == percent.express) {
@@ -198,12 +211,20 @@ delend = async(req, res)=>{
                 {},
                 {
                     $pull: { "express": { "express": percent.express }}
-                }
-            )
+                })
                 if(!delCod){
                     return res
                             .status(400)
-                            .send({status:false, message:"ไม่สามารถลบขนส่งได้"})
+                            .send({status:false, message:"ไม่สามารถลบ COD ขนส่งได้"})
+                }
+            const delCodExpress = await codExpress.findOneAndDelete(
+                {
+                    express:percent.express
+                })
+                if(!delCodExpress){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถลบ COD Base ได้"})
                 }
             const delWeight = await priceBase.findOneAndDelete(
                 {
