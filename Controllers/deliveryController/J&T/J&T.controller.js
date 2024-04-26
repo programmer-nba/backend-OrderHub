@@ -988,7 +988,7 @@ priceList = async (req, res)=>{
                     }
                     profit.push(dataOne)
                 }
-                console.log(profit)
+                // console.log(profit)
                 let shop_line = result.shop_line
                 if(shop_line != 'ICE'){
                     do{
@@ -1084,7 +1084,7 @@ priceList = async (req, res)=>{
                         remark: remark,
                         profitAll: profit
                     };
-                    // console.log(v)
+                    console.log(v)
                     // if (cod !== undefined) {
                         let formattedFee = parseFloat(fee_cod_total.toFixed(2));
                         let total = price + formattedFee + insuranceFee

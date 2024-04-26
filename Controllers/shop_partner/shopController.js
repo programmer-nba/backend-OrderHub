@@ -945,30 +945,191 @@ editExpress = async (req, res)=>{
 editExpressAll = async (req, res)=>{
     try{
         const id_shop = req.params.id_shop
+        const id_user = req.decoded.userid
         const on_off = req.body.on_off
+        const role = req.decoded.role
             if (on_off !== true && on_off !== false) {
                 return res
                         .status(200)
                         .send({status:false, message:"ท่านต้องกรอก true or false เท่านั้น"})
             } 
-        const updateExpress = await shopPartner.updateMany(
-            {
-                _id:id_shop
-            }, 
-            { 
-                $set: { 
-                    "express.$[].on_off": on_off
-                }
-            },
-            {new:true})
-            if(!updateExpress){
-                return res 
+
+        const findShopOne = await shopPartner.findById(id_shop)
+            if(!findShopOne){
+                return res
                         .status(400)
-                        .send({status:false, message:"ไม่สามารถแก้ไขได้"})
+                        .send({status:false, message:"ไม่สามารถค้นหาร้านค้าได้"})
             }
-        return res
-                .status(200)
-                .send({status:true,message:"แก้ไขสถานะสำเร็จ", data: updateExpress})
+            if (role != 'admin') {
+                if(id_user != findShopOne.upline.head_line){
+                    return res.status(400).send({
+                        status: false,
+                        message: "คุณไม่มีสิทธิ์แก้สถานะของร้านค้านี้"
+                    });
+                }
+            }
+
+        let level_partner 
+        if(role == 'admin'){
+            level_partner = 0
+        }else{
+            const findUser = await Partner.findOne({_id:id_user})
+            if(!findUser){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่พบข้อมูลพาร์ทเนอร์"})
+            }
+            level_partner = findUser.upline.level
+        }
+        console.log(level_partner)
+        if(on_off == false){
+            if(level_partner > p.level){ //ถ้า level ผู้ทำการ ยิง API นี้สูงกว่า level ของผู้ถูกเปลี่ยนข้อมูล จะไม่สามารถเปลี่ยนได้
+                return res
+                        .status(400)
+                        .send({status:false, message:"คุณไม่มีสิทธิ์ เปิด-ปิด ขนส่งนี้"})
+            }else{
+                try {
+                    let bulkPush = []
+                    let bulkCodPush = []
+                    const changLevel = {
+                            updateOne: {
+                                filter: { _id: id_shop },
+                                update: { 
+                                    $set: {
+                                        "express.$[].on_off": on_off,
+                                        'express.$[].level': level_partner
+                                    }
+                                }
+                            }
+                        }
+
+                    const bulk = findShopOne.upline.shop_downline.map(data => ({
+                            updateOne: {
+                                filter: { _id: data._id },
+                                update: { 
+                                    $set: {
+                                        'express.$[].on_off': on_off,
+                                        'express.$[].level': level_partner,
+                                    }
+                                }
+                            }
+                    }))
+
+                    const changOnOffCod = {
+                            updateOne: {
+                                filter: { shop_id: id_shop },
+                                update: { 
+                                    $set: {
+                                        'express.$[].on_off': on_off,
+                                    }
+                                }
+                            }
+                    }
+                    const bulkCod = findShopOne.upline.shop_downline.map(data => ({
+                            updateOne: {
+                                filter: { shop_id: data._id },
+                                update: { 
+                                    $set: {
+                                        'express.$[].on_off': on_off,
+                                    }
+                                }
+                            }
+                    }))
+                    // console.log(bulkCod)
+                    bulkPush = bulkPush.concat(changLevel, bulk);
+                    bulkCodPush= bulkCodPush.concat(changOnOffCod, bulkCod)
+                    const result = await shopPartner.bulkWrite(bulkPush);
+                    const resultCOD = await codPercent.bulkWrite(bulkCodPush)
+                    return res
+                            .status(200)
+                            .send({ 
+                                status: true, 
+                                message:"อัพเดทข้อมูลสำเร็จ",
+                                data: result,
+                                cod: resultCOD
+                            });
+        
+                } catch (error) {
+                    console.error(error);
+                    return res.status(500).send({ status: false, message: "มีข้อผิดพลาดในการประมวลผลคำขอ" });
+                }
+            }
+        }else if(on_off == true){
+            if(level_partner > p.level){
+                return res
+                        .status(400)
+                        .send({status:false, message:"คุณไม่มีสิทธิ์ เปิด-ปิด ขนส่งนี้"})
+            }else{
+                try {
+                    let bulkPush = []
+                    let bulkCodPush = []
+                    //แก้สถานะ SHOP
+                    const changLevel = {
+                            updateOne: {
+                                filter: { _id: id_shop },
+                                update: { 
+                                    $set: {
+                                        'express.$[].on_off': on_off,
+                                        'express.$[].level': 2,
+                                    }
+                                },
+                            }
+                        }
+                    const bulk = findShopOne.upline.shop_downline.map(data => ({
+                            updateOne: {
+                                filter: { _id: data._id },
+                                update: { 
+                                    $set: {
+                                        'express.$[].on_off': on_off,
+                                        'express.$[].level': 2,
+                                    }
+                                }
+                            }
+                    }))
+
+                    //แก้ COD SHOP
+                    const changOnOffCod = {
+                        updateOne: {
+                            filter: { shop_id: id_shop },
+                            update: { 
+                                $set: {
+                                    'express.$[].on_off': on_off,
+                                }
+                            }
+                        }
+                    }
+                    const bulkCod = findShopOne.upline.shop_downline.map(data => ({
+                        updateOne: {
+                            filter: { shop_id: data._id },
+                            update: { 
+                                $set: {
+                                    'express.$[].on_off': on_off,
+                                }
+                            }
+                        }
+                    }))
+                    bulkPush = bulkPush.concat(changLevel, bulk);
+                    bulkCodPush = bulkCodPush.concat(changOnOffCod, bulkCod)
+
+                    const resultCOD = await codPercent.bulkWrite(bulkCodPush)
+                    const result = await shopPartner.bulkWrite(bulkPush);
+
+                    return res
+                            .status(200)
+                            .send({ 
+                                status: true, 
+                                message:"อัพเดทข้อมูลสำเร็จ",
+                                data: result,
+                                cod: resultCOD
+                             });
+        
+                } catch (error) {
+                    console.error(error);
+                    return res.status(500).send({ status: false, message: "มีข้อผิดพลาดในการประมวลผลคำขอ" });
+                }
+            }
+        }
+       
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res

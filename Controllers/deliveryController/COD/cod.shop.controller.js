@@ -144,9 +144,11 @@ getShopById = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่พบข้อมูลร้านค้า COD"})
             }
+        const expressTrue = findShop.express.filter((item)=> item.on_off == true)
+        // console.log(expressTrue)
         return res
                 .status(200)
-                .send({status:true, data:findShop})
+                .send({status:true, express:expressTrue})
     }catch(err){
         return res
                 .status(500)
