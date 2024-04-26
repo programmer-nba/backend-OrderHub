@@ -744,7 +744,7 @@ priceList = async (req, res)=>{
                                 .send({status:false, message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
                     }
                     // console.log(percentCOD)
-                        if(percentCOD != 0){
+                        if(percentCOD != 0){ //กรณีกรอก %COD ที่ต้องการมา
                             let feeOne = (reqCod * percentCOD)/100
                             fee_cod_total = feeOne
                             fee_cod = (reqCod * pFirst.percent)/100
@@ -759,30 +759,39 @@ priceList = async (req, res)=>{
                         }else{
                             fee_cod = ((reqCod * pFirst.percent)/100)
                         }
-                // console.log(pFirst)
-                let shop_line = findShopCod.shop_line
-                // console.log(shop_line)
-                    do{
+
+                    // console.log(shop_line)
+                    if(findShopCod.shop_line != 'ICE'){
+                        let shop_line = findShopCod.shop_line
+                        do{
                             const findShopLine = await codPercent.findOne({shop_id:shop_line})
                             const p = findShopLine.express.find((item)=> item.express == "J&T")
                             let feeOne = (reqCod * p.percent)/100
                             let profit = fee_cod - feeOne
-                            fee_cod -= profit
-                                let v = {
-                                    id:findShopLine.owner_id,
-                                    cod_profit:profit
-                                }
-                            cod_percent.push(v)
-                                if(findShopLine.shop_line == 'ICE'){
-                                    let b = {
-                                            id:'ICE',
-                                            cod_profit:fee_cod
+                                fee_cod -= profit
+                                    let v = {
+                                            id:findShopLine.owner_id,
+                                            cod_profit:profit
                                         }
-                                    cod_percent.push(b)
-                                }
-                            shop_line = findShopLine.shop_line
-                        
-                    }while(shop_line != "ICE")
+                                cod_percent.push(v)
+                                    if(findShopLine.shop_line == 'ICE'){
+                                        let b = {
+                                                id:'ICE',
+                                                cod_profit:fee_cod
+                                            }
+                                        cod_percent.push(b)
+                                    }
+                                shop_line = findShopLine.shop_line
+                            
+                        }while(shop_line != "ICE")
+                    }else{
+                        let v = {
+                                id:'ICE',
+                                cod_profit:fee_cod
+                            }
+                        cod_percent.push(v)
+                    }
+                    
                 }
         }
         console.log(cod_percent)

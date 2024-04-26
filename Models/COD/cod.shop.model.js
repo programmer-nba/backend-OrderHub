@@ -9,9 +9,10 @@ const percentShopCodSchema = new Schema({
     level: {type:Number, required: false},
     express: [{
         express: {type:String, required: false},
-        percent: {type:Number, required: false}
+        percent: {type:Number, required: false},
+        on_off: {type:Boolean, required: false},
     }]
-},{timestamps: true});
+},{timestamps: true})
 
 const codPercent = mongoose.model("cod_percent", percentShopCodSchema);
 

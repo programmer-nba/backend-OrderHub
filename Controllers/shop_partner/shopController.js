@@ -778,7 +778,7 @@ editExpress = async (req, res)=>{
         if(on_off == false){
             const p = findShopOne.express.find((item)=> item._id.toString() == id_express.toString())
             console.log(p)
-            if(level_partner > p.level){
+            if(level_partner > p.level){ //ถ้า level ผู้ทำการ ยิง API นี้สูงกว่า level ของผู้ถูกเปลี่ยนข้อมูล จะไม่สามารถเปลี่ยนได้
                 return res
                         .status(400)
                         .send({status:false, message:"คุณไม่มีสิทธิ์ เปิด-ปิด ขนส่งนี้"})
@@ -786,6 +786,7 @@ editExpress = async (req, res)=>{
                 try {
                     let id_express_object = new mongoose.Types.ObjectId(id_express)
                     let bulkPush = []
+                    let bulkCodPush = []
                     const changLevel = {
                             updateOne: {
                                 filter: { _id: id_shop },
@@ -798,7 +799,17 @@ editExpress = async (req, res)=>{
                                 arrayFilters: [{ 'element._id': id_express_object }],
                             }
                         }
-                    
+                    const changOnOffCod = {
+                            updateOne: {
+                                filter: { shop_id: id_shop },
+                                update: { 
+                                    $set: {
+                                        'express.$[element].on_off': on_off,
+                                    }
+                                },
+                                arrayFilters: [{ 'element.express': p.express }],
+                            }
+                        }
                     const bulk = findShopOne.upline.shop_downline.map(data => ({
                             updateOne: {
                                 filter: { _id: data._id },
@@ -811,16 +822,30 @@ editExpress = async (req, res)=>{
                                 arrayFilters: [{ 'element.courier_code': p.courier_code }],
                             }
                     }))
+                    const bulkCod = findShopOne.upline.shop_downline.map(data => ({
+                            updateOne: {
+                                filter: { shop_id: data._id },
+                                update: { 
+                                    $set: {
+                                        'express.$[element].on_off': on_off,
+                                    }
+                                },
+                                arrayFilters: [{ 'element.express': p.express }],
+                            }
+                    }))
+                    // console.log(bulkCod)
                     bulkPush = bulkPush.concat(changLevel, bulk);
-
+                    bulkCodPush= bulkCodPush.concat(changOnOffCod, bulkCod)
                     const result = await shopPartner.bulkWrite(bulkPush);
-
+                    const resultCOD = await codPercent.bulkWrite(bulkCodPush)
                     return res
                             .status(200)
                             .send({ 
                                 status: true, 
                                 message:"อัพเดทข้อมูลสำเร็จ",
-                                data: result });
+                                data: result,
+                                cod: resultCOD
+                            });
         
                 } catch (error) {
                     console.error(error);
@@ -837,6 +862,8 @@ editExpress = async (req, res)=>{
                 try {
                     let id_express_object = new mongoose.Types.ObjectId(id_express)
                     let bulkPush = []
+                    let bulkCodPush = []
+                    //แก้สถานะ SHOP
                     const changLevel = {
                             updateOne: {
                                 filter: { _id: id_shop },
@@ -849,20 +876,46 @@ editExpress = async (req, res)=>{
                                 arrayFilters: [{ 'element._id': id_express_object }],
                             }
                         }
-                    
                     const bulk = findShopOne.upline.shop_downline.map(data => ({
                             updateOne: {
                                 filter: { _id: data._id },
                                 update: { 
                                     $set: {
+                                        'express.$[element].on_off': on_off,
                                         'express.$[element].level': 2,
                                     }
                                 },
                                 arrayFilters: [{ 'element.courier_code': p.courier_code }],
                             }
                     }))
-                    bulkPush = bulkPush.concat(changLevel, bulk);
 
+                    //แก้ COD SHOP
+                    const changOnOffCod = {
+                        updateOne: {
+                            filter: { shop_id: id_shop },
+                            update: { 
+                                $set: {
+                                    'express.$[element].on_off': on_off,
+                                }
+                            },
+                            arrayFilters: [{ 'element.express': p.express }],
+                        }
+                    }
+                    const bulkCod = findShopOne.upline.shop_downline.map(data => ({
+                        updateOne: {
+                            filter: { shop_id: data._id },
+                            update: { 
+                                $set: {
+                                    'express.$[element].on_off': on_off,
+                                }
+                            },
+                            arrayFilters: [{ 'element.express': p.express }],
+                        }
+                    }))
+                    bulkPush = bulkPush.concat(changLevel, bulk);
+                    bulkCodPush = bulkCodPush.concat(changOnOffCod, bulkCod)
+
+                    const resultCOD = await codPercent.bulkWrite(bulkCodPush)
                     const result = await shopPartner.bulkWrite(bulkPush);
 
                     return res
@@ -870,7 +923,9 @@ editExpress = async (req, res)=>{
                             .send({ 
                                 status: true, 
                                 message:"อัพเดทข้อมูลสำเร็จ",
-                                data: result });
+                                data: result,
+                                cod: resultCOD
+                             });
         
                 } catch (error) {
                     console.error(error);

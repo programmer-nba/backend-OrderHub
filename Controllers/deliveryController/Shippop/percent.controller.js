@@ -14,12 +14,12 @@ create = async(req, res)=>{
                     .status(400)
                     .send({message : error.details[0].message, status : false});
         }
-        // const check_courier = await PercentCourier.findOne({courier_code:req.body.courier_code});
-        // if(check_courier){
-        //     return res
-        //             .status(400)
-        //             .send({message: "รหัสคูเรียนี้มีในระบบแล้ว"})
-        // }
+        const check_courier = await PercentCourier.findOne({courier_code:req.body.courier_code});
+        if(check_courier){
+            return res
+                    .status(400)
+                    .send({message: "รหัสคูเรียนี้มีในระบบแล้ว"})
+        }
         const percent = await PercentCourier.create(req.body);
             if(percent){
                 const update = await shopPartner.updateMany(
@@ -53,7 +53,8 @@ create = async(req, res)=>{
                         $push:{
                             express: { 
                                 express : percent.express,
-                                percent : 0
+                                percent : 0,
+                                on_off : false
                             }
                         }
                     })
