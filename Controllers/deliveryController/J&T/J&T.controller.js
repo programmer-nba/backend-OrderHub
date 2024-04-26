@@ -676,7 +676,7 @@ priceList = async (req, res)=>{
         const declared_value = formData.declared_value
         const remark = req.body.remark
         let reqCod = req.body.cod_amount
-        let percentCod 
+
         if (!Number.isInteger(reqCod)||
             !Number.isInteger(declared_value)) {
                     return res.status(400).send({
@@ -823,8 +823,6 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status: false, message:`น้ำหนักของร้านค้า ${req.body.shop_number} ที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`})
             }
-
-        const cod = 6.5
 
         let priceBangkok = false;
         const findPostcal = await bangkokMetropolitan.findOne({ Postcode: req.body.to.postcode });
@@ -1131,7 +1129,7 @@ priceList = async (req, res)=>{
         
         return res
                 .status(200)
-                .send({ status: true, new:new_data, sender:infoSender});
+                .send({ status: true, new:new_data[0], sender:infoSender});
     }catch(err){
         return res
                 .status(500)
