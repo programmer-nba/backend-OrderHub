@@ -15,6 +15,9 @@ const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { dropOffs } = require('../../../Models/Delivery/dropOff');
 const { bestRemoteArea } = require('../../../Models/remote_area/best.area');
 const { orderAll } = require('../../../Models/Delivery/order_all');
+const { bangkokMetropolitan } = require('../../../Models/postcal_bangkok/postcal.bangkok');
+const { priceBase } = require('../../../Models/Delivery/weight/priceBase.express');
+const { codPercent } = require('../../../Models/COD/cod.shop.model');
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -1123,9 +1126,9 @@ priceList = async (req, res)=>{
         const shop = formData.shop_number
         const declared_value = req.body.declared_value
         const weight = formData.parcel.weight
+        const remark = req.body.remark
         let reqCod = req.body.cod_amount
         let percentCod
-        let price_remote_area
         let insuranceFee
         if(reqCod > 50000){ //เอามาจาก PDF best knowledge
             return res
@@ -1141,7 +1144,23 @@ priceList = async (req, res)=>{
         }
 
         if(weight <= 50){
-            insuranceFee = ((declared_value * 0.4)/100) 
+            const value = ((declared_value * 0.4)/100) 
+            if(value < 10){
+                insuranceFee = 10
+            }else{
+                insuranceFee = value
+            }
+        }else if(weight > 50 && weight <= 300){
+            const value = ((declared_value * 1)/100) 
+            if(value < 50){
+                insuranceFee = 50
+            }else{
+                insuranceFee = value
+            }
+        }else{
+            return res
+                    .status(200)
+                    .send({status:false, message:"น้ำหนักที่ท่านกรอกมากเกิน 300 KG"})
         }
 
         //ผู้ส่ง
@@ -1176,13 +1195,95 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
+        //ตรวจว่าใช้ขนส่งนี้ได้ไหม
         const checkSwitch = findForCost.express.find(item => item.express == 'BEST')
             if(checkSwitch.on_off == false || checkSwitch.cancel_contract == true){
                 return res
                         .status(400)
                         .send({status:false, message:"ท่านไม่สามารถใช้งานระบบขนส่งนี้ได้"})
             }
-        
+
+        //คำนวณค่า COD
+        let cod_percent = []
+        let fee_cod_total = 0
+        let profitCOD = 0
+        if(reqCod != 0){
+            const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
+                if(findShopCod){
+                    let fee_cod = 0
+                    let percentCOD = req.body.percentCOD 
+                    
+                    // สร้าง regular expression เพื่อตรวจสอบทศนิยมไม่เกิน 2 ตำแหน่ง
+                    const regex = /^\d+(\.\d{1,2})?$/;
+
+                    let pFirst = findShopCod.express.find((item)=> item.express == "J&T")
+
+                    if(pFirst.percent == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่แนะนำท่านกรอกเปอร์เซ็น COD ที่ต้องการ"})
+                    }else if(!regex.test(percentCOD)){
+                        return res
+                                .status(400)
+                                .send({ status: false, message: "ค่าเปอร์เซ็น COD ต้องเป็นทศนิยมไม่เกิน 2 ตำแหน่ง" });
+                    }else if(percentCOD != 0 && percentCOD < pFirst.percent){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
+                    }
+                    // console.log(percentCOD)
+                        if(percentCOD != 0){ //กรณีกรอก %COD ที่ต้องการมา
+                            let feeOne = (reqCod * percentCOD)/100
+                            fee_cod_total = feeOne
+                            fee_cod = (reqCod * pFirst.percent)/100
+                            let profit = feeOne - fee_cod
+                                let v = {
+                                    id:findShopCod.owner_id,
+                                    cod_profit:profit
+                                }
+                            profitCOD = profit
+                            cod_percent.push(v)
+                            
+                        }else{
+                            fee_cod = ((reqCod * pFirst.percent)/100)
+                        }
+ 
+                    // console.log(shop_line)
+                    if(findShopCod.shop_line != 'ICE'){
+                        let shop_line = findShopCod.shop_line
+                        do{
+                            const findShopLine = await codPercent.findOne({shop_id:shop_line})
+                            const p = findShopLine.express.find((item)=> item.express == "BEST")
+                            let feeOne = (reqCod * p.percent)/100
+                            let profit = fee_cod - feeOne
+                                fee_cod -= profit
+                                    let v = {
+                                            id:findShopLine.owner_id,
+                                            cod_profit:profit
+                                        }
+                                cod_percent.push(v)
+                                    if(findShopLine.shop_line == 'ICE'){
+                                        let b = {
+                                                id:'ICE',
+                                                cod_profit:fee_cod
+                                            }
+                                        cod_percent.push(b)
+                                    }
+                                shop_line = findShopLine.shop_line
+                        }while(shop_line != "ICE")
+                    }else{
+                        let v = {
+                                id:'ICE',
+                                cod_profit:fee_cod
+                            }
+                        cod_percent.push(v)
+                    }
+                    
+                }
+        }
+        console.log(cod_percent)
+
+        //ดึงข้อมูลตารางของ Partner มาเพื่อเช็คว่าค่าไหนยังไม่ถูกกรอกบ้าง
         const result  = await weightAll.findOne(
             {
                 shop_id: findForCost._id,
@@ -1203,213 +1304,275 @@ priceList = async (req, res)=>{
                 return res
                         .status(400)
                         .send({status: false, message:`น้ำหนักของร้านค้า ${req.body.shop_number} ที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`})
-            }else if(reqCod > 0){
-                const findCod = await codExpress.findOne({express:"BEST"})
-                percentCod = findCod.percent
             }
-        const cod = percentCod
 
+        //ค้นหาว่ารหัสไปรณีย์อยู่กรุงเทพ/ปริมลฑล หรือเปล่า
         let priceBangkok = false;
         const findPostcal = await bangkokMetropolitan.findOne({ Postcode: req.body.to.postcode });
             if (findPostcal) {
                 priceBangkok = true;
             }
-        let new_data = []
-        if(upline === 'ICE'){
-                let v = null;
-                let p = findForCost.express.find(element => element.courier_code == 'J&T');
-                        // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
-                            if(p.on_off == false){
-                                console.log(`Skipping 'J&T' because courier is off`)
-                                return res
-                                        .status(200)
-                                        .send({status:true, result: new_data })
-                            }else if (!p) {
-                                console.log(`ยังไม่มี courier name: 'J&T'`);
-                            }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
-                                return res
-                                        .status(400)
-                                        .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง J&T กรุณาติดต่อ Admin`})
-                            }
-                    // คำนวนต้นทุนของร้านค้า
-                    let cost_hub = result[0].price;
-                    let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan); // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                    let price = Math.ceil(cost + p.costUpcountry);
-                    let status = null;
-                    let cod_amount = 0
 
-                    try {
-                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-                        if (findForCost.credit < price) {
-                            status = 'จำนวนเงินของท่านไม่เพียงพอ';
-                        } else {
-                            status = 'พร้อมใช้บริการ';
-                        }
-                    } catch (error) {
-                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
-                    }
-                    v = {
-                        express: "BEST(ICE)",
-                        price_remote_area: 0,
-                        cost_hub: cost_hub,
-                        cost: cost,
-                        cod_amount: Number(cod_amount.toFixed()),
-                        fee_cod: 0,
-                        profitPartner: 0,
-                        priceOne: 0,
-                        price: Number(price.toFixed()),
-                        total: 0,
-                        cut_partner: 0,
-                        declared_value: declared_value,
-                        status: status
-                    };
-                    if (cod !== undefined) {
-                        let fee = (reqCod * percentCod)/100
-                        let formattedFee = parseFloat(fee.toFixed(2));
-                        let total = price + formattedFee
-                        let profitPartner = price - cost
-                        let cut_partner = total - profitPartner
-                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.fee_cod = formattedFee
-                            v.profitPartner = profitPartner
-                                if(price_remote_area != undefined){
-                                    let total1 = total + price_remote_area
-                                        v.total = total1
-                                        v.cut_partner = total1 - profitPartner
-                                        v.price_remote_area = price_remote_area
-                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
-                                            //     new_data.push(v);
-                                            // }
-                                }else{
-                                    v.cut_partner = cut_partner
-                                    v.total = total
-                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
-                                        //     new_data.push(v);
-                                        // }
-                                }
-                            new_data.push(v);
-                    }else{
-                        let profitPartner = price - cost
-                        if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
-                            let total = price + price_remote_area
-                                v.price_remote_area = price_remote_area
-                                v.total = total
-                                v.cut_partner = total - profitPartner
-                                v.profitPartner = profitPartner
-                        }else{
-                            v.profitPartner = profitPartner
-                            v.total = price
-                            v.cut_partner = price - profitPartner
-                        }
-                        new_data.push(v);
-                    }
-        }else{
-            const costFind = await costPlus.findOne(
-                {_id:upline, 'cost_level.partner_number':findPartner.partnerNumber},
-                { _id: 0, 'cost_level.$': 1 })
-            if(!costFind){
-                return res
-                        .status(400)
-                        .send({status:false, message:"ค้นหาหมายเลขแนะนำไม่เจอ"})
-            }else if(costFind.cost_level[0].cost_plus === ""){
-                return res
-                        .status(400)
-                        .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่ทำการแนะนำระบุส่วนต่าง"})
+        //เช็คว่าเป็นพื้นที่ห่างไกลหรือเปล่า
+        let price_remote_area = 0
+        const findRemote = await bestRemoteArea.findOne({Postcode: req.body.to.postcode})
+            if(findRemote){
+                price_remote_area = findRemote.Price
             }
-            const cost_plus = parseInt(costFind.cost_level[0].cost_plus, 10);
-                let v = null;
-                let p = findForCost.express.find(element => element.courier_code == 'J&T');
-                // console.log(p.costBangkok_metropolitan, p.costUpcountry, p.on_off)
-                    if(p.on_off == false){
-                        console.log(`Skipping 'J&T' because courier is off`)
-                        return res
-                                .status(200)
-                                .send({status:true, result: new_data })
-                    }else if (!p) {
-                        console.log(`ยังไม่มี courier name: 'J&T'`);
-                    }else if(p.costBangkok_metropolitan <= 0 || p.costUpcountry <= 0){
-                        return res
-                                .status(400)
-                                .send({status:false, message:`ระบบยังไม่ได้กำหนดราคาขนส่ง J&T กรุณาติดต่อ Admin`})
-                    }
-                // คำนวนต้นทุนของร้านค้า
-                let cost_hub = result[0].price;
-                let cost = Math.ceil(cost_hub + p.costBangkok_metropolitan) // ต้นทุน hub + ((ต้นทุน hub * เปอร์เซ็น hub)/100)
-                let priceOne = Math.ceil(cost + p.costUpcountry)
-                let price = priceOne + cost_plus
 
-                let cod_amount = 0
-                let status = null;
-                    try {
-                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-                        if (findForCost.credit < price) {
-                            status = 'จำนวนเงินของท่านไม่เพียงพอ';
-                        } else {
-                            status = 'พร้อมใช้บริการ';
-                        }
-                    } catch (error) {
-                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+        //เช็คราคาไตรมาสของ BEST
+        const findPriceBase = await priceBase.findOne({express:"BEST"})
+            if(!findPriceBase){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ค้นหาราคามาตรฐานไม่เจอ"})
+            }
+
+        //การตรวจว่าราคาต้นทุน และราคาขาย ถูกตั้งค่าแล้วหรือยัง
+        let new_data = []
+            let v = null;
+            let resultP
+            let p = result.weight
+                for(let i = 0; i< p.length; i++){
+                    if(weight >= p[i].weightStart && weight <= p[i].weightEnd){
+                        resultP = p[i]
+                        break;
                     }
-                    v = {
-                        express: "BEST(ICE)",
+                }
+            // console.log(resultP)
+                if(resultP.costUpcountry == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                }else if(resultP.costBangkok_metropolitan == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                }else if(resultP.salesBangkok_metropolitan == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                }else if(resultP.salesUpcountry == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                }
+            let resultBase
+            let base = findPriceBase.weight
+                for(let i = 0; i< base.length; i++){
+                    if(weight >= base[i].weightStart && weight <= base[i].weightEnd){
+                        resultBase = base[i]
+                        break;
+                    }
+                }
+            // console.log(resultBase)    
+                if(resultBase.costUpcountry == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                }else if(resultBase.costBangkok_metropolitan == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                }else if(resultBase.salesBangkok_metropolitan == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                }else if(resultBase.salesUpcountry == 0){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                }
+
+                //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
+                if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ 
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                }else if(resultP.costUpcountry > resultBase.salesUpcountry){
+                    return res
+                            .status(400)
+                            .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                }
+
+                // คำนวนต้นทุนของร้านค้า
+                let cost_hub
+                let price
+                let profit_partner
+                let profit = []
+                let status = null;
+                let cut_partner
+                let cod_profit
+                let profitSaleMartket
+                let findOwner = cod_percent.find((item)=> item.id == result.owner_id)
+                    if(!findOwner){
+                        cod_profit = 0
+                    }else{
+                        cod_profit = findOwner.cod_profit
+                    }
+                // console.log(findOwner)
+                if(priceBangkok){
+                        cost_hub = resultP.costBangkok_metropolitan
+                        price = resultP.salesBangkok_metropolitan
+                        profitSaleMartket = price - resultBase.salesBangkok_metropolitan
+                        profit_partner = resultBase.salesBangkok_metropolitan - cost_hub
+                        cut_partner = resultBase.salesBangkok_metropolitan
+
+                        //cost ต้องบวกกับ กำไร cod ของผู้ส่ง เพราะว่า เค้าเก็บเงินหน้าร้านมาแล้ว สมมุติ ค่าธรรมเนียม COD อยู่ที่ 15 บาท กำไร COD ของเขาคือ 2 บาท 
+                        //เขาเก็บเงินจากผู้ส่ง หน้าร้าน มาแล้ว ดังนั้นเวลาหัก Wallet ต้องหัก กำไร COD ของ Partner ผู้ทำการสั่ง ORDER ด้วย เพราะเขาได้เงินจากหน้าร้านมาแล้ว
+                        let cost = resultP.costBangkok_metropolitan + cod_profit
+
+                        let total = profit_partner + cod_profit
+                            let dataOne = {
+                                id: result.owner_id,
+                                cost: parseFloat(cost.toFixed(2)),
+                                profit: parseFloat(profit_partner.toFixed(2)),
+                                cod_profit: parseFloat(cod_profit.toFixed(2)),
+                                total: parseFloat(total.toFixed(2))
+                            }
+                        profit.push(dataOne)
+                }else{
+                        cost_hub = resultP.costUpcountry
+                        // console.log(cost_hub)
+                        price = resultP.salesUpcountry
+                        profitSaleMartket = price - resultBase.salesUpcountry
+                        profit_partner = resultBase.salesUpcountry - cost_hub
+                        cut_partner = resultBase.salesUpcountry
+                        let cost = resultP.costUpcountry + cod_profit
+                        let total = profit_partner + cod_profit
+                            let dataOne = {
+                                id: result.owner_id,
+                                cost: parseFloat(cost.toFixed(2)),
+                                profit: parseFloat(profit_partner.toFixed(2)),
+                                cod_profit: parseFloat(cod_profit.toFixed(2)),
+                                total: parseFloat(total.toFixed(2))
+                            }
+                        profit.push(dataOne)
+                    }
+                // console.log(profit)
+                let shop_line = result.shop_line
+                if(shop_line != 'ICE'){
+                    do{
+                        const findHead = await weightAll.findOne(
+                                {
+                                    shop_id: shop_line,
+                                    express:"BEST"
+                                })
+                        let profitOne 
+                        let cod_profit
+                        let findWeight = findHead.weight.find((item)=> item.weightEnd == resultP.weightEnd )
+                        let findOwner = cod_percent.find((item)=> item.id == findHead.owner_id)  
+                            if(!findOwner){
+                                cod_profit = 0
+                            }else{
+                                cod_profit = findOwner.cod_profit
+                            }
+                            // console.log(findOwner)
+                        let cost 
+                            if(priceBangkok){
+                                profitOne = cost_hub - findWeight.costBangkok_metropolitan
+                                cost = findWeight.costBangkok_metropolitan
+                            }else{
+                                profitOne = cost_hub - findWeight.costUpcountry
+                                cost = findWeight.costUpcountry
+                            }
+                        let total = profitOne + cod_profit
+                        let data = {
+                                    id: findHead.owner_id,
+                                    cost: parseFloat(cost.toFixed(2)),
+                                    profit: parseFloat(profitOne.toFixed(2)),
+                                    cod_profit: parseFloat(cod_profit.toFixed(2)),
+                                    total: parseFloat(total.toFixed(2)),
+                            }
+                        profit.push(data)
+                        shop_line = findHead.shop_line
+                        cost_hub -= profitOne
+                    }while(shop_line != 'ICE')
+                }
+
+                let cod_iceprofit
+                let findIce = cod_percent.find((item)=> item.id == "ICE")
+                    if(!findIce){
+                        cod_iceprofit = 0
+                    }else{
+                        cod_iceprofit = findIce.cod_profit
+                    }
+
+                if(priceBangkok){
+                    // console.log(cost_hub)
+                    let cost = resultBase.costBangkok_metropolitan
+                    let profitTwo = cost_hub - resultBase.costBangkok_metropolitan
+                    let total = profitTwo + cod_iceprofit
+                    let dataICE = {
+                        id:"ICE",
+                        cost: parseFloat(cost.toFixed(2)),
+                        profit: parseFloat(profitTwo.toFixed(2)),
+                        cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
+                        total: parseFloat(total.toFixed(2))
+                    }
+                    profit.push(dataICE)
+                    cost_hub -= profitTwo
+                }else{
+                    let cost = resultBase.costUpcountry
+                    let profitTwo = cost_hub - resultBase.costUpcountry
+                    let total = profitTwo + cod_iceprofit
+                    let dataICE = {
+                        id:"ICE",
+                        cost: parseFloat(cost.toFixed(2)),
+                        profit: parseFloat(profitTwo.toFixed(2)),
+                        cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
+                        total: parseFloat(total.toFixed(2))
+                    }
+                    profit.push(dataICE)
+                    cost_hub -= profitTwo
+                }
+                // console.log(profit)
+                v = {
+                        ...req.body,
+                        express: "BEST",
                         price_remote_area: 0,
                         cost_hub: cost_hub,
-                        cost: cost,
-                        cod_amount: Number(cod_amount.toFixed()),
+                        cost_base: cut_partner,
                         fee_cod: 0,
-                        profitPartner: 0,
-                        priceOne: priceOne,
                         price: Number(price.toFixed()),
+                        profitSaleMartket: profitSaleMartket,
+                        declared_value: declared_value,
+                        insuranceFee: insuranceFee,
                         total: 0,
                         cut_partner: 0,
-                        declared_value: declared_value,
-                        status: status
-                    };
-                    console.log(v)
-                    if (cod !== undefined) {
-                        let fee = (reqCod * percentCod)/100
-                        let formattedFee = parseFloat(fee.toFixed(2));
-                        let total = price + formattedFee
-                        let profitPartner = price - priceOne
-                        let cut_partner = total - profitPartner
-                            v.cod_amount = reqCod; // ถ้ามี req.body.cod ก็นำไปใช้แทนที่
-                            v.fee_cod = formattedFee
-                            v.profitPartner = profitPartner
-                                if(price_remote_area != undefined){
-                                    let total1 = total + price_remote_area
-                                        v.total = total1
-                                        v.cut_partner = total1 - profitPartner
-                                        v.price_remote_area = price_remote_area
-                                            // if(reqCod > total1){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม (ค่าขนส่ง + ค่าธรรมเนียม COD + ราคาพื้นที่ห่างไกล) จึงเห็นและสั่ง order ได้
-                                            //     new_data.push(v);
-                                            // }
-                                }else{
-                                    v.cut_partner = cut_partner
+                        status: status,
+                        remark: remark,
+                        profitAll: profit
+                };
+                    // console.log(v)
+                    // if (cod !== undefined) {
+                    let formattedFee = parseFloat(fee_cod_total.toFixed(2));
+                    let total = price + formattedFee + insuranceFee
+                        v.fee_cod = formattedFee
+                            // v.profitPartner = profitPartner
+                            if(price_remote_area != undefined){
+                                let total1 = total + price_remote_area
+                                    v.total = total1
+                                    v.cut_partner = cut_partner + price_remote_area + insuranceFee + formattedFee
+                                    v.price_remote_area = price_remote_area
+                            }else{
+                                    v.cut_partner = cut_partner + insuranceFee + formattedFee
                                     v.total = total
-                                        // if(reqCod > total){ //ราคา COD ที่พาร์ทเนอร์กรอกเข้ามาต้องมากกว่าราคารวม(ค่าขนส่ง + ค่าธรรมเนียม COD) จึงเห็นและสั่ง order ได้
-                                        //     new_data.push(v);
-                                        // }
+                            }
+                        new_data.push(v);  
+                            try {
+                                await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                                if (findForCost.credit < new_data[0].cut_partner) {
+                                    new_data[0].status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                                } else {
+                                    new_data[0].status = 'พร้อมใช้บริการ';
                                 }
-                            new_data.push(v);
-                    }else{
-                        let profitPartner = price - priceOne
-                        if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
-                            let total = price + price_remote_area
-                                v.price_remote_area = price_remote_area
-                                v.total = total
-                                v.cut_partner = total - profitPartner
-                                v.profitPartner = profitPartner
-                        }else{
-                            v.profitPartner = profitPartner
-                            v.total = price
-                            v.cut_partner = price - profitPartner
-                        }
-                        new_data.push(v);
-                    }
-        }
+                            } catch (error) {
+                                console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                            }  
         return res
                 .status(200)
-                .send({ status: true, data: result, new:new_data });
+                .send({ status: true, new:new_data[0], sender:infoSender });
     }catch(err){
         return res
                 .status(500)

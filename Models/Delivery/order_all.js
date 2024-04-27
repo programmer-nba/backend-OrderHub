@@ -49,9 +49,17 @@ const orderAllSchema = new Schema({
                 required: false,
                 default: function () {
                     // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
-                    return currentTime;
+                    return dayjs().tz('Asia/Bangkok').format('YYYY-MM-DDTHH:mm:ssZ');
                 }
             },
+        day_end: {
+                type: String,
+                required: false,
+                default: function () {
+                    // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
+                    return dayjs().tz('Asia/Bangkok').add(7, 'day').format('YYYY-MM-DDTHH:mm:ssZ');
+                }
+        },
         profitAll: {type: Array, required: false}
 },{timestamps:true})
 

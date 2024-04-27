@@ -97,19 +97,19 @@ editWeight = async (req, res)=>{
                 if(data.costUpcountry < p.costUpcountry){
                     return res
                             .status(400)
-                            .send({status:false, message:`Partner ที่ทำการแนะนำท่าน กรุณาอย่าตั้งราคา(ต่างจังหวัด) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าต้นทุนที่ได้รับ`})
+                            .send({status:false, message:`กรุณาอย่าตั้งราคา(ต่างจังหวัด) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าต้นทุนที่ได้รับ`})
                 }else if(data.costBangkok_metropolitan < p.costBangkok_metropolitan){
                     return res
                             .status(400)
-                            .send({status:false, message:`Partner ที่ทำการแนะนำท่าน กรุณาอย่าตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าราคาทุนที่ได้รับ`})
+                            .send({status:false, message:`กรุณาอย่าตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าราคาทุนที่ได้รับ`})
                 }else if(data.costBangkok_metropolitan > base.salesBangkok_metropolitan){
                     return res
                             .status(400)
-                            .send({status:false, message:`กรุณาอย่าตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} มากกว่าราคาขายที่ได้รับ`})
+                            .send({status:false, message:`กรุณาอย่าตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} มากกว่าราคาขายไตรมาสที่ได้รับ`})
                 }else if(data.costUpcountry > base.salesUpcountry){
                     return res
                             .status(400)
-                            .send({status:false, message:`กรุณาอย่าตั้งราคา(ต่างจังหวัด) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} มากกว่าราคาขายที่ได้รับ`})
+                            .send({status:false, message:`กรุณาอย่าตั้งราคา(ต่างจังหวัด) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} มากกว่าราคาขายไตรมาสที่ได้รับ`})
                 }else if(p.costUpcountry == 0 || p.costUpcountry == 0){
                     if(data.costUpcountry != 0 || data.costBangkok_metropolitan != 0){
                         return res 

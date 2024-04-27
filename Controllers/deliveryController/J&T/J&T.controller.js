@@ -108,7 +108,7 @@ createOrder = async (req, res)=>{
         const senderTel = data.from.tel;
          //  console.log(senderTel)
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
-  
+            
         const updatedDocument = await dropOffs.findOne(filterSender);
              if(!updatedDocument){
                  return res 
@@ -684,6 +684,7 @@ priceList = async (req, res)=>{
                         message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`
                     });
                 }
+        
         //ผู้ส่ง
         const sender = formData.from; 
         const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -716,6 +717,13 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
+        const checkSwitch = findForCost.express.find(item => item.express == 'J&T')
+            if(checkSwitch.on_off == false || checkSwitch.cancel_contract == true){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ท่านไม่สามารถใช้งานระบบขนส่งนี้ได้"})
+            }
+
         let cod_percent = []
         let fee_cod_total = 0
         let profitCOD = 0
@@ -795,12 +803,6 @@ priceList = async (req, res)=>{
                 }
         }
         console.log(cod_percent)
-        const checkSwitch = findForCost.express.find(item => item.express == 'J&T')
-            if(checkSwitch.on_off == false || checkSwitch.cancel_contract == true){
-                return res
-                        .status(400)
-                        .send({status:false, message:"ท่านไม่สามารถใช้งานระบบขนส่งนี้ได้"})
-            }
         
         const result  = await weightAll.findOne(
             {
@@ -867,8 +869,8 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ค้นหาราคามาตรฐานไม่เจอ"})
             }
+
         let new_data = []
-        // if(upline === 'ICE'){
                 let v = null;
                 let resultP
                 let p = result.weight
@@ -939,7 +941,6 @@ priceList = async (req, res)=>{
                 let profit_partner
                 let profit = []
                 let status = null;
-                // let cost_base
                 let cut_partner
                 let cod_profit
                 let profitSaleMartket
@@ -1084,7 +1085,7 @@ priceList = async (req, res)=>{
                         remark: remark,
                         profitAll: profit
                     };
-                    console.log(v)
+                    // console.log(v)
                     // if (cod !== undefined) {
                         let formattedFee = parseFloat(fee_cod_total.toFixed(2));
                         let total = price + formattedFee + insuranceFee

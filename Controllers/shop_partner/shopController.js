@@ -983,11 +983,6 @@ editExpressAll = async (req, res)=>{
         }
         console.log(level_partner)
         if(on_off == false){
-            if(level_partner > p.level){ //ถ้า level ผู้ทำการ ยิง API นี้สูงกว่า level ของผู้ถูกเปลี่ยนข้อมูล จะไม่สามารถเปลี่ยนได้
-                return res
-                        .status(400)
-                        .send({status:false, message:"คุณไม่มีสิทธิ์ เปิด-ปิด ขนส่งนี้"})
-            }else{
                 try {
                     let bulkPush = []
                     let bulkCodPush = []
@@ -1053,13 +1048,8 @@ editExpressAll = async (req, res)=>{
                     console.error(error);
                     return res.status(500).send({ status: false, message: "มีข้อผิดพลาดในการประมวลผลคำขอ" });
                 }
-            }
+            
         }else if(on_off == true){
-            if(level_partner > p.level){
-                return res
-                        .status(400)
-                        .send({status:false, message:"คุณไม่มีสิทธิ์ เปิด-ปิด ขนส่งนี้"})
-            }else{
                 try {
                     let bulkPush = []
                     let bulkCodPush = []
@@ -1126,10 +1116,9 @@ editExpressAll = async (req, res)=>{
                 } catch (error) {
                     console.error(error);
                     return res.status(500).send({ status: false, message: "มีข้อผิดพลาดในการประมวลผลคำขอ" });
-                }
+
             }
         }
-       
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res
@@ -1311,6 +1300,32 @@ findShopDownLine = async (req, res)=>{
     }
 }
 
+fixCredits = async(req, res)=>{
+    try{
+        const id = req.params.id
+        const amount = req.body.amount
+        
+        const findShop = await Partner.findOneAndUpdate(
+            {_id:id},
+            {
+                credits:amount
+            },
+            {new:true})
+            if(!findShop){
+                return res  
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาร้านค้าเจอ"})
+            }
+        return res
+                .status(200)
+                .send({status:false, data:findShop})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoicePTS() {
     let data = `PTS`
     let random = Math.floor(Math.random() * 10000000000)
@@ -1348,8 +1363,9 @@ async function invoiceSTP() {
     console.log(combinedData);
     return combinedData;
 }
+
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
-                , editExpressAll ,pushExpress, statusContract, fixNameExpress, findShopDownLine}
+                , editExpressAll ,pushExpress, statusContract, fixNameExpress, findShopDownLine, fixCredits}
 
 
