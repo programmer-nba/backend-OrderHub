@@ -35,6 +35,7 @@ const orderAllSchema = new Schema({
         cost : {type: Number ,required : false},
         cost_base: {type: Number ,required : false},
         price_remote_area: {type: Number ,required : false},
+        packing_price: {type: Number ,required : false},
         profitSaleMartket: {type: Number ,required : false},
         total: {type: Number , required: false},
         cut_partner: {type: Number , required: false},

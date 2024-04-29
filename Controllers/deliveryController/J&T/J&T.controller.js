@@ -23,6 +23,7 @@ const { priceBase } = require("../../../Models/Delivery/weight/priceBase.express
 const { bangkokMetropolitan } = require("../../../Models/postcal_bangkok/postcal.bangkok");
 const { Admin } = require("../../../Models/admin");
 const { codPercent } = require("../../../Models/COD/cod.shop.model");
+const { postalThailand } = require("../../../Models/postal.thailand/postal.thai.model");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -46,6 +47,7 @@ createOrder = async (req, res)=>{
         const total = req.body.total
         const remark = req.body.remark
         const profitSaleMartket = req.body.profitSaleMartket
+        const packing_price = req.body.packing_price
         const declared_value = req.body.declared_value
         const insuranceFee = req.body.insuranceFee
         const cost_base = req.body.cost_base
@@ -199,6 +201,7 @@ createOrder = async (req, res)=>{
                 fee_cod: fee_cod,
                 total: total,
                 cut_partner: cut_partner,
+                packing_price: packing_price,
                 profitSaleMartket: profitSaleMartket,
                 price_remote_area: price_remote_area,
                 price: price,
@@ -259,6 +262,8 @@ createOrder = async (req, res)=>{
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
                     cost: profitAll[0].cost,
+                    packing_price: packing_price,
+                    profitSaleMartket: profitSaleMartket,
                     profitCost: profitAll[0].profit,
                     profitCOD: profitAll[0].cod_profit,
                     profit: profitAll[0].total,
@@ -675,16 +680,153 @@ priceList = async (req, res)=>{
         const weight = formData.parcel.weight
         const declared_value = formData.declared_value
         const remark = req.body.remark
+        const packing_price = req.body.packing_price
         let reqCod = req.body.cod_amount
 
+        if(weight == 0 || weight == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`ลำดับที่ ${no} กรุณาระบุน้ำหนัก(kg)`})
+        }
+        if(formData.parcel.width == 0 || formData.parcel.width == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกความกว้าง(cm)`})
+        }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกความยาว(cm)`})
+        }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกความสูง(cm)`})
+        }
+        if(!Number.isInteger(packing_price)){
+            return res
+                    .status(400)
+                    .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
+        }
         if (!Number.isInteger(reqCod)||
             !Number.isInteger(declared_value)) {
                     return res.status(400).send({
                         status: false,
-                        message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`
+                        message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
                     });
                 }
-        
+
+        //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+        try{
+            const data = await postalThailand.find({postcode: formData.from.postcode})
+                if (!data || data.length == 0) {
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
+                }
+            // console.log(data)
+            let isValid = false;
+            let errorMessage = 'ผู้ส่ง:';
+            let errorProvince = false;
+            let errorState = []
+            let errorDistrict = []
+
+            for (const item of data) {
+                if (item.province == formData.from.province && item.district == formData.from.district && item.state == formData.from.state) {
+                    isValid = true;
+                    break;
+                } else {
+                    if (item.province != formData.from.province && !errorProvince){
+                        errorMessage += 'จังหวัดไม่ถูกต้อง / ';
+                        errorProvince = true;
+                    }
+
+                    if (item.state != formData.from.state){ 
+                        errorState.push(false)
+                    }else{
+                        errorState.push(true)
+                    }
+
+                    if (item.district != formData.from.district){ 
+                        errorDistrict.push(false)
+                    }else{
+                        errorDistrict.push(true)
+                    }
+                }
+            }
+            // console.log(errorState)
+            // เช็คว่า errorState มีค่าเป็น false ทั้งหมดหรือไม่
+            if (errorState.length > 0 && !errorState.includes(true)) { //เช็คอำเภอว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'อำเภอไม่ถูกต้อง / ';
+            }
+            if (errorDistrict.length > 0 && !errorDistrict.includes(true)) {//เช็คตำบลว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'ตำบลไม่ถูกต้อง / ';
+            }
+            
+            if (!isValid) {
+                return res
+                        .status(400)
+                        .send({staus:false, message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+            } 
+        }catch(err){
+            console.log(err)
+        }
+
+        //ตรวจสอบข้อมูลผู้รับ จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+        try{
+            const data = await postalThailand.find({postcode: formData.to.postcode})
+                if (!data || data.length == 0) {
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
+                }
+            // console.log(data)
+            let isValid = false;
+            let errorMessage = 'ผู้รับ:';
+            let errorProvince = false;
+            let errorState = []
+            let errorDistrict = []
+
+            //ตรวจสอบข้อมูล จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+            for (const item of data) {
+                if (item.province == formData.to.province && item.district == formData.to.district && item.state == formData.to.state) {
+                    isValid = true;
+                    break;
+                } else {
+                    if (item.province != formData.to.province && !errorProvince){
+                        errorMessage += 'จังหวัดไม่ถูกต้อง / ';
+                        errorProvince = true;
+                    }
+
+                    if (item.state != formData.to.state){ 
+                        errorState.push(false)
+                    }else{
+                        errorState.push(true)
+                    }
+
+                    if (item.district != formData.to.district){ 
+                        errorDistrict.push(false)
+                    }else{
+                        errorDistrict.push(true)
+                    }
+                }
+            }
+            // console.log(errorState)
+            // เช็คว่า errorState มีค่าเป็น false ทั้งหมดหรือไม่
+            if (errorState.length > 0 && !errorState.includes(true)) { //เช็คอำเภอว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'อำเภอไม่ถูกต้อง / ';
+            }
+            if (errorDistrict.length > 0 && !errorDistrict.includes(true)) {//เช็คตำบลว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'ตำบลไม่ถูกต้อง / ';
+            }
+            
+            if (!isValid) {
+                return res
+                        .status(400)
+                        .send({staus:false, message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+            } 
+        }catch(err){
+            console.log(err)
+        }
+
         //ผู้ส่ง
         const sender = formData.from; 
         const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -766,6 +908,7 @@ priceList = async (req, res)=>{
                             
                         }else{
                             fee_cod = ((reqCod * pFirst.percent)/100)
+                            fee_cod_total = fee_cod
                         }
 
                     // console.log(shop_line)
@@ -802,7 +945,7 @@ priceList = async (req, res)=>{
                     
                 }
         }
-        console.log(cod_percent)
+        // console.log(cod_percent)
         
         const result  = await weightAll.findOne(
             {
@@ -960,7 +1103,7 @@ priceList = async (req, res)=>{
 
                     //cost ต้องบวกกับ กำไร cod ของผู้ส่ง เพราะว่า เค้าเก็บเงินหน้าร้านมาแล้ว สมมุติ ค่าธรรมเนียม COD อยู่ที่ 15 บาท กำไร COD ของเขาคือ 2 บาท 
                     //เขาเก็บเงินจากผู้ส่ง หน้าร้าน มาแล้ว ดังนั้นเวลาหัก Wallet ต้องหัก กำไร COD ของ Partner ผู้ทำการสั่ง ORDER ด้วย เพราะเขาได้เงินจากหน้าร้านมาแล้ว
-                    let cost = resultP.costBangkok_metropolitan + cod_profit
+                    let cost = resultP.costBangkok_metropolitan
 
                     let total = profit_partner + cod_profit
                         let dataOne = {
@@ -978,15 +1121,15 @@ priceList = async (req, res)=>{
                     profitSaleMartket = price - resultBase.salesUpcountry
                     profit_partner = resultBase.salesUpcountry - cost_hub
                     cut_partner = resultBase.salesUpcountry
-                    let cost = resultP.costUpcountry + cod_profit
+                    let cost = resultP.costUpcountry
                     let total = profit_partner + cod_profit
-                    let dataOne = {
-                        id: result.owner_id,
-                        cost: parseFloat(cost.toFixed(2)),
-                        profit: parseFloat(profit_partner.toFixed(2)),
-                        cod_profit: parseFloat(cod_profit.toFixed(2)),
-                        total: parseFloat(total.toFixed(2))
-                    }
+                        let dataOne = {
+                            id: result.owner_id,
+                            cost: parseFloat(cost.toFixed(2)),
+                            profit: parseFloat(profit_partner.toFixed(2)),
+                            cod_profit: parseFloat(cod_profit.toFixed(2)),
+                            total: parseFloat(total.toFixed(2))
+                        }
                     profit.push(dataOne)
                 }
                 // console.log(profit)
@@ -1079,6 +1222,7 @@ priceList = async (req, res)=>{
                         profitSaleMartket: profitSaleMartket,
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,
+                        packing_price: packing_price,
                         total: 0,
                         cut_partner: 0,
                         status: status,
@@ -1088,7 +1232,7 @@ priceList = async (req, res)=>{
                     // console.log(v)
                     // if (cod !== undefined) {
                         let formattedFee = parseFloat(fee_cod_total.toFixed(2));
-                        let total = price + formattedFee + insuranceFee
+                        let total = price + formattedFee + insuranceFee + packing_price
                             v.fee_cod = formattedFee
                             // v.profitPartner = profitPartner
                                 if(price_remote_area != undefined){
@@ -1101,21 +1245,6 @@ priceList = async (req, res)=>{
                                     v.total = total
                                 }
                             new_data.push(v);
-                    // }else{
-                    //     // let profitPartner = price - cost
-                    //     if(price_remote_area != undefined){ //เช็คว่ามี ราคา พื้นที่ห่างไกลหรือเปล่า
-                    //         let total = price + price_remote_area + insuranceFee
-                    //             v.price_remote_area = price_remote_area
-                    //             v.total = total
-                    //             v.cut_partner = cut_partner + price_remote_area + insuranceFee
-                    //             // v.profitPartner = profitPartner
-                    //     }else{
-                    //         // v.profitPartner = profitPartner
-                    //         v.total = price + insuranceFee
-                    //         v.cut_partner = cut_partner + insuranceFee
-                    //     }
-                    //     new_data.push(v);
-                    // }
                     
                     try {
                         await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้

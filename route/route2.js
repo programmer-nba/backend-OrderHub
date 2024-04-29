@@ -270,4 +270,7 @@ router.route('/orderhub/weight/all/get/weight/:id_shop').post( auth.checkToken,w
 router.route('/orderhub/weight/all/del/:id').delete( auth.checkToken, weightAll.delend )
 router.route('/orderhub/weight/all/edit/weightMax/:id').put( auth.checkToken, weightAll.editWeightMax )
 
+//เพิ่มไปรษณีย์ ของประเทศไทย
+const postal = require('../functions/add.postal.thailand')
+router.route('/orderhub/postcal/create').post( auth.checkToken, postal.createPostal )
 module.exports = router;

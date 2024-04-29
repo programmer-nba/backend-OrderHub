@@ -17,9 +17,11 @@ const profitPartnerSchema = new Schema({
     shop_number:{type:String, require: false},
     orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
     cost:{type:Number, require: false},
-    profitCost: {type:Number, require: false},
-    profitCOD: {type:Number, require: false},
-    profit:{type:Number, require: false},
+    packing_price: {type:Number, default:0,  require: false},
+    profitCost: {type:Number,default:0, require: false},
+    profitCOD: {type:Number,default:0, require: false},
+    profitSaleMartket: {type:Number,default:0, require: false},
+    profit:{type:Number,default:0, require: false},
     express: {type:String, require: false},
     type:{type:String, require: false},
     day: {
