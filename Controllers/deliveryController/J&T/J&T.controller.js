@@ -347,7 +347,6 @@ createOrder = async (req, res)=>{
                         .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
         if(cod_amount != 0){
-            
             const pfSenderTemplate = {
                     orderid: new_data.txlogisticid,
                     Orderer: id,
@@ -396,7 +395,7 @@ trackingOrder = async (req, res)=>{
             "logistics_interface":{
                 "billcode": txlogisticid,
                 "querytype":"2",
-                "lang":"th",
+                "lang":"en",
                 "customerid":customer_id
             },
             "msg_type": "TRACKQUERY",
@@ -408,13 +407,13 @@ trackingOrder = async (req, res)=>{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
-            },
-        })
+            }})
             if(!response){
                 return res
                         .status(404)
                         .send({status:false, message:"ไม่สามารถใช้ได้"})
             }
+        
         return res
                 .status(200)
                 .send({status:true, data: response.data})

@@ -120,6 +120,7 @@ getOrderMeAll = async(req, res)=>{
         const owner_id = req.body.owner_id
         const express = req.body.express
         const shop_id = req.body.shop_id
+        const orderer_id = req.body.orderer_id
         if(shop_id){
             if(express){
                 const findOrder = await orderAll.find(
@@ -149,7 +150,7 @@ getOrderMeAll = async(req, res)=>{
                             .status(200)
                             .send({status:true, data:findOrder})
             }
-        }else{
+        }else if(owner_id){
             if(express){
                 const findOrderID = await orderAll.find(
                     {
@@ -179,6 +180,36 @@ getOrderMeAll = async(req, res)=>{
                             .status(200)
                             .send({status:true, data:findOrderID})
             }
+        }else{
+            if(express){
+                const findOrderID = await orderAll.find(
+                    {
+                        orderer_id:orderer_id,
+                        express:express
+                    })
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }else{
+                const findOrderID = await orderAll.find(
+                    {
+                        orderer_id:orderer_id,
+
+                    })
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }
         }
     }catch(err){
         return res
@@ -186,4 +217,77 @@ getOrderMeAll = async(req, res)=>{
                 .send({status:false, message:err})
     }
 }
-module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll }
+
+getCode = async(req, res)=>{
+    try{
+        const tracking_code = req.body.tracking_code
+        const number = await invoiceNumber()
+        console.log(number)
+        const mapTracking = tracking_code.map(item =>({
+            updateOne: {
+                filter: { tracking_code: item },
+                update: { 
+                    $set: {
+                        print_code:number
+                    }
+                }
+            }
+        }))
+        
+        const bulkWrite = await orderAll.bulkWrite(mapTracking)
+            if(!bulkWrite){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถสร้าง bulkWrite ได้"})
+            }
+
+        return res
+                .status(200)
+                .send({status:true, code:number ,data:bulkWrite})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getCodeOrder = async(req, res)=>{
+    try{
+        const print_code = req.params.print_code
+        const findOrder = await orderAll.find({print_code:print_code})
+            if(findOrder.length == 0){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่พบข้อมูลในระบบ"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findOrder})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+async function invoiceNumber() {
+    try{
+        let random = Math.floor(Math.random() * 1000000)
+        const combinedData = random;
+        const findInvoice = await orderAll.find({print_code:combinedData})
+
+            while (findInvoice && findInvoice.length > 0) {
+                // สุ่ม random ใหม่
+                random = Math.floor(Math.random() * 1000000);
+                combinedData = `JNT`+ data + random;
+
+                // เช็คใหม่
+                findInvoice = await orderAll.find({print_code:combinedData});
+            }
+        // console.log(combinedData)
+        return combinedData;
+    }catch(err){
+        console.log(err)
+    }
+}
+
+module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder }

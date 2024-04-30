@@ -245,7 +245,8 @@ router.route('/orderhub/orderall/get/tracking/:tracking_code').get( auth.checkTo
 router.route('/orderhub/orderall/del/:id').delete( auth.checkToken, orderAll.delend )
 router.route('/orderhub/orderall/update/bill/status').put( auth.checkToken, orderAll.updateBillStatus )
 router.route('/orderhub/orderall/get/me/:id').post( auth.checkToken, orderAll.getOrderMeAll )
-
+router.route('/orderhub/orderall/get/code').post( auth.checkToken, orderAll.getCode )
+router.route('/orderhub/orderall/get/code/:print_code').post( auth.checkToken, orderAll.getCodeOrder )
 //insured
 const insured = require('../Controllers/deliveryController/Insured/insuredFee')
 router.route('/orderhub/insured/getAll').get( authAdmin.checkToken, insured.getAll )
