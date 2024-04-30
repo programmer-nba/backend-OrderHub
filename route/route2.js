@@ -187,6 +187,7 @@ const profitPN = require('../Controllers/profit/withdrawal_partner')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
 router.route('/orderhub/profitPartner/Withdrawal/:id').post( auth.checkToken, profitPN.Withdrawal )
 router.route('/orderhub/profitPartner/chang/wait').put( authAdmin.checkToken, profitPN.changStatus )
+router.route('/orderhub/profitPartner/get/cod').post( authAdmin.checkToken, profitPN.getCod )
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')
