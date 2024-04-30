@@ -115,4 +115,75 @@ updateBillStatus = async(req, res)=>{
     }
 }
 
-module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus }
+getOrderMeAll = async(req, res)=>{
+    try{
+        const owner_id = req.body.owner_id
+        const express = req.body.express
+        const shop_id = req.body.shop_id
+        if(shop_id){
+            if(express){
+                const findOrder = await orderAll.find(
+                    {
+                        shop_id:shop_id,
+                        express:express
+                    })
+                    if(findOrder.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrder})
+            }else{
+                const findOrder = await orderAll.find(
+                    {
+                        shop_id:shop_id,
+                    })
+                    if(findOrder.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrder})
+            }
+        }else{
+            if(express){
+                const findOrderID = await orderAll.find(
+                    {
+                        owner_id:owner_id,
+                        express:express
+                    })
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }else{
+                const findOrderID = await orderAll.find(
+                    {
+                        owner_id:owner_id,
+
+                    })
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }
+        }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll }

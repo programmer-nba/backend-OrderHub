@@ -145,78 +145,6 @@ createOrder = async (req, res)=>{
                         .send({status:false, message:`ลำดับ ${no} ไม่สามารถสร้างออเดอร์ได้เนื่องจากมีความผิดพลาด กรุณาตรวจสอบ น้ำหนัก,ที่อยู่ของ ผู้รับ, ผู้ส่ง และ เบอร์โทร ว่าท่านได้กรอกถูกต้องหรือไม่(${response.data.responseitems[0].reason})`})
             }
         const new_data = response.data.responseitems[0]
-        // const createOrder = await jntOrder.create(
-        //     {
-        //         ID:id,
-        //         shop_number:shop,
-        //         role:role,
-        //         from:{
-        //             ...data.from
-        //         },
-        //         to:{
-        //             ...data.to
-        //         },
-        //         parcel:{
-        //             ...data.parcel
-        //         },
-        //         invoice: invoice,
-        //         status:'booking',
-        //         cost_hub: cost_hub,
-        //         cost: cost,
-        //         cod_amount:cod_amount,
-        //         fee_cod: fee_cod,
-        //         total: total,
-        //         cut_partner: cut_partner,
-        //         price_remote_area: price_remote_area,
-        //         price: price,
-        //         declared_value: declared_value,
-        //         insuranceFee: insuranceFee,
-        //         ...new_data
-        //     })
-        //     if(!createOrder){
-        //         return res
-        //                 .status(404)
-        //                 .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
-        //     }
-        const createOrderAll = await orderAll.create(
-            {
-                ID:id,
-                shop_number:shop,
-                role:role,
-                tracking_code: new_data.txlogisticid,
-                from:{
-                    ...data.from
-                },
-                to:{
-                    ...data.to
-                },
-                parcel:{
-                    ...data.parcel
-                },
-                invoice: invoice,
-                status:'booking',
-                cost_hub: cost_hub,
-                cost_base: cost_base,
-                cod_amount:cod_amount,
-                fee_cod: fee_cod,
-                total: total,
-                cut_partner: cut_partner,
-                packing_price: packing_price,
-                profitSaleMartket: profitSaleMartket,
-                price_remote_area: price_remote_area,
-                price: price,
-                declared_value: declared_value,
-                insuranceFee: insuranceFee,
-                profitAll: profitAll,
-                express: "J&T",
-                remark: remark,
-                ...new_data //mailno อยู่ในนี้แล้ว ไม่ต้องประกาศ
-            })
-            if(!createOrderAll){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
-            }
 
         let allProfit = []
         let profit_ice
@@ -377,6 +305,47 @@ createOrder = async (req, res)=>{
                             allProfit.push(profitP)
                         }
                 }
+
+        const createOrderAll = await orderAll.create(
+            {
+                owner_id:findShop.partnerID,
+                orderer_id:id,
+                shop_id:findShop._id,
+                role:role,
+                tracking_code: new_data.txlogisticid,
+                from:{
+                    ...data.from
+                },
+                to:{
+                    ...data.to
+                },
+                parcel:{
+                    ...data.parcel
+                },
+                invoice: invoice,
+                status:'booking',
+                cost_hub: cost_hub,
+                cost_base: cost_base,
+                cod_amount:cod_amount,
+                fee_cod: fee_cod,
+                total: total,
+                cut_partner: cut_partner,
+                packing_price: packing_price,
+                profitSaleMartket: profitSaleMartket,
+                price_remote_area: price_remote_area,
+                price: price,
+                declared_value: declared_value,
+                insuranceFee: insuranceFee,
+                profitAll: profitAll,
+                express: "J&T",
+                remark: remark,
+                ...new_data //mailno อยู่ในนี้แล้ว ไม่ต้องประกาศ
+            })
+            if(!createOrderAll){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
+            }
         if(cod_amount != 0){
             
             const pfSenderTemplate = {
@@ -686,31 +655,31 @@ priceList = async (req, res)=>{
         if(weight == 0 || weight == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`ลำดับที่ ${no} กรุณาระบุน้ำหนัก(kg)`})
+                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
         }
         if(formData.parcel.width == 0 || formData.parcel.width == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกความกว้าง(cm)`})
+                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
         }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกความยาว(cm)`})
+                    .send({status:false, message:`ลำกรุณากรอกความยาว(cm)`})
         }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกความสูง(cm)`})
+                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
         }
         if(!Number.isInteger(packing_price)){
             return res
                     .status(400)
-                    .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
+                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
         }
         if (!Number.isInteger(reqCod)||
             !Number.isInteger(declared_value)) {
                     return res.status(400).send({
                         status: false,
-                        message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
+                        message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
                     });
                 }
 
@@ -1027,19 +996,19 @@ priceList = async (req, res)=>{
                     if(resultP.costUpcountry == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                     }else if(resultP.costBangkok_metropolitan == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                     }else if(resultP.salesBangkok_metropolitan == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                     }else if(resultP.salesUpcountry == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                     }
                 let resultBase
                 let base = findPriceBase.weight
@@ -1053,25 +1022,25 @@ priceList = async (req, res)=>{
                     if(resultBase.costUpcountry == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }else if(resultBase.costBangkok_metropolitan == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }else if(resultBase.salesBangkok_metropolitan == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }else if(resultBase.salesUpcountry == 0){
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                                .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }
 
                     if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
                         return res
                                 .status(400)
-                                .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                                .send({status:false, message:`ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
                     }else if(resultP.costUpcountry > resultBase.salesUpcountry){
                         return res
                                 .status(400)
