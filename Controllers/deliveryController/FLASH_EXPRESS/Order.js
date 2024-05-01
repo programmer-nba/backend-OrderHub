@@ -20,6 +20,7 @@ const { codPercent } = require('../../../Models/COD/cod.shop.model');
 const { weightAll } = require('../../../Models/Delivery/weight/weight.all.express');
 const { bangkokMetropolitan } = require('../../../Models/postcal_bangkok/postcal.bangkok');
 const { priceBase } = require('../../../Models/Delivery/weight/priceBase.express');
+const { Admin } = require('../../../Models/admin');
 
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
@@ -36,14 +37,16 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const id = req.decoded.userid
         const role = req.decoded.role
         const mchId = process.env.MCH_ID
-        const cost = req.body.cost
+        const packing_price = req.body.packing_price
+        const profitSaleMartket = req.body.profitSaleMartket
         const weight = dataForm.parcel.weight * 1000
         const cost_hub = req.body.cost_hub
         const fee_cod = req.body.fee_cod
         const total = req.body.total
+        const cost_base = req.body.cost_base
         const cut_partner = req.body.cut_partner
         const price_remote_area = req.body.price_remote_area
-        const priceOne = req.body.priceOne
+        const profitAll = req.body.profitAll
         const declared_value = req.body.declared_value
         const insuranceFee = req.body.insuranceFee
         const codForPrice = req.body.cod_amount
@@ -82,7 +85,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             codEnabled:0,
             insured:0,
             articleCategory:2,
-            remark: remark
+            // remark: remark
             // เพิ่ม key-value pairs ตามต้องการ
           };
         if(codForPrice > 0){
@@ -95,7 +98,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             formData.insureDeclareValue = declared_valueStang
         }
         //ผู้ส่ง
-        const senderTel = req.body.srcPhone;
+        const senderTel = req.body.from.tel;
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
 
         const updatedDocument = await dropOffs.findOne(filterSender);
@@ -104,10 +107,10 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         .status(404)
                         .send({status:false, message:"ไม่สามารถค้นหาเอกสารผู้ส่งได้"})
             }
-        console.log(updatedDocument)
+        // console.log(updatedDocument)
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-            // console.log(formDataOnly)
+            console.log(formDataOnly)
         const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formDataOnly),{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -120,54 +123,14 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     .send({status:false, data:response.data})
         }
 
-        const new_data = {
-            ID:id,
-            shop_number:shop,
-            role:role,
-            tracking_code: response.data.data.pno,
-            from:{
-                ...dataForm.from
-            },
-            to:{
-                ...dataForm.to
-            },
-            parcel:{
-                ...dataForm.parcel
-            },
-            invoice: invoice,
-            cost_hub: cost_hub,
-            cost: cost,
-            priceOne: priceOne,
-            price: price,
-            codAmount: codForPrice,
-            cod_amount: codForPrice,
-            cut_partner: cut_partner,
-            price_remote_area: price_remote_area,
-            declared_value: declared_value,
-            insuranceFee: insuranceFee,
-            total: total,
-            fee_cod: fee_cod,
-            express:"FLASH"
-          };
           //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
-        let profitsPartner
-              if(priceOne == 0){ //กรณีไม่ใช่ พาร์ทเนอร์ลูก
-                  profitsPartner = price - cost
-              }else{
-                  profitsPartner = price - priceOne
-              }
-        let profitsPartnerOne 
-            if(priceOne != 0){
-                profitsPartnerOne = priceOne - cost
-            }
-
-        let profitsICE = cost - cost_hub
-        profitsICE = parseFloat(profitsICE.toFixed(2)); //FLASH ราคาต้นทุน(cost_hub) ที่ FLASH ให้มามีทศนิยม ดังนั้นจึงจำเป็นต้อง ใส่ทศนิยม
-        let profit_partnerOne
-        let profit_partner
+       let allProfit = []
         let profit_ice
-        let profit_iceCOD
-        if(codForPrice == 0){
+        let profit_p
+        let profitP
+        let createTemplate
+        let proficICE
+        // if(cod_amount == 0){
             const findShop = await shopPartner.findOneAndUpdate(
                 {shop_number:shop},
                 { $inc: { credit: -cut_partner } },
@@ -177,29 +140,22 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .status(400)
                             .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
                 }
-            // console.log(findShop.credit)
-            const create = await flashOrder.create(new_data)
-                if(!create){
-                    return res
-                            .status(400)
-                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
-                }
-            const createOrderAll = await orderAll.create(new_data)
-                if(!createOrderAll){
-                    console.log("ไม่สามารถสร้างข้อมูล orderAll ได้")
-                }
+
+            console.log(findShop.credit)
+
             const plus = findShop.credit + cut_partner
             const history = {
                     ID: id,
                     role: role,
                     shop_number: shop,
-                    orderid: create.response.pno,
+                    orderid: response.data.data.pno,
                     amount: cut_partner,
                     before: plus,
                     after: findShop.credit,
-                    type: 'FLE(ICE)',
+                    type: 'FLASH',
                     remark: "ขนส่งสินค้า(FLASH)"
                 }
+            // console.log(history)
             const historyShop = await historyWalletShop.create(history)
                 if(!historyShop){
                     console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
@@ -210,266 +166,198 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     Orderer: id,
                     role: role,
                     shop_number: shop,
-                    orderid: create.response.pno,
-                    profit: profitsPartner,
-                    express: 'FLE(ICE)',
-                    type: 'โอนเงิน',
+                    orderid: response.data.data.pno,
+                    cost: profitAll[0].cost,
+                    packing_price: packing_price,
+                    profitSaleMartket: profitSaleMartket,
+                    profitCost: profitAll[0].profit,
+                    profitCOD: profitAll[0].cod_profit,
+                    profit: profitAll[0].total + profitSaleMartket + packing_price,
+                    express: 'FLASH',
             }
-            profit_partner = await profitPartner.create(pf)
+                if(profitAll[0].cod_profit == 0){
+                    pf.type = 'เงินสด'
+                }else{
+                    pf.type = 'COD'
+                }
+            let profit_partner = await profitPartner.create(pf)
                 if(!profit_partner){
                     return  res
                             .status(400)
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                 }
-            const profitPlus = await Partner.findOneAndUpdate(
-                    {_id:findShop.partnerID},
-                    { $inc: { profit: +profitsPartner } },
-                    {new:true, projection: { profit: 1 }})
-                    if(!profitPlus){
-                        return res
-                                .status(400)
-                                .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
-                    }
-            const pfICE = {
-                    Orderer: id,
-                    role: role,
-                    shop_number: shop,
-                    orderid: create.response.pno,
-                    profit: profitsICE,
-                    express: 'FLE(ICE)',
-                    type: 'กำไรจากต้นทุน',
-            }
-            profit_ice = await profitIce.create(pfICE)
-                if(!profit_ice){
-                    return res
-                            .status(400)
-                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
-                }
-
-            let profitPlusOne
-            if(priceOne != 0){
-                const findUpline = await Partner.findOne({_id:findShop.partnerID})
-                const headLine = findUpline.upline.head_line
-
-                const pfPartnerOne = {
-                                wallet_owner: headLine,
-                                Orderer: id,
-                                role: role,
-                                shop_number: shop,
-                                orderid: create.response.pno,
-                                profit: profitsPartnerOne,
-                                express: 'FLE(ICE)',
-                                type: 'Partner downline',
-                        }
-                profit_partnerOne = await profitPartner.create(pfPartnerOne)
-                        if(!profit_partnerOne){
-                            return  res
-                                    .status(400)
-                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
-                        }
-                profitPlusOne = await Partner.findOneAndUpdate(
-                        {_id:headLine},
-                        { $inc: { 
-                                profit: +profitsPartnerOne,
-                                credits: +profitsPartnerOne
+            // console.log(id)
+            // console.log(profitAll)
+            let profitTotal = profitAll[0].total + profitSaleMartket + packing_price
+            let profitOne = await Partner.findOneAndUpdate(
+                    { _id: id },
+                    { $inc: { 
+                            profit: +profitTotal,
                         } 
-                        },
-                        {new:true, projection: { profit: 1, credits: 1 }})
-                            if(!profitPlusOne){
-                                return res
-                                        .status(400)
-                                        .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
-                            }
-            
-            }
-            return res
-                    .status(200)
-                    .send({
-                        status:true, message:"เชื่อมต่อสำเร็จ", 
-                        data: createOrderAll,
-                        // shop: findShop,
-                        history: historyShop,
-                        profitP: profit_partner,
-                        profitPartnerOne: profit_partnerOne,
-                        profitIce: profit_ice,
-                        profitPlus: profitPlus,
-                        profitPlusOne: profitPlusOne
-                    })
-
-        }else if(codForPrice != 0){
-            new_data.codAmount = cod_integer;
-            console.log(cod_integer)
-
-            const create = await flashOrder.create(new_data)
-                if(!create){
-                    return res
-                            .status(400)
-                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
-                }
-            const createOrderAll = await orderAll.create(new_data)
-                if(!createOrderAll){
-                    console.log("ไม่สามารถสร้างข้อมูล orderAll ได้")
-                }
-            const findShopTwo = await shopPartner.findOneAndUpdate(
-                {shop_number:shop},
-                { $inc: { credit: -cut_partner } },
-                {new:true})
-                if(!findShopTwo){
-                    return res
-                            .status(400)
-                            .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
-                }
-            console.log(findShopTwo.credit)
-                    
-            const plus = findShopTwo.credit + cut_partner
-            const historytwo = {
-                    ID: id,
-                    role: role,
-                    shop_number: shop,
-                    orderid: create.response.pno,
-                    amount: cut_partner,
-                    before: plus,
-                    after: findShopTwo.credit,
-                    type: 'FLE(ICE)',
-                    remark: "ขนส่งสินค้าแบบ COD(FLASH)"
-            }
-            // console.log(history)
-            const historyShop2 = await historyWalletShop.create(historytwo)
-                if(!historyShop2){
-                    console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                }
-
-            const pf = {
-                    wallet_owner: findShopTwo.partnerID,
-                    Orderer: id,
-                    role: role,
-                    shop_number: shop,
-                    orderid: create.response.pno,
-                    profit: profitsPartner,
-                    express: 'FLE(ICE)',
-                    type: 'COD',
-            }
-            profit_partner = await profitPartner.create(pf)
-                if(!profit_partner){
-                    return  res
-                            .status(400)
-                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
-                }
-
-            const profitPlus = await Partner.findOneAndUpdate(
-                    {_id:findShopTwo.partnerID},
-                    { $inc: { profit: +profitsPartner } },
-                    {new:true, projection: { profit: 1 }})
-                    if(!profitPlus){
-                        return res
-                                .status(400)
-                                .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
+                    },
+                    {new:true, projection: { profit: 1  }})
+                    if(!profitOne){
+                            return res
+                                    .status(400)
+                                    .send({status:false,message:"ไม่สามารถค้นหาพาร์ทเนอร์และอัพเดทข้อมูลได้"})
                     }
+            // console.log(profitOne)
+            allProfit.push(historyShop)
+            allProfit.push(profit_partner)
+            allProfit.push(profitOne)
+            // console.log(profitAll)  
+                for (let i = 1; i < profitAll.length; i++) {
+                        if(profitAll[i].id == 'ICE'){
+                            const pfICE = {
+                                        Orderer: id,
+                                        role: role,
+                                        shop_number: shop,
+                                        orderid: response.data.data.pno,
+                                        cost: profitAll[i].cost,
+                                        profitCost: profitAll[i].profit,
+                                        profitCOD: profitAll[i].cod_profit,
+                                        profit: profitAll[i].total,
+                                        express: 'FLASH',
+                                    }
+                                if(profitAll[i].cod_profit == 0){
+                                    pfICE.type = 'กำไรจากต้นทุน'
+                                }else{
+                                    pfICE.type = 'กำไรจากต้นทุน/COD'
+                                }
+                            profit_ice = await profitIce.create(pfICE)
+                                    if(!profit_ice){
+                                        return res
+                                                .status(400)
+                                                .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                                    }
 
-            const pfICE = {
-                    Orderer: id,
-                    role: role,
-                    shop_number: shop,
-                    orderid: create.response.pno,
-                    profit: profitsICE,
-                    express: 'FLE(ICE)',
-                    type: 'กำไรจากต้นทุน',
-            }
-            profit_ice = await profitIce.create(pfICE)
-                if(!profit_ice){
-                    return res
-                            .status(400)
-                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของคุณไอซ์ได้"})
+                            proficICE = await Admin.findOneAndUpdate(
+                                        { username:'admin' },
+                                        { $inc: { profit: +profitAll[i].total } },
+                                        {new:true, projection: { profit: 1 } })
+                                        if(!proficICE){
+                                                return res
+                                                        .status(400)
+                                                        .send({status:false,message:"ไม่สามารถบันทึกกำไรคุณไอซ์ได้"})
+                                        }
+                            allProfit.push(profit_ice)
+                        }else{
+                            const pf = {
+                                        wallet_owner: profitAll[i].id,
+                                        Orderer: id,
+                                        role: role,
+                                        shop_number: shop,
+                                        orderid: response.data.data.pno,
+                                        cost: profitAll[i].cost,
+                                        profitCost: profitAll[i].profit,
+                                        profitCOD: profitAll[i].cod_profit,
+                                        profit: profitAll[i].total,
+                                        express: 'FLASH',
+                                    }
+                        
+                                if(profitAll[i].cod_profit == 0){
+                                    pf.type = 'เงินสด'
+                                }else{
+                                    pf.type = 'COD'
+                                }
+                            profit_p = await profitPartner.create(pf)
+                                if(!profit_p){
+                                    return  res
+                                            .status(400)
+                                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
+                                }
+                            profitP = await Partner.findOneAndUpdate(
+                                        { _id: profitAll[i].id },
+                                        { 
+                                            $inc: { 
+                                                    profit: +profitAll[i].total,
+                                                    credits: +profitAll[i].total
+                                            } 
+                                        },
+                                        {new:true, projection: { profit: 1, credits: 1 }})
+                                        if(!profitP){
+                                                return res
+                                                        .status(400)
+                                                        .send({status:false,message:"ไม่สามารถค้นหาพาร์ทเนอร์และอัพเดทข้อมูลได้"})
+                                        }
+                            allProfit.push(profit_p)
+                            allProfit.push(profitP)
+                        }
                 }
-            const pfIceCOD = {
-                    Orderer: id,
-                    role: role,
-                    shop_number: shop,
-                    orderid: create.response.pno,
-                    profit: fee_cod,
-                    express: 'FLE(ICE)',
-                    type: 'COD',
+
+        const createOrderAll = await orderAll.create(
+            {
+                owner_id:findShop.partnerID,
+                orderer_id:id,
+                shop_id:findShop._id,
+                role:role,
+                tracking_code: response.data.data.pno,
+                from:{
+                    ...data.from
+                },
+                to:{
+                    ...data.to
+                },
+                parcel:{
+                    ...data.parcel
+                },
+                invoice: invoice,
+                status:'booking',
+                cost_hub: cost_hub,
+                cost_base: cost_base,
+                cod_amount:cod_amount,
+                fee_cod: fee_cod,
+                total: total,
+                cut_partner: cut_partner,
+                packing_price: packing_price,
+                profitSaleMartket: profitSaleMartket,
+                price_remote_area: price_remote_area,
+                price: price,
+                declared_value: declared_value,
+                insuranceFee: insuranceFee,
+                profitAll: profitAll,
+                express: "FLASH",
+                remark: remark,
+            })
+            if(!createOrderAll){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถสร้างออเดอร์ได้"})
             }
-            profit_iceCOD = await profitIce.create(pfIceCOD)
-                if(!profit_iceCOD){
-                    return res
-                            .status(400)
-                            .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการ COD ของคุณไอซ์ได้"})
-                }
+        if(cod_amount != 0){
             const pfSenderTemplate = {
-                    orderid: create.response.pno,
+                    orderid: response.data.data.pno,
                     Orderer: id,
                     role: role,
                     shop_number: shop,
                     type: 'COD(SENDER)',
-                    'template.partner_number': create.response.pno,
+                    'template.partner_number': response.data.data.pno,
                     'template.account_name':updatedDocument.flash_pay.name,
                     'template.account_number':updatedDocument.flash_pay.card_number,
                     'template.bank':updatedDocument.flash_pay.aka,
-                    'template.amount':codForPrice,
+                    'template.amount':cod_amount,
                     'template.phone_number': updatedDocument.tel,
                     'template.email':updatedDocument.email,
                     status:"กำลังขนส่งสินค้า"
             }
-           
-            const createTemplate = await profitTemplate.create(pfSenderTemplate)
+            createTemplate = await profitTemplate.create(pfSenderTemplate)
                 if(!createTemplate){
                     return res
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างรายการ COD ของผู้ส่งได้"})
                 }
-            let profitPlusOne
-            if(priceOne != 0){
-                    const findUpline = await Partner.findOne({_id:findShopTwo.partnerID})
-                    const headLine = findUpline.upline.head_line
-
-                    const pfPartnerOne = {
-                            wallet_owner: headLine,
-                            Orderer: id,
-                            role: role,
-                            shop_number: shop,
-                            orderid: create.response.pno,
-                            profit: profitsPartnerOne,
-                            express: 'FLE(ICE)',
-                            type: 'Partner downline',
-                        }
-                    profit_partnerOne = await profitPartner.create(pfPartnerOne)
-                        if(!profit_partnerOne){
-                            return  res
-                                    .status(400)
-                                    .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner Upline ได้"})
-                        }
-
-                    profitPlusOne = await Partner.findOneAndUpdate(
-                            {_id:headLine},
-                            { $inc: { 
-                                    profit: +profitsPartnerOne,
-                                    credits: +profitsPartnerOne
-                            } 
-                            },
-                            {new:true, projection: { profit: 1, credits: 1 }})
-                                if(!profitPlusOne){
-                                    return res
-                                            .status(400)
-                                            .send({status:false, message:"ไม่สามารถค้นหา Partner เจอ"})
-                                }
-                }
-           
-            return res
-                    .status(200)
-                    .send({
-                        status:true, message:"เชื่อมต่อสำเร็จ", 
-                        data: createOrderAll,
-                        history: historyShop2,
-                        profitPartner: profit_partner,
-                        profitPartnerOne: profit_partnerOne,
-                        profitIce: profit_ice,
-                        profitIceCOD: profit_iceCOD,
-                        profitPlus: profitPlus,
-                        profitPlusOne: profitPlusOne,
-                        template: createTemplate
-                    })
+            allProfit.push(createTemplate)
         }
+        
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    res: response.data,
+                    order: createOrderAll,
+                    // shop: findShop,
+                    profitAll: allProfit
+                })
 
     }catch(err){
         console.log(err)
@@ -491,7 +379,7 @@ statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
           }
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-        console.log(formDataOnly)
+        // console.log(formDataOnly)
         const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/routes`,querystring.stringify(formDataOnly),{
                 headers: {
                   'Content-Type': 'application/x-www-form-urlencoded',
@@ -503,10 +391,39 @@ statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
                     .status(400)
                     .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
         }else{
+            // let detailBulk = []
+            // const detail = response.data.responseitems[0].tracesList
+            // const detailMap = detail.map(item =>{
+            //     const latestDetails = item.details[item.details.length - 1];
+            //     let scantype
+            //         if(latestDetails.scantype == 'Receipting' || latestDetails.scantype == 'Picked Up'){
+            //             scantype = 'รับพัสดุแล้ว'
+            //         }else if(latestDetails.scantype == 'On Delivery'){
+            //             scantype = 'ระหว่างการจัดส่ง'
+            //         }else if(latestDetails.scantype == 'Signature'){
+            //             scantype = 'เซ็นรับแล้ว'
+            //         }else if(latestDetails.scantype == 'Return'){
+            //             scantype = 'พัสดุตีกลับ'
+            //         }else{
+            //             return;
+            //         }
+            //     let changStatus = {
+            //         updateOne: {
+            //             filter: { mailno: item.billcode },
+            //             update: { 
+            //                 $set: {
+            //                     order_status:scantype
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     detailBulk.push(changStatus)
+            // })
+            // const bulkDetail = await orderAll.bulkWrite(detailBulk)
             return res
                     .status(200)
-                    .send({status:true, message:"เชื่อมต่อสำเร็จ", data:response.data})
-        }
+                    .send({status:true, data: response.data})
+            }
     }catch(err){
         console.log(err)
         return res
@@ -718,17 +635,17 @@ cancelOrder = async (req, res)=>{ //cancel order
             // เพิ่ม key-value pairs ตามต้องการ
           };
 
-        const findStatus = await flashOrder.findOne({'response.pno':pno});
+        const findStatus = await orderAll.findOne({tracking_code:pno});
           if (!findStatus) {
               return res
                       .status(400)
                       .send({ status: false, message: "ไม่มีหมายเลขที่ท่านกรอก" });
-          }else if(findStatus.status == 'cancel'){
+          }else if(findStatus.order_status == 'cancel'){
               return res
                       .status(404)
                       .send({status: false, message:"หมายเลขสินค้านี้ถูก cancel ไปแล้ว"})
           }
-
+        console.log(findStatus)
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
         // console.log(formDataOnly)  
@@ -743,118 +660,137 @@ cancelOrder = async (req, res)=>{ //cancel order
                     .status(400)
                     .send({status:false, message:"ไม่สามารถทำการยกเลิกออเดอร์นี้ได้"})
         }else{
-            const findPno = await flashOrder.findOneAndUpdate(
-                {'response.pno':pno},
-                {status:"cancel"},
+            let refundAll = []
+            const findPno = await orderAll.findOneAndUpdate(
+                {tracking_code:pno},
+                {order_status:"cancel"},
                 {new:true})
                 if(!findPno){
                     return res
                             .status(400)
-                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno(FLASH) หรืออัพเดทข้อมูลได้"})
+                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลข PNO หรืออัพเดทข้อมูลได้"})
                 }
+
+            //SHOP Credit//
+            const findShop = await shopPartner.findOneAndUpdate(
+                        {_id:findPno.shop_id},
+                        { $inc: { credit: +findPno.cut_partner } },
+                        {new:true})
+                        if(!findShop){
+                            return res
+                                    .status(400)
+                                    .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+                            }
+                let diff = findShop.credit - findPno.cut_partner
+                let history = {
+                            ID: id,
+                            role: role,
+                            shop_number: findPno.shop_number,
+                            orderid: pno,
+                            amount: findPno.cut_partner,
+                            before: diff,
+                            after: findShop.credit,
+                            type: 'FLASH',
+                            remark: "ยกเลิกขนส่งสินค้า(FLASH)"
+                    }
+            const historyShop = await historyWalletShop.create(history)
+                        if(!historyShop){
+                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                        }
+
+            //REFUND PARTNER//
+            let profitRefundTotal = findPno.profitAll[0].total+ findPno.profitSaleMartket+ findPno.packing_price
+            const profitOne = await Partner.findOneAndUpdate(
+                    { _id: findShop.partnerID },
+                    { $inc: { 
+                            profit: -profitRefundTotal,
+                        }
+                    },
+                    {new:true, projection: { profit: 1  }})
+                    if(!profitOne){
+                            return res
+                                    .status(400)
+                                    .send({status:false,message:"ไม่สามารถค้นหาพาร์ทเนอร์และอัพเดทข้อมูลได้"})
+                    }
+            
+            const findTracking = await profitPartner.findOneAndUpdate(
+                {
+                    wallet_owner : findShop.partnerID,
+                    orderid : pno
+                },
+                {
+                    status:"ยกเลิกออเดอร์"
+                },
+                {new:true, projection: { status: 1  }})
+                if(!findTracking){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
+                }
+            let findTemplate
+                if(findTracking.profitCOD != 0){
+                    findTemplate = await profitTemplate.findOneAndUpdate(
+                        { orderid : pno},
+                        {
+                            status:"ยกเลิกออเดอร์"
+                        },{new:true, projection: { status: 1}})
+                        if(!findTemplate){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถหารายการโอนเงิน COD ได้"})
+                        }
+                }
+            refundAll = refundAll.concat(findPno, historyShop, profitOne, findTracking, findTemplate);
+
+                for(const element of findPno.profitAll.slice(1)){//คืนเงินให้พาร์ทเนอร์ที่ทำการกระจาย(ไม่รวมตัวเอง)
+                    if(element.id == 'ICE'){
+                        const refundAdmin = await Admin.findOneAndUpdate(
+                            { username:'admin' },
+                            { $inc: { profit: -element.total } },
+                            {new:true, projection: { profit: 1 } })
+                            if(!refundAdmin){
+                                    return res
+                                            .status(400)
+                                            .send({status:false,message:"ไม่สามารถบันทึกกำไรคุณไอซ์ได้"})
+                            }
+                        refundAll.push(refundAdmin)
+                    }else{
+                        const refund = await Partner.findOneAndUpdate(
+                            { _id: element.id },
+                            { $inc: { 
+                                    profit: -element.total,
+                                    credits: -element.total,
+                                }
+                            },{new:true, projection: { profit: 1, credits: 1  }})
+                            if(!refund){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถคืนเงินให้ พาร์ทเนอร์ได้"})
+                            } 
+                        const findTracking = await profitPartner.findOneAndUpdate(
+                            {
+                                wallet_owner : element.id,
+                                orderid : pno
+                            },
+                            {
+                                status:"ยกเลิกออเดอร์"
+                            },
+                            {new:true, projection: { status: 1  }})
+                            if(!findTracking){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
+                            }
+                        refundAll.push(refund)
+                        refundAll.push(findTracking)
+                    }
+                }
+                
             return res
                     .status(200)
-                    .send({status:false, data:findPno})
-        }
-        //     if(findPno.codAmount == 0){
-        //         const findShop = await shopPartner.findOneAndUpdate(
-        //             {shop_number:findPno.shop_number},
-        //             { $inc: { credit: +findPno.price } },
-        //             {new:true})
-        //             if(!findShop){
-        //                 return res
-        //                         .status(400)
-        //                         .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
-        //             }
-        //         let diff = findShop.credit - findPno.price
-        //         let history = {
-        //                 ID: id,
-        //                 role: role,
-        //                 shop_number: findPno.shop_number,
-        //                 orderid: pno,
-        //                 amount: findPno.price,
-        //                 before: diff,
-        //                 after: findShop.credit,
-        //                 type: 'FLE(ICE)',
-        //                 remark: "ยกเลิกขนส่งสินค้า(FLASH)"
-        //         }
-        //         const historyShop = await historyWalletShop.create(history)
-        //             if(!historyShop){
-        //                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-        //             }
-
-        //         const delProfitPartner = await profitPartner.deleteMany({orderid:pno})
-        //             if(!delProfitPartner){
-        //                 return res
-        //                         .status(404)
-        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
-        //             }
-
-        //         const delProfitIce = await profitIce.findOneAndDelete({orderid:pno})
-        //             if(!delProfitIce){
-        //                 return res
-        //                         .status(404)
-        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
-        //             }
-        //         return res
-        //                 .status(200)
-        //                 .send({
-        //                     status:true, 
-        //                     order: findPno, 
-        //                     // shop: findShop,
-        //                     history: historyShop,
-        //                     delPartner: delProfitPartner,
-        //                     delIce: delProfitIce
-        //                 })
-        //     }else{
-        //         const findShopCOD = await historyWalletShop.findOne({orderid:pno})
-        //             if(!findShopCOD){
-        //                 return res
-        //                         .status(404)
-        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข pno ได้"})
-        //             }
-        //         let history = {
-        //                 ID: id,
-        //                 role: role,
-        //                 shop_number: findPno.shop_number,
-        //                 orderid: pno,
-        //                 amount: findPno.price,
-        //                 before: findShopCOD.before,
-        //                 after: 'COD',
-        //                 type: 'FLE(ICE)',
-        //                 remark: "ยกเลิกขนส่งสินค้าแบบ COD(FLASH)"
-        //         }
-        //         const historyShop = await historyWalletShop.create(history)
-        //             if(!historyShop){
-        //                 console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-        //             }
-        //         const delProfitPartner = await profitPartner.deleteMany({orderid:pno})
-        //             if(!delProfitPartner){
-        //                 return res
-        //                         .status(404)
-        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ได้"})
-        //             }
-        //         const delProfitIce = await profitIce.deleteMany(
-        //                 {
-        //                     orderid:pno
-        //                 }
-        //             )
-        //             if(!delProfitIce){
-        //                 return res
-        //                         .status(404)
-        //                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking code ของคุณไอซ์ได้"})
-        //             }
-        //         return res
-        //                 .status(200)
-        //                 .send({
-        //                     status:true, 
-        //                     flash: findPno, 
-        //                     history: historyShop,
-        //                     delPartner: delProfitPartner,
-        //                     delIce: delProfitIce
-        //                 })
-        //     }
-        // }    
+                    .send({status:false, data:refundAll})
+        }   
+        
     }catch(err){
         console.log(err)
         return res

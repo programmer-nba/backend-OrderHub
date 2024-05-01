@@ -194,7 +194,7 @@ createOrder = async (req, res)=>{
                     profitSaleMartket: profitSaleMartket,
                     profitCost: profitAll[0].profit,
                     profitCOD: profitAll[0].cod_profit,
-                    profit: profitAll[0].total,
+                    profit: profitAll[0].total + profitSaleMartket + packing_price,
                     express: 'J&T',
             }
                 if(profitAll[0].cod_profit == 0){
@@ -209,11 +209,12 @@ createOrder = async (req, res)=>{
                             .send({status:false, message: "ไม่สามารถสร้างประวัติผลประกอบการของ Partner ได้"})
                 }
             // console.log(id)
-            console.log(profitAll)  
+            // console.log(profitAll)  
+            let profitTotal = profitAll[0].total + profitSaleMartket + packing_price
             let profitOne = await Partner.findOneAndUpdate(
                     { _id: id },
                     { $inc: { 
-                            profit: +profitAll[0].total,
+                            profit: +profitTotal,
                         } 
                     },
                     {new:true, projection: { profit: 1  }})
@@ -402,7 +403,7 @@ trackingOrder = async (req, res)=>{
             "eccompanyid": ecom_id,
         }
         const newData = await generateJT(formData)
-            console.log(newData)
+            // console.log(newData)
         const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -413,10 +414,39 @@ trackingOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถใช้ได้"})
             }
-        
+
+        let detailBulk = []
+        const detail = response.data.responseitems[0].tracesList
+        const detailMap = detail.map(item =>{
+            const latestDetails = item.details[item.details.length - 1];
+            let scantype
+                if(latestDetails.scantype == 'Receipting' || latestDetails.scantype == 'Picked Up'){
+                    scantype = 'รับพัสดุแล้ว'
+                }else if(latestDetails.scantype == 'On Delivery'){
+                    scantype = 'ระหว่างการจัดส่ง'
+                }else if(latestDetails.scantype == 'Signature'){
+                    scantype = 'เซ็นรับแล้ว'
+                }else if(latestDetails.scantype == 'Return'){
+                    scantype = 'พัสดุตีกลับ'
+                }else{
+                    return;
+                }
+            let changStatus = {
+                updateOne: {
+                    filter: { mailno: item.billcode },
+                    update: { 
+                        $set: {
+                            order_status:scantype
+                        }
+                    }
+                }
+            }
+            detailBulk.push(changStatus)
+        })
+        const bulkDetail = await orderAll.bulkWrite(detailBulk)
         return res
                 .status(200)
-                .send({status:true, data: response.data})
+                .send({status:true, data: response.data, bulk: bulkDetail})
     }catch(err){
         return res
                 .status(500)
@@ -481,7 +511,7 @@ cancelOrder = async (req, res)=>{
 
                 //SHOP Credit//
                 const findShop = await shopPartner.findOneAndUpdate(
-                            {shop_number:findPno.shop_number},
+                            {_id:findPno.shop_id},
                             { $inc: { credit: +findPno.cut_partner } },
                             {new:true})
                             if(!findShop){
@@ -495,7 +525,7 @@ cancelOrder = async (req, res)=>{
                                 role: role,
                                 shop_number: findPno.shop_number,
                                 orderid: txlogisticid,
-                                amount: findPno.price,
+                                amount: findPno.cut_partner,
                                 before: diff,
                                 after: findShop.credit,
                                 type: 'J&T',
@@ -507,10 +537,11 @@ cancelOrder = async (req, res)=>{
                             }
 
                 //REFUND PARTNER//
+                let profitRefundTotal = findPno.profitAll[0].total+ findPno.profitSaleMartket+ findPno.packing_price
                 const profitOne = await Partner.findOneAndUpdate(
                         { _id: findShop.partnerID },
                         { $inc: { 
-                                profit: -findPno.profitAll[0].total,
+                                profit: -profitRefundTotal,
                             }
                         },
                         {new:true, projection: { profit: 1  }})
@@ -669,6 +700,7 @@ priceList = async (req, res)=>{
                     .status(400)
                     .send({status:false, message:`กรุณากรอกความสูง(cm)`})
         }
+
         if(!Number.isInteger(packing_price)){
             return res
                     .status(400)
