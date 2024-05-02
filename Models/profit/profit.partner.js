@@ -8,7 +8,7 @@ require('dayjs/plugin/utc');
 dayjs.extend(require('dayjs/plugin/timezone'));
 dayjs.extend(require('dayjs/plugin/utc'));
 
-const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DDTHH:mm:ssZ')
+const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD')
 
 const profitPartnerSchema = new Schema({
     wallet_owner: {type:String, require: false},

@@ -269,6 +269,99 @@ getCodeOrder = async(req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
+getOrderByDate = async(req, res)=>{
+    try{
+        const dayStart = req.body.dayStart
+        const dayEnd = req.body.dayEnd
+        const express = req.body.express
+        const shop_id = req.body.shop_id
+        const partner_id = req.body.partner_id
+        // console.log(dayStart, dayEnd)
+        if(shop_id){
+            if(express){
+                const findOrder = await orderAll.find(
+                    {
+                        shop_id:shop_id,
+                        express:express,
+                        $and: [
+                            { day: { $gte: dayStart } },
+                            { day: { $lte: dayEnd } }
+                        ]
+                    })
+                    if(findOrder.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrder})
+            }else{
+                const findOrder = await orderAll.find(
+                    {
+                        shop_id:shop_id,
+                        $and: [
+                            { day: { $gte: dayStart } },
+                            { day: { $lte: dayEnd } }
+                        ]
+                    })
+                    if(findOrder.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrder})
+            }
+        }else if(partner_id){
+            if(express){
+                const findOrderID = await orderAll.find(
+                    {
+                        owner_id:partner_id,
+                        express:express,
+                        $and: [
+                            { day: { $gte: dayStart } },
+                            { day: { $lte: dayEnd } }
+                        ]
+                    })
+                    // console.log(findOrderID)
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }else{
+                const findOrderID = await orderAll.find(
+                    {
+                        owner_id:partner_id,
+                        $and: [
+                            { day: { $gte: dayStart } },
+                            { day: { $lte: dayEnd } }
+                        ]
+                    })
+                    // console.log(findOrderID)
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }
+        }
+
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
 async function invoiceNumber() {
     try{
         let random = Math.floor(Math.random() * 1000000)
@@ -290,4 +383,4 @@ async function invoiceNumber() {
     }
 }
 
-module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder }
+module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder, getOrderByDate }

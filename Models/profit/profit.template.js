@@ -8,7 +8,7 @@ require('dayjs/plugin/utc');
 dayjs.extend(require('dayjs/plugin/timezone'));
 dayjs.extend(require('dayjs/plugin/utc'));
 
-const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DDTHH:mm:ssZ');
+const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
 
 const profitTemplateSchema = new Schema({
     orderid: {type:String, require: false},

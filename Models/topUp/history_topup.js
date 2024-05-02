@@ -2,6 +2,14 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema
 const Joi = require("joi");
 const dayjs = require("dayjs")
+require('dayjs/plugin/timezone');
+require('dayjs/plugin/utc');
+
+// เพิ่ม plugin สำหรับใช้งาน timezone และ utc
+dayjs.extend(require('dayjs/plugin/timezone'));
+dayjs.extend(require('dayjs/plugin/utc'));
+
+const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
 
 const historySchema = new Schema({
     partnerID:{type:String, require: false},
@@ -16,6 +24,14 @@ const historySchema = new Schema({
     money_now:{type:String, require: false, default: ""},
     type:{type:String, require: false, default: "none"},
     image:{type:String, require: false, default: "none"},
+    day: {
+        type: String,
+        required: false,
+        default: function () {
+            // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
+            return currentTime;
+        }
+    }
 },{timestamps:true});
 
 const historyWallet = mongoose.model("historytopup", historySchema);
