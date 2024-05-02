@@ -358,14 +358,14 @@ createOrder = async (req, res)=>{
                     role: role,
                     shop_number: shop,
                     type: 'COD(SENDER)',
-                    'template.partner_number': new_data.txlogisticid,
+                    'template.partner_number': new_data.mailno,
                     'template.account_name':updatedDocument.flash_pay.name,
                     'template.account_number':updatedDocument.flash_pay.card_number,
                     'template.bank':updatedDocument.flash_pay.aka,
                     'template.amount':cod_amount,
                     'template.phone_number': updatedDocument.tel,
                     'template.email':updatedDocument.email,
-                    status:"กำลังขนส่งสินค้า"
+                    status:"รอรถเข้ารับ"
             }
             createTemplate = await profitTemplate.create(pfSenderTemplate)
                 if(!createTemplate){
@@ -420,6 +420,7 @@ trackingOrder = async (req, res)=>{
             }
 
         let detailBulk = []
+        let codBulk = []
         const detail = response.data.responseitems[0].tracesList
         const detailMap = detail.map(item =>{
             const latestDetails = item.details[item.details.length - 1];
@@ -430,7 +431,6 @@ trackingOrder = async (req, res)=>{
                     scantype = 'ระหว่างการจัดส่ง'
                 }else if(latestDetails.scantype == 'Signature'){
                     scantype = 'เซ็นรับแล้ว'
-                    
                 }else if(latestDetails.scantype == 'Return'){
                     scantype = 'พัสดุตีกลับ'
                 }else{
@@ -446,12 +446,28 @@ trackingOrder = async (req, res)=>{
                     }
                 }
             }
+            let changStatusCod = {
+                updateOne: {
+                    filter: { 'template.partner_number': item.billcode },
+                    update: { 
+                        $set: {
+                            status:scantype
+                        }
+                    }
+                }
+            }
             detailBulk.push(changStatus)
+            codBulk.push(changStatusCod)
         })
         const bulkDetail = await orderAll.bulkWrite(detailBulk)
+        const bulkCod = await profitTemplate.bulkWrite(codBulk)
         return res
                 .status(200)
-                .send({status:true, data: response.data, bulk: bulkDetail})
+                .send({status:true, 
+                    data: response.data,
+                    detailBulk: bulkDetail,
+                    codBulk:bulkCod
+                })
     }catch(err){
         return res
                 .status(500)
