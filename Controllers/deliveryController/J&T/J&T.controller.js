@@ -56,9 +56,10 @@ createOrder = async (req, res)=>{
         const cut_partner = req.body.cut_partner
         const shop = req.body.shop_number
         const weight = data.parcel.weight //หน่วยเป็น kg อยู่แล้วไม่ต้องแก้ไข
+        // txlogisticid = "JNT2024043066453"
         const txlogisticid = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+txlogisticid);
-        const invoice = await invoiceJNT()
+        const invoice = await invoiceJNT(dayjsTimestamp)
         const fromData = {
             "logistics_interface" :{
                 "actiontype": "add",
@@ -132,9 +133,12 @@ createOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถส่งคำร้องขอไปยัง J&T ได้"})
             }else if(response.data.responseitems[0].reason == "S10"){
-                return res
-                        .status(404)
-                        .send({status:false, message:"หมายเลขรหัสการสั่งซื้อเกิดการซ้ำกัน กรุณากดสร้างสินค้าอีกครั้ง"})
+                // return res
+                //         .status(404)
+                //         .send({status:false, message:"หมายเลขรหัสการสั่งซื้อเกิดการซ้ำกัน"})
+                let newbe = await createOrder(req, res);
+                console.log("หมายเลขรหัสการสั่งซื้อเกิดการซ้ำกัน")
+                return newbe
             }else if(response.data.responseitems[0].reason == "B0101"){
                 return res
                         .status(404)
@@ -426,6 +430,7 @@ trackingOrder = async (req, res)=>{
                     scantype = 'ระหว่างการจัดส่ง'
                 }else if(latestDetails.scantype == 'Signature'){
                     scantype = 'เซ็นรับแล้ว'
+                    
                 }else if(latestDetails.scantype == 'Return'){
                     scantype = 'พัสดุตีกลับ'
                 }else{
@@ -1828,17 +1833,17 @@ getPartnerBooking = async (req, res)=>{
 async function invoiceNumber(date) {
     try{
         data = `${dayjs(date).format("YYYYMMDD")}`
-        let random = Math.floor(Math.random() * 100000)
+        let random = Math.floor(Math.random() * 10000000)
         const combinedData = `JNT` + data + random;
-        const findInvoice = await jntOrder.find({txlogisticid:combinedData})
+        const findInvoice = await orderAll.find({tracking_code:combinedData})
 
             while (findInvoice && findInvoice.length > 0) {
                 // สุ่ม random ใหม่
-                random = Math.floor(Math.random() * 100000);
+                random = Math.floor(Math.random() * 10000000);
                 combinedData = `JNT`+ data + random;
 
                 // เช็คใหม่
-                findInvoice = await jntOrder.find({txlogisticid: combinedData});
+                findInvoice = await orderAll.find({tracking_code: combinedData});
             }
 
         console.log(combinedData);
@@ -1848,19 +1853,20 @@ async function invoiceNumber(date) {
     }
 }
 
-async function invoiceJNT() {
-    data = `ODHJNT`
-    let random = Math.floor(Math.random() * 10000000000)
-    const combinedData = data + random;
-    const findInvoice = await jntOrder.find({invoice:combinedData})
+async function invoiceJNT(day) {
+    day = `${dayjs(day).format("YYYYMMDD")}`
+    let data = `ODHJNT`
+    let random = Math.floor(Math.random() * 10000000)
+    const combinedData = data + day + random;
+    const findInvoice = await orderAll.find({invoice:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
-        random = Math.floor(Math.random() * 10000000000);
-        combinedData = data + random;
+        random = Math.floor(Math.random() * 10000000);
+        combinedData = data + day + random;
 
         // เช็คใหม่
-        findInvoice = await jntOrder.find({invoice: combinedData});
+        findInvoice = await orderAll.find({invoice: combinedData});
     }
 
     console.log(combinedData);

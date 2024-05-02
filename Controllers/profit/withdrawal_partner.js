@@ -36,14 +36,12 @@ getSumForMe = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ"})
             }
-        const totalProfit = findMe.reduce((total, document) => total + document.profit, 0);
         // console.log(totalProfit)
         return res
                 .status(200)
                 .send({
                     status:true, 
                     data:findMe,
-                    sum:totalProfit
                 })
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
