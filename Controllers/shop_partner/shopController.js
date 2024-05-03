@@ -13,11 +13,17 @@ const { uploadFileCreate, deleteFile } = require("../../functions/uploadfilecrea
 const { ObjectId } = require('mongodb');
 const mongoose = require('mongoose');
 const multer = require("multer");
+const dayjs = require('dayjs')
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
 const storage = multer.diskStorage({
     filename: function (req, file, cb) {
       cb(null, Date.now() + "-");
     },
   });
+
+const dayjsTimestamp = dayjs(Date.now());
+const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 
 create = async (req, res)=>{
     try{
@@ -629,11 +635,11 @@ tranfersShopToPartner = async (req, res)=>{
                             .status(400)
                             .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
                 }
-
+            console.log(partner_id)
             const findPartner = await Partner.findOne(
                 {
                     _id:partner_id,
-                    shop_partner:{
+                    shop_me:{
                         $elemMatch: { _id: id_shop } //การหา _id ที่ตรงกับ id_shop ที่ user ส่งมา
                     }
                 }
@@ -690,7 +696,7 @@ tranfersShopToPartner = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
                 }
-            const ShopToPartner = await invoiceSTP()
+            const ShopToPartner = await invoiceSTP(dayjsTimestamp)
             const dataHistoryShop = {
                     partnerID: partner_id,
                     shop_number: cutCredtisShop.shop_number,
@@ -1326,16 +1332,17 @@ fixCredits = async(req, res)=>{
     }
 }
 
-async function invoicePTS() {
+async function invoicePTS(date) {
     let data = `PTS`
+    date = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 10000000000)
-    const combinedData = data + random;
+    const combinedData = data + date + random;
     const findInvoice = await historyWallet.find({orderid:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
         random = Math.floor(Math.random() * 10000000000);
-        combinedData = data + random;
+        combinedData = data + date + random;
 
         // เช็คใหม่
         findInvoice = await historyWallet.find({orderid: combinedData});
@@ -1345,16 +1352,17 @@ async function invoicePTS() {
     return combinedData;
 }
 
-async function invoiceSTP() {
+async function invoiceSTP(date) {
     let data = `STP`
+    date = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 10000000000)
-    const combinedData = data + random;
+    const combinedData = data + date + random;
     const findInvoice = await historyWallet.find({orderid:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
         random = Math.floor(Math.random() * 10000000000);
-        combinedData = data + random;
+        combinedData = data + date + random;
 
         // เช็คใหม่
         findInvoice = await historyWallet.find({orderid: combinedData});
