@@ -701,6 +701,9 @@ priceList = async (req, res)=>{
         const declared_value = formData.declared_value
         const remark = req.body.remark
         const packing_price = req.body.packing_price
+        const send_behalf = formData.from.send_behalf
+        const send_number = formData.from.send_number
+        const send_type = formData.from.send_type
         let reqCod = req.body.cod_amount
 
         if(weight == 0 || weight == undefined){
@@ -721,7 +724,34 @@ priceList = async (req, res)=>{
                     .status(400)
                     .send({status:false, message:`กรุณากรอกความสูง(cm)`})
         }
-
+  
+        if(send_behalf != "บริษัท" && send_behalf != "บุคคล"){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ผู้ส่ง กรุณากรอก ส่งในนาม บริษัทหรือบุคคล"})
+        }else if(send_number == undefined || send_number == ""){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ผู้ส่ง กรุณากรอกหมายเลขผู้เสียภาษี, บัตรประชาชน หรือ passport"})
+        }else if(send_type != "บัตรประชาชน" && send_type != "passport" && send_type != "หมายเลขผู้เสียภาษี"){
+            return res
+                    .status(400)
+                    .send({status:false, message:"ผู้ส่ง กรุณากรอกประเภทของหมายเลขที่ท่านกรอก"})
+        }
+        if(send_behalf == "บริษัท"){
+            if(send_type != "หมายเลขผู้เสียภาษี"){
+                return res
+                    .status(400)
+                    .send({status:false, message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
+            }
+        }else if(send_behalf == "บุคคล"){
+            if(send_type != "บัตรประชาชน" && send_type != "passport"){
+                return res
+                    .status(400)
+                    .send({status:false, message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
+            }
+        }
+        
         if(!Number.isInteger(packing_price)){
             return res
                     .status(400)
@@ -857,6 +887,9 @@ priceList = async (req, res)=>{
                 ID: id,
                 status: 'ผู้ส่ง',
                 shop_id: shop,
+                send_behalf: send_behalf,
+                send_number: send_number,
+                send_type: send_type,
                 postcode: String(sender.postcode),
             };
 

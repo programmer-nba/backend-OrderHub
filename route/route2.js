@@ -130,7 +130,7 @@ router.route('/orderhub/historyShop/getId/:id').get( auth.checkToken, historySho
 const genKey = require('../Controllers/deliveryController/J&T/generate.signJ&T')
 const JT = require('../Controllers/deliveryController/J&T/J&T.controller')
 router.route('/orderhub/JT/create').post( auth.checkToken, JT.createOrder )
-router.route('/orderhub/JT/tracking').get( auth.checkToken,JT.trackingOrder )
+router.route('/orderhub/JT/tracking').post( auth.checkToken,JT.trackingOrder )
 router.route('/orderhub/JT/cancel').delete( auth.checkToken, JT.cancelOrder )
 router.route('/orderhub/JT/label').post( auth.checkToken, JT.label )
 router.route('/orderhub/JT/price').post( auth.checkToken, JT.priceList )

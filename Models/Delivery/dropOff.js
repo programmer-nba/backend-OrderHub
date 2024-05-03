@@ -15,6 +15,9 @@ const dropoffSchema = new Schema({
     province:{type:String, required: false},
     postcode:{type:String, required: true},
     tel:{type:String, required: true},
+    send_behalf: {type:String, required: true},
+    send_number: {type:String, required: true},
+    send_type: {type:String, required: true},
     flash_pay:{
         aka:{type:String, default:"", required: false},
         name:{type:String, default:"", required: false},
