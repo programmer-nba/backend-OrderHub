@@ -1127,9 +1127,167 @@ priceList = async (req, res)=>{
         const declared_value = req.body.declared_value
         const weight = formData.parcel.weight
         const remark = req.body.remark
+        const send_behalf = formData.from.send_behalf
+        const send_number = formData.from.send_number
+        const send_type = formData.from.send_type
         let reqCod = req.body.cod_amount
         let percentCod
         let insuranceFee
+
+        if(send_behalf != "บริษัท" && send_behalf != "บุคคล"){
+            return res
+                    .status(400)
+                    .send({status:false, type:"sender", message:"ผู้ส่ง กรุณากรอก ส่งในนาม บริษัทหรือบุคคล"})
+        }else if(send_number == undefined || send_number == ""){
+            return res
+                    .status(400)
+                    .send({status:false, type:"sender", message:"ผู้ส่ง กรุณากรอกหมายเลขผู้เสียภาษี, บัตรประชาชน หรือ passport"})
+        }
+        if(send_behalf == "บริษัท"){
+            if(send_type != "หมายเลขผู้เสียภาษี"){
+                return res
+                    .status(400)
+                    .send({status:false, type:"sender", message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
+            }
+        }else if(send_behalf == "บุคคล"){
+            if(send_type != "บัตรประชาชน" && send_type != "passport"){
+                return res
+                    .status(400)
+                    .send({status:false, type:"sender", message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
+            }
+        }
+
+        //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+         try{
+            const data = await postalThailand.find({postcode: formData.from.postcode})
+                if (!data || data.length == 0) {
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
+                }
+            // console.log(data)
+            let isValid = false;
+            let errorMessage = 'ผู้ส่ง:';
+            let errorProvince = false;
+            let errorState = []
+            let errorDistrict = []
+
+            for (const item of data) {
+                if (item.province == formData.from.province && item.district == formData.from.district && item.state == formData.from.state) {
+                    isValid = true;
+                    break;
+                } else {
+                    if (item.province != formData.from.province && !errorProvince){
+                        errorMessage += 'จังหวัดไม่ถูกต้อง / ';
+                        errorProvince = true;
+                    }
+
+                    if (item.state != formData.from.state){ 
+                        errorState.push(false)
+                    }else{
+                        errorState.push(true)
+                    }
+
+                    if (item.district != formData.from.district){ 
+                        errorDistrict.push(false)
+                    }else{
+                        errorDistrict.push(true)
+                    }
+                }
+            }
+            // console.log(errorState)
+            // เช็คว่า errorState มีค่าเป็น false ทั้งหมดหรือไม่
+            if (errorState.length > 0 && !errorState.includes(true)) { //เช็คอำเภอว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'อำเภอไม่ถูกต้อง / ';
+            }
+            if (errorDistrict.length > 0 && !errorDistrict.includes(true)) {//เช็คตำบลว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'ตำบลไม่ถูกต้อง / ';
+            }
+            
+            if (!isValid) {
+                return res
+                        .status(400)
+                        .send({staus:false, type:"sender", message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+            } 
+        }catch(err){
+            console.log(err)
+        }
+
+        //ตรวจสอบข้อมูลผู้รับ จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+        try{
+            const data = await postalThailand.find({postcode: formData.to.postcode})
+                if (!data || data.length == 0) {
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
+                }
+            // console.log(data)
+            let isValid = false;
+            let errorMessage = 'ผู้รับ:';
+            let errorProvince = false;
+            let errorState = []
+            let errorDistrict = []
+
+            //ตรวจสอบข้อมูล จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+            for (const item of data) {
+                if (item.province == formData.to.province && item.district == formData.to.district && item.state == formData.to.state) {
+                    isValid = true;
+                    break;
+                } else {
+                    if (item.province != formData.to.province && !errorProvince){
+                        errorMessage += 'จังหวัดไม่ถูกต้อง / ';
+                        errorProvince = true;
+                    }
+
+                    if (item.state != formData.to.state){ 
+                        errorState.push(false)
+                    }else{
+                        errorState.push(true)
+                    }
+
+                    if (item.district != formData.to.district){ 
+                        errorDistrict.push(false)
+                    }else{
+                        errorDistrict.push(true)
+                    }
+                }
+            }
+            // console.log(errorState)
+            // เช็คว่า errorState มีค่าเป็น false ทั้งหมดหรือไม่
+            if (errorState.length > 0 && !errorState.includes(true)) { //เช็คอำเภอว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'อำเภอไม่ถูกต้อง / ';
+            }
+            if (errorDistrict.length > 0 && !errorDistrict.includes(true)) {//เช็คตำบลว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'ตำบลไม่ถูกต้อง / ';
+            }
+            
+            if (!isValid) {
+                return res
+                        .status(400)
+                        .send({staus:false, message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+            } 
+        }catch(err){
+            console.log(err)
+        }
+
+        if(weight == 0 || weight == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
+        }
+        if(formData.parcel.width == 0 || formData.parcel.width == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
+        }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกความยาว(cm)`})
+        }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
+        }
         if(reqCod > 50000){ //เอามาจาก PDF best knowledge
             return res
                     .status(400)
@@ -1141,6 +1299,12 @@ priceList = async (req, res)=>{
                     .send({
                         status: false,
                         message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`});
+        }
+
+        if(!Number.isInteger(packing_price)){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
         }
 
         if(weight <= 50){
@@ -1172,6 +1336,9 @@ priceList = async (req, res)=>{
                ID: id,
                status: 'ผู้ส่ง',
                shop_id: shop,
+               send_behalf: send_behalf,
+               send_number: send_number,
+               send_type: send_type,
                postcode: String(sender.postcode),
            };
 
@@ -1281,7 +1448,7 @@ priceList = async (req, res)=>{
                     
                 }
         }
-        console.log(cod_percent)
+        // console.log(cod_percent)
 
         //ดึงข้อมูลตารางของ Partner มาเพื่อเช็คว่าค่าไหนยังไม่ถูกกรอกบ้าง
         const result  = await weightAll.findOne(
@@ -1343,19 +1510,19 @@ priceList = async (req, res)=>{
                 if(resultP.costUpcountry == 0){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                            .send({status:false, message:`กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                 }else if(resultP.costBangkok_metropolitan == 0){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                            .send({status:false, message:`กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                 }else if(resultP.salesBangkok_metropolitan == 0){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                            .send({status:false, message:`กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                 }else if(resultP.salesUpcountry == 0){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
+                            .send({status:false, message:`กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`})
                 }
             let resultBase
             let base = findPriceBase.weight
@@ -1369,30 +1536,30 @@ priceList = async (req, res)=>{
                 if(resultBase.costUpcountry == 0){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                            .send({status:false, message:`กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                 }else if(resultBase.costBangkok_metropolitan == 0){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                            .send({status:false, message:`กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                 }else if(resultBase.salesBangkok_metropolitan == 0){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                            .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                 }else if(resultBase.salesUpcountry == 0){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
+                            .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                 }
 
                 //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
                 if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ 
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                            .send({status:false, message:`ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
                 }else if(resultP.costUpcountry > resultBase.salesUpcountry){
                     return res
                             .status(400)
-                            .send({status:false, message:`ลำดับที่ ${no} ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                            .send({status:false, message:`ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
                 }
 
                 // คำนวนต้นทุนของร้านค้า
@@ -1420,7 +1587,7 @@ priceList = async (req, res)=>{
 
                         //cost ต้องบวกกับ กำไร cod ของผู้ส่ง เพราะว่า เค้าเก็บเงินหน้าร้านมาแล้ว สมมุติ ค่าธรรมเนียม COD อยู่ที่ 15 บาท กำไร COD ของเขาคือ 2 บาท 
                         //เขาเก็บเงินจากผู้ส่ง หน้าร้าน มาแล้ว ดังนั้นเวลาหัก Wallet ต้องหัก กำไร COD ของ Partner ผู้ทำการสั่ง ORDER ด้วย เพราะเขาได้เงินจากหน้าร้านมาแล้ว
-                        let cost = resultP.costBangkok_metropolitan + cod_profit
+                        let cost = resultP.costBangkok_metropolitan
 
                         let total = profit_partner + cod_profit
                             let dataOne = {
@@ -1438,7 +1605,7 @@ priceList = async (req, res)=>{
                         profitSaleMartket = price - resultBase.salesUpcountry
                         profit_partner = resultBase.salesUpcountry - cost_hub
                         cut_partner = resultBase.salesUpcountry
-                        let cost = resultP.costUpcountry + cod_profit
+                        let cost = resultP.costUpcountry
                         let total = profit_partner + cod_profit
                             let dataOne = {
                                 id: result.owner_id,
@@ -1538,6 +1705,7 @@ priceList = async (req, res)=>{
                         profitSaleMartket: profitSaleMartket,
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,
+                        packing_price: packing_price,
                         total: 0,
                         cut_partner: 0,
                         status: status,
@@ -1547,7 +1715,7 @@ priceList = async (req, res)=>{
                     // console.log(v)
                     // if (cod !== undefined) {
                     let formattedFee = parseFloat(fee_cod_total.toFixed(2));
-                    let total = price + formattedFee + insuranceFee
+                    let total = price + formattedFee  + packing_price + insuranceFee
                         v.fee_cod = formattedFee
                             // v.profitPartner = profitPartner
                             if(price_remote_area != undefined){

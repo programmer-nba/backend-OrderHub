@@ -85,7 +85,6 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             codEnabled:0,
             insured:0,
             articleCategory:2,
-            // remark: remark
             // เพิ่ม key-value pairs ตามต้องการ
           };
         if(codForPrice > 0){
@@ -96,6 +95,9 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         if(declared_value > 0){
             formData.insured = 1
             formData.insureDeclareValue = declared_valueStang
+        }
+        if(remark != undefined && remark != ""){
+            formData.remark = remark
         }
         //ผู้ส่ง
         const senderTel = req.body.from.tel;
@@ -338,7 +340,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     'template.amount':cod_integer,
                     'template.phone_number': updatedDocument.tel,
                     'template.email':updatedDocument.email,
-                    status:"กำลังขนส่งสินค้า"
+                    status:"รอรถเข้ารับ"
             }
             createTemplate = await profitTemplate.create(pfSenderTemplate)
                 if(!createTemplate){
@@ -485,7 +487,7 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
           };
           const newData = await generateSign(formData)
           const formDataOnly = newData.formData
-          console.log(formDataOnly)
+        //   console.log(formDataOnly)
         try{
             const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/pre_print`,formDataOnly,{
             headers: {
@@ -524,7 +526,7 @@ print100x75 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
           };
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-        console.log(formDataOnly)
+        // console.log(formDataOnly)
         try{
             const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/small/pre_print`,formDataOnly,{
             headers: {
@@ -632,7 +634,7 @@ statusOrderPack = async (req, res)=>{ //ตรวจสอบข้อมูล�
                 }
             let changStatus = {
                 updateOne: {
-                    filter: { orderid: item.pno },
+                    filter: { tracking_code: item.pno },
                     update: { 
                         $set: {
                             order_status:scantype
@@ -850,7 +852,7 @@ cancelOrder = async (req, res)=>{ //cancel order
 notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พนักงานเข้ารับ 
     try{
         const apiUrl = process.env.TRAINING_URL
-        const mchId = req.body.mchId
+        const mchId = process.env.MCH_ID
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
@@ -868,7 +870,7 @@ notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พ�
           };
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-        console.log(formDataOnly)  
+        // console.log(formDataOnly)  
 
         const response = await axios.post(`${apiUrl}/open/v1/notify`,formDataOnly,{
             headers: {
