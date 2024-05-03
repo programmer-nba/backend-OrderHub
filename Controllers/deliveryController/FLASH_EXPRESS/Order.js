@@ -305,7 +305,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 status:'booking',
                 cost_hub: cost_hub,
                 cost_base: cost_base,
-                cod_amount:cod_amount,
+                cod_amount:cod_integer,
                 fee_cod: fee_cod,
                 total: total,
                 cut_partner: cut_partner,
@@ -335,7 +335,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     'template.account_name':updatedDocument.flash_pay.name,
                     'template.account_number':updatedDocument.flash_pay.card_number,
                     'template.bank':updatedDocument.flash_pay.aka,
-                    'template.amount':cod_amount,
+                    'template.amount':cod_integer,
                     'template.phone_number': updatedDocument.tel,
                     'template.email':updatedDocument.email,
                     status:"กำลังขนส่งสินค้า"
