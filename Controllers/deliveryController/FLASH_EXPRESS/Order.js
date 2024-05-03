@@ -597,7 +597,7 @@ statusOrderPack = async (req, res)=>{ //ตรวจสอบข้อมูล�
           };
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-        console.log(formDataOnly)  
+        // console.log(formDataOnly)  
 
         const response = await axios.post(`${apiUrl}/open/v1/orders/routesBatch`,querystring.stringify(formDataOnly),{
             headers: {
@@ -609,11 +609,59 @@ statusOrderPack = async (req, res)=>{ //ตรวจสอบข้อมูล�
             return res
                     .status(400)
                     .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
-        }else{
-            return res
-                    .status(200)
-                    .send({status:true, message:"เชื่อมต่อสำเร็จ", data:response.data})
         }
+        // console.log(response.data.data)
+        let detailBulk = []
+        let codBulk = []
+        const detail = response.data.data
+        const detailMap = detail.map(item =>{
+            let scantype
+            console.log(item.state)
+                if(item.state == 1 ){
+                    scantype = 'รับพัสดุแล้ว'
+                }else if(item.state == 2 || item.state == 3){
+                    scantype = 'ระหว่างการจัดส่ง'
+                }else if(item.state == 5){
+                    scantype = 'เซ็นรับแล้ว'
+                }else if(item.state == 7){
+                    scantype = 'พัสดุตีกลับ'
+                }else if(item.state == 6){
+                    scantype = 'พัสดุมีปัญหา'
+                }else{
+                    return;
+                }
+            let changStatus = {
+                updateOne: {
+                    filter: { orderid: item.pno },
+                    update: { 
+                        $set: {
+                            order_status:scantype
+                        }
+                    }
+                }
+            }
+            let changStatusCod = {
+                updateOne: {
+                    filter: { 'template.partner_number': item.pno },
+                    update: { 
+                        $set: {
+                            status:scantype
+                        }
+                    }
+                }
+            }
+            detailBulk.push(changStatus)
+            codBulk.push(changStatusCod)
+        })
+        const bulkDetail = await orderAll.bulkWrite(detailBulk)
+        const bulkCod = await profitTemplate.bulkWrite(codBulk)
+        return res
+                .status(200)
+                .send({status:true, 
+                    data: response.data,
+                    detailBulk: bulkDetail,
+                    codBulk:bulkCod
+                })
     }catch(err){
         console.log(err)
         return res
@@ -900,25 +948,6 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         const packing_price = req.body.packing_price
         let reqCod = req.body.cod_amount
         
-        if(weight == 0 || weight == undefined){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
-        }
-        if(formData.parcel.width == 0 || formData.parcel.width == undefined){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
-        }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณากรอกความยาว(cm)`})
-        }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
-        }
-
         if(send_behalf != "บริษัท" && send_behalf != "บุคคล"){
             return res
                     .status(400)
@@ -942,21 +971,8 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
             }
         }
 
-        if(!Number.isInteger(packing_price)){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
-        }
-        if (!Number.isInteger(reqCod)||
-            !Number.isInteger(declared_value)) {
-                    return res.status(400).send({
-                        status: false,
-                        message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
-                    });
-                }
-
         //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
-        try{
+         try{
             const data = await postalThailand.find({postcode: formData.from.postcode})
                 if (!data || data.length == 0) {
                     return res
@@ -1067,6 +1083,38 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         }catch(err){
             console.log(err)
         }
+
+        if(weight == 0 || weight == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
+        }
+        if(formData.parcel.width == 0 || formData.parcel.width == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
+        }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกความยาว(cm)`})
+        }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
+        }
+
+        if(!Number.isInteger(packing_price)){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
+        }
+        if (!Number.isInteger(reqCod)||
+            !Number.isInteger(declared_value)) {
+                    return res.status(400).send({
+                        status: false,
+                        message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
+                    });
+                }
 
         //ผู้ส่ง
         const sender = formData.from; 

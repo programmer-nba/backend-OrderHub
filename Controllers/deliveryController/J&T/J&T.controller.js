@@ -433,6 +433,8 @@ trackingOrder = async (req, res)=>{
                     scantype = 'เซ็นรับแล้ว'
                 }else if(latestDetails.scantype == 'Return'){
                     scantype = 'พัสดุตีกลับ'
+                }else if(latestDetails.scantype == 'Problematic'){
+                    scantype = 'พัสดุมีปัญหา'
                 }else{
                     return;
                 }
@@ -705,61 +707,29 @@ priceList = async (req, res)=>{
         const send_number = formData.from.send_number
         const send_type = formData.from.send_type
         let reqCod = req.body.cod_amount
-
-        if(weight == 0 || weight == undefined){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
-        }
-        if(formData.parcel.width == 0 || formData.parcel.width == undefined){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
-        }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
-            return res
-                    .status(400)
-                    .send({status:false, message:`ลำกรุณากรอกความยาว(cm)`})
-        }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
-        }
   
         if(send_behalf != "บริษัท" && send_behalf != "บุคคล"){
             return res
                     .status(400)
-                    .send({status:false, message:"ผู้ส่ง กรุณากรอก ส่งในนาม บริษัทหรือบุคคล"})
+                    .send({status:false, type:"sender",message:"ผู้ส่ง กรุณากรอก ส่งในนาม บริษัทหรือบุคคล"})
         }else if(send_number == undefined || send_number == ""){
             return res
                     .status(400)
-                    .send({status:false, message:"ผู้ส่ง กรุณากรอกหมายเลขผู้เสียภาษี, บัตรประชาชน หรือ passport"})
+                    .send({status:false, type:"sender",message:"ผู้ส่ง กรุณากรอกหมายเลขผู้เสียภาษี, บัตรประชาชน หรือ passport"})
         }
         if(send_behalf == "บริษัท"){
             if(send_type != "หมายเลขผู้เสียภาษี"){
                 return res
                     .status(400)
-                    .send({status:false, message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
+                    .send({status:false, type:"sender",message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
             }
         }else if(send_behalf == "บุคคล"){
             if(send_type != "บัตรประชาชน" && send_type != "passport"){
                 return res
                     .status(400)
-                    .send({status:false, message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
+                    .send({status:false, type:"sender",message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
             }
         }
-
-        if(!Number.isInteger(packing_price)){
-            return res
-                    .status(400)
-                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
-        }
-        if (!Number.isInteger(reqCod)||
-            !Number.isInteger(declared_value)) {
-                    return res.status(400).send({
-                        status: false,
-                        message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
-                    });
-                }
 
         //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
         try{
@@ -811,7 +781,7 @@ priceList = async (req, res)=>{
             if (!isValid) {
                 return res
                         .status(400)
-                        .send({staus:false, message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+                        .send({staus:false, type:"sender",message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
             } 
         }catch(err){
             console.log(err)
@@ -873,6 +843,38 @@ priceList = async (req, res)=>{
         }catch(err){
             console.log(err)
         }
+
+        if(weight == 0 || weight == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
+        }
+        if(formData.parcel.width == 0 || formData.parcel.width == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
+        }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`ลำกรุณากรอกความยาว(cm)`})
+        }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
+        }
+
+        if(!Number.isInteger(packing_price)){
+            return res
+                    .status(400)
+                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
+        }
+        if (!Number.isInteger(reqCod)||
+            !Number.isInteger(declared_value)) {
+                    return res.status(400).send({
+                        status: false,
+                        message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
+                    });
+                }
 
         //ผู้ส่ง
         const sender = formData.from; 

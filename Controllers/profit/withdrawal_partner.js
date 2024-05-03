@@ -166,7 +166,8 @@ Withdrawal = async (req, res)=>{
 
 getCod = async(req, res)=>{
     try{
-        const findCod = await profitTemplate.find({status:"กำลังขนส่งสินค้า"})
+        const status = req.body.status
+        const findCod = await profitTemplate.find({status:status})
         if(!findCod){
             return res
                     .status(404)
