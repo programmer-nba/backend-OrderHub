@@ -951,23 +951,23 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         if(send_behalf != "บริษัท" && send_behalf != "บุคคล"){
             return res
                     .status(400)
-                    .send({status:false, message:"ผู้ส่ง กรุณากรอก ส่งในนาม บริษัทหรือบุคคล"})
+                    .send({status:false, type:"sender", message:"ผู้ส่ง กรุณากรอก ส่งในนาม บริษัทหรือบุคคล"})
         }else if(send_number == undefined || send_number == ""){
             return res
                     .status(400)
-                    .send({status:false, message:"ผู้ส่ง กรุณากรอกหมายเลขผู้เสียภาษี, บัตรประชาชน หรือ passport"})
+                    .send({status:false, type:"sender", message:"ผู้ส่ง กรุณากรอกหมายเลขผู้เสียภาษี, บัตรประชาชน หรือ passport"})
         }
         if(send_behalf == "บริษัท"){
             if(send_type != "หมายเลขผู้เสียภาษี"){
                 return res
                     .status(400)
-                    .send({status:false, message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
+                    .send({status:false, type:"sender", message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
             }
         }else if(send_behalf == "บุคคล"){
             if(send_type != "บัตรประชาชน" && send_type != "passport"){
                 return res
                     .status(400)
-                    .send({status:false, message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
+                    .send({status:false, type:"sender", message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
             }
         }
 
@@ -1021,7 +1021,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
             if (!isValid) {
                 return res
                         .status(400)
-                        .send({staus:false, message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+                        .send({staus:false, type:"sender", message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
             } 
         }catch(err){
             console.log(err)

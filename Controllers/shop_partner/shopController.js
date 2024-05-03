@@ -233,7 +233,7 @@ create = async (req, res)=>{
         console.log(err)
         return res
                 .status(500)
-                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+                .send({status:false, message:err})
     }
 }
 

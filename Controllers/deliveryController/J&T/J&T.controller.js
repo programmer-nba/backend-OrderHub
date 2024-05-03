@@ -920,7 +920,7 @@ priceList = async (req, res)=>{
 
         let cod_percent = []
         let fee_cod_total = 0
-        let profitCOD = 0
+        let profitCOD = 0 //ห้ามลบ
         if(reqCod != 0){
             const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
                 if(findShopCod){
@@ -1021,12 +1021,14 @@ priceList = async (req, res)=>{
                         .send({status: false, message:`น้ำหนักของร้านค้า ${req.body.shop_number} ที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`})
             }
 
+        //เช็คว่าอยู่เขต กรุงเทพ/ปริมณฑล หรือเปล่า
         let priceBangkok = false;
         const findPostcal = await bangkokMetropolitan.findOne({ Postcode: req.body.to.postcode });
             if (findPostcal) {
                 priceBangkok = true;
             }
 
+        //เช็คว่าอยู่เขต พื้นที่ห่างไกล หรือเปล่า
         let price_remote_area = 0
         const findPostCode = await jntRemoteArea.findOne({postcode:formData.to.postcode})
             if(findPostCode){
@@ -1044,7 +1046,8 @@ priceList = async (req, res)=>{
                 }
             }
         console.log("price_remote_area: ",price_remote_area)
-
+        
+        //เช็คประกัน(ถ้ามี)
         const findinsured = await insuredExpress.findOne({express:"JNT"})
         let insuranceFee = 0
             if(findinsured){
@@ -1057,7 +1060,8 @@ priceList = async (req, res)=>{
                         }
                     }
             }
-        // console.log(insuranceFee)
+        
+        //ดึงราคาขายหน้าร้านมาตรฐานมา
         const findPriceBase = await priceBase.findOne({express:"J&T"})
             if(!findPriceBase){
                 return res
