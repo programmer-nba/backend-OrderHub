@@ -733,10 +733,6 @@ priceList = async (req, res)=>{
             return res
                     .status(400)
                     .send({status:false, message:"ผู้ส่ง กรุณากรอกหมายเลขผู้เสียภาษี, บัตรประชาชน หรือ passport"})
-        }else if(send_type != "บัตรประชาชน" && send_type != "passport" && send_type != "หมายเลขผู้เสียภาษี"){
-            return res
-                    .status(400)
-                    .send({status:false, message:"ผู้ส่ง กรุณากรอกประเภทของหมายเลขที่ท่านกรอก"})
         }
         if(send_behalf == "บริษัท"){
             if(send_type != "หมายเลขผู้เสียภาษี"){
@@ -751,7 +747,7 @@ priceList = async (req, res)=>{
                     .send({status:false, message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
             }
         }
-        
+
         if(!Number.isInteger(packing_price)){
             return res
                     .status(400)
