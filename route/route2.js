@@ -249,6 +249,7 @@ router.route('/orderhub/orderall/get/me/:id').post( auth.checkToken, orderAll.ge
 router.route('/orderhub/orderall/get/code').post( auth.checkToken, orderAll.getCode )
 router.route('/orderhub/orderall/get/code/:print_code').post( auth.checkToken, orderAll.getCodeOrder )
 router.route('/orderhub/orderall/get/order/date').post( auth.checkToken, orderAll.getOrderByDate )
+router.route('/orderhub/orderall/get/order/status').post( auth.checkToken, orderAll.getOrderStatus )
 
 //insured
 const insured = require('../Controllers/deliveryController/Insured/insuredFee')

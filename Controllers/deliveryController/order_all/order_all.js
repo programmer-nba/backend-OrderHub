@@ -362,6 +362,30 @@ getOrderByDate = async(req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
+getOrderStatus = async(req, res)=>{
+    try{
+        const findOrder = await orderAll.find({
+            $or: [
+                { order_status: "booking" },
+                { order_status: "รับพัสดุแล้ว" },
+                { order_status: "ระหว่างการจัดส่ง" }
+              ]
+        })
+            if(findOrder.length == 0){
+                return res
+                        .status(200)
+                        .send({status:true, message:"ไม่พบออเดอร์ที่อยู่ระหว่างการจัดส่ง"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findOrder})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
 async function invoiceNumber() {
     try{
         let random = Math.floor(Math.random() * 1000000)
@@ -383,4 +407,4 @@ async function invoiceNumber() {
     }
 }
 
-module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder, getOrderByDate }
+module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder, getOrderByDate, getOrderStatus }

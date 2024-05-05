@@ -112,7 +112,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         // console.log(updatedDocument)
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-            console.log(formDataOnly)
+            // console.log(formDataOnly)
         const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formDataOnly),{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -169,16 +169,16 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     role: role,
                     shop_number: shop,
                     orderid: response.data.data.pno,
+                    cost_price: profitAll[0].cost_price,
                     cost: profitAll[0].cost,
-                    packing_price: packing_price,
-                    profitSaleMartket: profitSaleMartket,
                     profitCost: profitAll[0].profit,
                     profitCOD: profitAll[0].cod_profit,
-                    profit: profitAll[0].total + profitSaleMartket + packing_price,
+                    packing_price: packing_price,
+                    profit: profitAll[0].total + packing_price,
                     express: 'FLASH',
             }
                 if(profitAll[0].cod_profit == 0){
-                    pf.type = 'เงินสด'
+                    pf.type = 'ทั่วไป'
                 }else{
                     pf.type = 'COD'
                 }
@@ -190,7 +190,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
             // console.log(id)
             // console.log(profitAll)
-            let profitTotal = profitAll[0].total + profitSaleMartket + packing_price
+            let profitTotal = profitAll[0].total + packing_price
             let profitOne = await Partner.findOneAndUpdate(
                     { _id: id },
                     { $inc: { 
@@ -215,6 +215,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                         role: role,
                                         shop_number: shop,
                                         orderid: response.data.data.pno,
+                                        cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
                                         profitCost: profitAll[i].profit,
                                         profitCOD: profitAll[i].cod_profit,
@@ -250,6 +251,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                         role: role,
                                         shop_number: shop,
                                         orderid: response.data.data.pno,
+                                        cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
                                         profitCost: profitAll[i].profit,
                                         profitCOD: profitAll[i].cod_profit,
@@ -258,7 +260,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                     }
                         
                                 if(profitAll[i].cod_profit == 0){
-                                    pf.type = 'เงินสด'
+                                    pf.type = 'ทั่วไป'
                                 }else{
                                     pf.type = 'COD'
                                 }
@@ -1410,7 +1412,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 let status = null;
                 let cut_partner
                 let cod_profit
-                let profitSaleMartket
+                let cost_base
                 let findOwner = cod_percent.find((item)=> item.id == result.owner_id)
                     if(!findOwner){
                         cod_profit = 0
@@ -1421,17 +1423,16 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 if(priceBangkok){
                     cost_hub = resultP.costBangkok_metropolitan
                     price = resultP.salesBangkok_metropolitan
-                    profitSaleMartket = price - resultBase.salesBangkok_metropolitan
-                    profit_partner = resultBase.salesBangkok_metropolitan - cost_hub
-                    cut_partner = resultBase.salesBangkok_metropolitan
+                    // profitSaleMartket = price - resultBase.salesBangkok_metropolitan
+                    cut_partner = resultP.costBangkok_metropolitan
+                    cost_base = resultBase.salesBangkok_metropolitan
+                    profit_partner = price - cost_hub
 
-                    //cost ต้องบวกกับ กำไร cod ของผู้ส่ง เพราะว่า เค้าเก็บเงินหน้าร้านมาแล้ว สมมุติ ค่าธรรมเนียม COD อยู่ที่ 15 บาท กำไร COD ของเขาคือ 2 บาท 
-                    //เขาเก็บเงินจากผู้ส่ง หน้าร้าน มาแล้ว ดังนั้นเวลาหัก Wallet ต้องหัก กำไร COD ของ Partner ผู้ทำการสั่ง ORDER ด้วย เพราะเขาได้เงินจากหน้าร้านมาแล้ว
                     let cost = resultP.costBangkok_metropolitan
-
                     let total = profit_partner + cod_profit
                         let dataOne = {
                             id: result.owner_id,
+                            cost_price: parseFloat(price.toFixed(2)),
                             cost: parseFloat(cost.toFixed(2)),
                             profit: parseFloat(profit_partner.toFixed(2)),
                             cod_profit: parseFloat(cod_profit.toFixed(2)),
@@ -1440,15 +1441,17 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     profit.push(dataOne)
                 }else{
                     cost_hub = resultP.costUpcountry
-                    // console.log(cost_hub)
                     price = resultP.salesUpcountry
-                    profitSaleMartket = price - resultBase.salesUpcountry
-                    profit_partner = resultBase.salesUpcountry - cost_hub
-                    cut_partner = resultBase.salesUpcountry
+                    // profitSaleMartket = price - resultBase.salesUpcountry
+                    profit_partner = price - cost_hub
+                    cut_partner = resultP.costUpcountry
+                    cost_base = resultBase.salesUpcountry
+
                     let cost = resultP.costUpcountry
                     let total = profit_partner + cod_profit
                         let dataOne = {
                             id: result.owner_id,
+                            cost_price: parseFloat(price.toFixed(2)),
                             cost: parseFloat(cost.toFixed(2)),
                             profit: parseFloat(profit_partner.toFixed(2)),
                             cod_profit: parseFloat(cod_profit.toFixed(2)),
@@ -1486,6 +1489,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         let total = profitOne + cod_profit
                         let data = {
                                     id: findHead.owner_id,
+                                    cost_price: parseFloat(cost_hub.toFixed(2)),
                                     cost: parseFloat(cost.toFixed(2)),
                                     profit: parseFloat(profitOne.toFixed(2)),
                                     cod_profit: parseFloat(cod_profit.toFixed(2)),
@@ -1512,6 +1516,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     let total = profitTwo + cod_iceprofit
                     let dataICE = {
                         id:"ICE",
+                        cost_price: parseFloat(cost_hub.toFixed(2)),
                         cost: parseFloat(cost.toFixed(2)),
                         profit: parseFloat(profitTwo.toFixed(2)),
                         cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
@@ -1525,6 +1530,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     let total = profitTwo + cod_iceprofit
                     let dataICE = {
                         id:"ICE",
+                        cost_price: parseFloat(cost_hub.toFixed(2)),
                         cost: parseFloat(cost.toFixed(2)),
                         profit: parseFloat(profitTwo.toFixed(2)),
                         cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
@@ -1540,10 +1546,9 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         express: "FLASH",
                         price_remote_area: 0,
                         cost_hub: cost_hub,
-                        cost_base: cut_partner,
+                        cost_base: cost_base,
                         fee_cod: 0,
                         price: Number(price.toFixed()),
-                        profitSaleMartket: profitSaleMartket,
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,
                         packing_price: packing_price,
