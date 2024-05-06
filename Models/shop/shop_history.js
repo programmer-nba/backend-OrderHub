@@ -12,6 +12,7 @@ dayjs.extend(require('dayjs/plugin/utc'));
 const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
 
 const historySchema = new Schema({
+    shop_id:{type:String, require: false},
     ID:{type:String, require: false},
     role:{type:String, require: false},
     shop_number:{type:String, require: false},

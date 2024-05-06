@@ -147,6 +147,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
 
             const plus = findShop.credit + cut_partner
             const history = {
+                    shop_id: findShop._id,
                     ID: id,
                     role: role,
                     shop_number: shop,

@@ -23,8 +23,8 @@ getAll = async (req, res)=>{
 
 getOne = async (req, res)=>{
     try{
-        const shopNumber = req.params.shop_number
-        const findShop = await historyWalletShop.find({shop_number:shopNumber})
+        const shop_id = req.params.shop_id
+        const findShop = await historyWalletShop.find({shop_id:shop_id})
         if(!findShop){
             return res
                     .status(400)
