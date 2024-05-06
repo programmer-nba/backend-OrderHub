@@ -168,11 +168,21 @@ Withdrawal = async (req, res)=>{
 getCod = async(req, res)=>{
     try{
         const status = req.body.status
-        const findCod = await profitTemplate.find({status:status})
-        if(!findCod){
-            return res
-                    .status(404)
-                    .send({status:false ,message:"ไม่มีข้อมูลในระบบ"})
+        let findCod
+        if(status){
+            findCod = await profitTemplate.find({status:status})
+                if(findCod.length == 0){
+                    return res
+                            .status(200)
+                            .send({status:false ,data:[]})
+                }
+        }else{
+            findCod = await profitTemplate.find()
+                if(!findCod){
+                    return res
+                            .status(200)
+                            .send({status:false ,data:[]})
+                }
         }
     return res
             .status(200)
@@ -232,6 +242,5 @@ async function invoiceNumber(date) {
     // console.log(combinedData);
     return combinedData;
 }
-
 
 module.exports = { getAll, getSumForMe, Withdrawal, changStatus, getCod }
