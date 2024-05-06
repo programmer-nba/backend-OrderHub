@@ -123,7 +123,7 @@ router.route('/orderhub/flashpay/payment/notify').post( auth.checkToken, FP.noti
 //shop history (ประวัติการเงินของแต่ละช็อป)
 const historyShop = require('../Controllers/shop_partner/shop.history')
 router.route('/orderhub/historyShop/getAll').get( historyShop.getAll )
-router.route('/orderhub/historyShop/getOne/:shop_number').get( historyShop.getOne )
+router.route('/orderhub/historyShop/getOne/:shop_id').get( historyShop.getOne )
 router.route('/orderhub/historyShop/getId/:id').get( auth.checkToken, historyShop.getById )
 
 //J&T
