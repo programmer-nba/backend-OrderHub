@@ -291,8 +291,8 @@ getOrderByDate = async(req, res)=>{
                     })
                     if(findOrder.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                                .status(200)
+                                .send({status:true, data:[]})
                     }
                     return res
                             .status(200)
@@ -308,8 +308,8 @@ getOrderByDate = async(req, res)=>{
                     })
                     if(findOrder.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                                .status(200)
+                                .send({status:true, data:[]})
                     }
                     return res
                             .status(200)
@@ -329,8 +329,8 @@ getOrderByDate = async(req, res)=>{
                     // console.log(findOrderID)
                     if(findOrderID.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                                .status(200)
+                                .send({status:true, data:[]})
                     }
                     return res
                             .status(200)
@@ -347,13 +347,30 @@ getOrderByDate = async(req, res)=>{
                     // console.log(findOrderID)
                     if(findOrderID.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                                .status(200)
+                                .send({status:true, data:[]})
                     }
                     return res
                             .status(200)
                             .send({status:true, data:findOrderID})
             }
+        }else{
+            const findOrderID = await orderAll.find(
+                {
+                    $and: [
+                        { day: { $gte: dayStart } },
+                        { day: { $lte: dayEnd } }
+                    ]
+                })
+                // console.log(findOrderID)
+                if(findOrderID.length == 0){
+                    return res
+                            .status(200)
+                            .send({status:true, data:[]})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, data:findOrderID})
         }
 
     }catch(err){
