@@ -353,6 +353,7 @@ createOrder = async (req, res)=>{
         if(cod_amount != 0){
             const pfSenderTemplate = {
                     orderid: new_data.txlogisticid,
+                    owner_id: findShop.partnerID,
                     Orderer: id,
                     role: role,
                     shop_number: shop,
@@ -424,9 +425,9 @@ trackingOrder = async (req, res)=>{
         const detailMap = detail.map(item =>{
             const latestDetails = item.details[item.details.length - 1];
             let scantype
-                if(latestDetails.scantype == 'Receipting' || latestDetails.scantype == 'Picked Up'){
+                if(latestDetails.scantype == 'Picked Up'){
                     scantype = 'รับพัสดุแล้ว'
-                }else if(latestDetails.scantype == 'On Delivery'){
+                }else if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
                     scantype = 'ระหว่างการจัดส่ง'
                 }else if(latestDetails.scantype == 'Signature'){
                     scantype = 'เซ็นรับแล้ว'
@@ -559,7 +560,7 @@ cancelOrder = async (req, res)=>{
                             }
 
                 //REFUND PARTNER//
-                let profitRefundTotal = findPno.profitAll[0].total+ findPno.profitSaleMartket+ findPno.packing_price
+                let profitRefundTotal = findPno.profitAll[0].total + findPno.packing_price
                 const profitOne = await Partner.findOneAndUpdate(
                         { _id: findShop.partnerID },
                         { $inc: { 

@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const { profitTemplate } = require("../../Models/profit/profit.template");
 
 const dayjsTimestamp = dayjs(Date.now());
+const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 
 getAll = async (req, res)=>{
     try{
@@ -187,19 +188,24 @@ changStatus = async (req, res)=>{
     try{
         const orderids = req.body.orderid
         const status = req.body.status
+        const code = await invoiceNumber(dayTime)
         let orderBulk = orderids.map(item=>({
             updateOne:{
                 filter:{ orderid : item },
                 update: { 
                     $set: {
-                        status:status
+                        status:status,
+                        code:code
                     }
             }
         }}))
-        const bulkOrder = profitTemplate.bulkWrite(orderBulk)
+        const bulkOrder = await profitTemplate.bulkWrite(orderBulk)
         return res
                 .status(200)
-                .send({status:true, data:bulkOrder})
+                .send({status:true, 
+                    data:bulkOrder,
+                    code:code
+                })
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res  
@@ -210,21 +216,22 @@ changStatus = async (req, res)=>{
 
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
-    let random = Math.floor(Math.random() * 100000)
-    const combinedData = `WD`+data + random;
-    const findInvoice = await profitPartner.find({orderid:combinedData})
+    let random = Math.floor(Math.random() * 1000000)
+    const combinedData = `COD`+data + random;
+    const findInvoice = await profitTemplate.find({code:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
-        random = Math.floor(Math.random() * 100000);
-        combinedData = `WD`+data + random;
+        random = Math.floor(Math.random() * 1000000);
+        combinedData = `COD`+data + random;
 
         // เช็คใหม่
-        findInvoice = await profitPartner.find({orderid: combinedData});
+        findInvoice = await profitTemplate.find({code: combinedData});
     }
 
     // console.log(combinedData);
     return combinedData;
 }
+
 
 module.exports = { getAll, getSumForMe, Withdrawal, changStatus, getCod }

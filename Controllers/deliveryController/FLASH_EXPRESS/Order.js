@@ -331,6 +331,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         if(cod_amount != 0){
             const pfSenderTemplate = {
                     orderid: response.data.data.pno,
+                    owner_id: findShop.partnerID,
                     Orderer: id,
                     role: role,
                     shop_number: shop,

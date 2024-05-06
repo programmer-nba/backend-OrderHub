@@ -12,6 +12,7 @@ const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
 
 const profitTemplateSchema = new Schema({
     orderid: {type:String, require: false},
+    owner_id: {type:String, require: false},
     Orderer: {type:String, require: false},
     role: {type:String, require: false},
     shop_number: {type:String, require: false},
@@ -29,6 +30,7 @@ const profitTemplateSchema = new Schema({
             notes:{type:String, default: "", require:false},
     },
     status: {type:String, default: "รอดำเนินการ", require:false},
+    code: {type:String, default: "", require:false},
     day: {
         type: String,
         required: false,

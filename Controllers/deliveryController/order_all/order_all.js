@@ -392,7 +392,7 @@ getOrderStatus = async(req, res)=>{
             if(findOrder.length == 0){
                 return res
                         .status(200)
-                        .send({status:true, message:"ไม่พบออเดอร์ที่อยู่ระหว่างการจัดส่ง"})
+                        .send({status:true, data:[]})
             }
         return res
                 .status(200)
@@ -403,6 +403,29 @@ getOrderStatus = async(req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
+getOrderCancel = async(req, res)=>{
+    try{
+        const dayEnd = req.body.dayEnd
+        const findDayEnd = await orderAll.find({
+            status:"booking",
+            day_end: { $lte: dayEnd }
+        })
+        if(findDayEnd.length == 0){
+            return res
+                    .status(200)
+                    .send({status:true, data:[]})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findDayEnd})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber() {
     try{
         let random = Math.floor(Math.random() * 1000000)
@@ -424,4 +447,4 @@ async function invoiceNumber() {
     }
 }
 
-module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder, getOrderByDate, getOrderStatus }
+module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel }
