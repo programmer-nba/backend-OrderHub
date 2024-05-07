@@ -11,10 +11,11 @@ dayjs.extend(require('dayjs/plugin/utc'));
 const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
 
 const profitIceSchema = new Schema({
-    Orderer:{type:String, require: false},
-    role:{type:String, require: false},
-    shop_number:{type:String, require: false},
-    orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
+    Orderer: {type:String, require: false},
+    role: {type:String, require: false},
+    shop_number: {type:String, require: false},
+    orderid: {type:String, require: false},//เลขที่ทำรายการ(invoice)
+    mailno: {type:String, default:"", require: false},
     cost_price: {type:Number, require: false},
     cost: {type:Number, require: false},
     profitCost: {type:Number,default:0, require: false},

@@ -237,6 +237,7 @@ createOrder = async (req, res)=>{
                                         role: role,
                                         shop_number: shop,
                                         orderid: new_data.txlogisticid,
+                                        mailno: new_data.mailno,
                                         cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
                                         profitCost: profitAll[i].profit,
