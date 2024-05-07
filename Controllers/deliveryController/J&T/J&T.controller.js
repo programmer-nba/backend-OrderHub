@@ -27,9 +27,9 @@ const { postalThailand } = require("../../../Models/postal.thailand/postal.thai.
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
-apiUrl = process.env.JT_URL
-ecom_id = process.env.ECOMPANY_ID
-customer_id = process.env.CUSTOMER_ID
+let apiUrl = process.env.JT_URL
+let ecom_id = process.env.ECOMPANY_ID
+let customer_id = process.env.CUSTOMER_ID
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -229,7 +229,7 @@ createOrder = async (req, res)=>{
             allProfit.push(historyShop)
             allProfit.push(profit_partner)
             allProfit.push(profitOne)
-            // console.log(profitAll)  
+            // console.log(profitAll)
                 for (let i = 1; i < profitAll.length; i++) {
                         if(profitAll[i].id == 'ICE'){
                             const pfICE = {
@@ -408,9 +408,11 @@ trackingOrder = async (req, res)=>{
             "msg_type": "TRACKQUERY",
             "eccompanyid": ecom_id,
         }
+        let apiUrlQuery = process.env.JT_URL_QUERY
+        // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
