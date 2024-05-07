@@ -412,7 +412,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -587,13 +587,14 @@ cancelOrder = async (req, res)=>{
                     {
                         status:"ยกเลิกออเดอร์"
                     },
-                    {new:true, projection: { status: 1  }})
+                    {new:true})
                     if(!findTracking){
                         return res
                                 .status(400)
                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
                     }
                 let findTemplate
+                // console.log(findTracking)
                     if(findTracking.profitCOD != 0){
                         findTemplate = await profitTemplate.findOneAndUpdate(
                             { orderid : txlogisticid},
