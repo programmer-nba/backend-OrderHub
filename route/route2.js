@@ -37,15 +37,15 @@ router.route('/orderhub/shopAdmin/confirmShop/:id').put( authAdmin.checkToken, a
 router.route('/orderhub/shopAdmin/cancelShop/:id').put( authAdmin.checkToken, admin.cancelShop ) //ไม่อนุมัติร้านค้า
 
 //MEMBER SHOP
-router.route('/orderhub/member/create').post( member_shop.create )
-router.route('/orderhub/member/getAll').get( member_shop.getAll )
+router.route('/orderhub/member/create/:id').post( auth.checkToken, member_shop.create )
+router.route('/orderhub/member/getAll').get( auth.checkToken, member_shop.getAll )
 router.route('/orderhub/member/getMe').get( auth.checkToken, member_shop.getMe )
-router.route('/orderhub/member/del/:id').delete( member_shop.delend )
-router.route('/orderhub/member/update/:id').put( member_shop.update )
+router.route('/orderhub/member/del/:id').delete( auth.checkToken, member_shop.delend )
+router.route('/orderhub/member/update/:id').put( auth.checkToken, member_shop.update )
 router.route('/orderhub/member/get/:id').get( auth.checkToken, member_shop.getByID )
-router.route('/orderhub/member/approve/:id').put( partner.approveMemberShop )
-router.route('/orderhub/member/cancel/:id').put( partner.cancelMemberShop )
-router.route('/orderhub/member/getPNM').get( member_shop.getMemberPartner )
+router.route('/orderhub/member/approve/:id').put( auth.checkToken, partner.approveMemberShop )
+router.route('/orderhub/member/cancel/:id').put( auth.checkToken, partner.cancelMemberShop )
+router.route('/orderhub/member/getPNM').get( auth.checkToken, member_shop.getMemberPartner )
 
 //Flash Admin
 router.route('/orderhub/flash/getAll').get( authAdmin.checkToken, flash.getAll )

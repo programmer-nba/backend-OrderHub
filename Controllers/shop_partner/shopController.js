@@ -440,7 +440,7 @@ getShopPartnerByAdmin = async (req, res) =>{
 findShopMember = async (req, res)=>{
     try{
         const idShop = req.params.id
-        const findMember = await memberShop.find({shop_number:idShop})
+        const findMember = await memberShop.find({shop_id:idShop})
         if(findMember){
             return res
                     .status(200)

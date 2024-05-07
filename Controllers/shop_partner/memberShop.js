@@ -7,6 +7,7 @@ var bcrypt = require("bcrypt");
 create = async (req, res)=>{
     try{
         const user = req.body.username
+        const id = req.params.id
         const findPartner = await Partner.findOne({username:user})
         if(findPartner){
             return res
@@ -31,10 +32,11 @@ create = async (req, res)=>{
                     .status(400)
                     .send({status:false, message:"มีผู้ใช้บัตรประชาชนนี้แล้ว"})
         }
-        const findShop = await shopPartner.findOne({shop_number:req.body.shop_number})
+        const findShop = await shopPartner.findById(id)
         if(findShop){
             const data = {
                 ...req.body,
+                shop_id:findShop._id,
                 id_ownerShop:findShop.partnerID,
                 shop_name:findShop.shop_name
             }
