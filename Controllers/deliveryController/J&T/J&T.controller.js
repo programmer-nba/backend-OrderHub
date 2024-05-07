@@ -472,9 +472,10 @@ trackingOrder = async (req, res)=>{
                     codBulk:bulkCod
                 })
     }catch(err){
+        console.log(err)
         return res
-                .status(500)
-                .send({status:false, message:err})
+                .status(200)
+                .send({status:true, data:[]})
     }
 }
 
