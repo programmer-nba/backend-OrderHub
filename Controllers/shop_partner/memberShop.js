@@ -122,13 +122,19 @@ update = async (req, res)=>{
 
 getMe = async (req, res)=>{
     try{
-        console.log(req.decoded.id)
+        // console.log(req.decoded.id)
         const id = req.decoded.userid
         const findMe = await memberShop.findOne({_id:id})
         if(findMe){
+            const findShop = await shopPartner.findById(findMe.shop_id)
+                if(!findShop){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่พบร้านค้า"})
+                }
             return res
                     .status(200)
-                    .send({status:true, data:findMe})
+                    .send({status:true, data:findMe, shop:findShop})
         }else{
             return res
                     .status(400)
