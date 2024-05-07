@@ -37,6 +37,7 @@ create = async (req, res)=>{
             const data = {
                 ...req.body,
                 shop_id:findShop._id,
+                shop_number:findShop.shop_number,
                 id_ownerShop:findShop.partnerID,
                 shop_name:findShop.shop_name
             }
