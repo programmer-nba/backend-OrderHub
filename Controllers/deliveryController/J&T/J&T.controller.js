@@ -412,7 +412,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -422,7 +422,9 @@ trackingOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถใช้ได้"})
             }
-
+        // return res
+        //         .status(200)
+        //         .send({status:true, data:response.data})
         let detailBulk = []
         let codBulk = []
         const detail = response.data.responseitems[0].tracesList
