@@ -64,7 +64,7 @@ create = async (req,res)=>{
             }
           let fileMetaData = {
             name: req.file.originalname,
-            parents: [process.env.GOOGLE_DRIVE_WALLET_TOPUP],
+            parents: [process.env.GOOGLE_DRIVE_IMAGE_PRODUCT],
           };
           let media = {
             body: fs.createReadStream(filePath),

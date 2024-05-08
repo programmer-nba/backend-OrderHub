@@ -22,7 +22,7 @@ async function uploadFileCreate(file, res, { i, reqFiles }) {
 
   let fileMetaData = {
     name: file.originalname,
-    parents: [process.env.GOOGLE_DRIVE_WALLET_TOPUP],
+    parents: [process.env.GOOGLE_DRIVE_IMAGE_PRODUCT],
   };
   let media = {
     body: fs.createReadStream(filePath),

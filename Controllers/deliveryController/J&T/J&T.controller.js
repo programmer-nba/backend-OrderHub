@@ -1304,12 +1304,12 @@ priceList = async (req, res)=>{
                             // v.profitPartner = profitPartner
                                 if(price_remote_area != undefined){
                                     let total1 = total + price_remote_area
-                                        v.total = total1
+                                        v.total = parseFloat(total1.toFixed(2))
                                         v.cut_partner = cut_partner + price_remote_area + insuranceFee + formattedFee
                                         v.price_remote_area = price_remote_area
                                 }else{
                                     v.cut_partner = cut_partner + insuranceFee + formattedFee
-                                    v.total = total
+                                    v.total = parseFloat(total.toFixed(2))
                                 }
                             new_data.push(v);
                     
