@@ -412,7 +412,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -551,6 +551,7 @@ cancelOrder = async (req, res)=>{
                                 }
                     let diff = findShop.credit - findPno.cut_partner
                     let history = {
+                                shop_id: findShop._id,
                                 ID: id,
                                 role: role,
                                 shop_number: findPno.shop_number,
@@ -595,10 +596,9 @@ cancelOrder = async (req, res)=>{
                                 .status(400)
                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
                     }
-                let findTemplate
                 // console.log(findTracking)
                     if(findTracking.profitCOD != 0){
-                        findTemplate = await profitTemplate.findOneAndUpdate(
+                       let findTemplate = await profitTemplate.findOneAndUpdate(
                             { orderid : txlogisticid},
                             {
                                 status:"ยกเลิกออเดอร์"
@@ -608,8 +608,9 @@ cancelOrder = async (req, res)=>{
                                         .status(400)
                                         .send({status:false, message:"ไม่สามารถหารายการโอนเงิน COD ได้"})
                             }
+                        refundAll.push(findTemplate)
                     }
-                refundAll = refundAll.concat(findPno, historyShop, profitOne, findTracking, findTemplate);
+                refundAll = refundAll.concat(findPno, historyShop, profitOne, findTracking);
 
                     for(const element of findPno.profitAll.slice(1)){//คืนเงินให้พาร์ทเนอร์ที่ทำการกระจาย(ไม่รวมตัวเอง)
                         if(element.id == 'ICE'){
@@ -622,7 +623,17 @@ cancelOrder = async (req, res)=>{
                                                 .status(400)
                                                 .send({status:false,message:"ไม่สามารถบันทึกกำไรคุณไอซ์ได้"})
                                 }
+                            const changStatusAdmin = await profitIce.findOneAndUpdate(
+                                {orderid: txlogisticid},
+                                {type:"ยกเลิกออเดอร์"},
+                                {new:true})
+                                if(!changStatusAdmin){
+                                    return res
+                                            .status(404)
+                                            .send({status:false, message:"ไม่สามารถค้นหาประวัติกำไรคุณไอซ์"})
+                                }
                             refundAll.push(refundAdmin)
+                            refundAll.push(changStatusAdmin)
                         }else{
                             const refund = await Partner.findOneAndUpdate(
                                 { _id: element.id },
@@ -658,6 +669,199 @@ cancelOrder = async (req, res)=>{
                 return res
                         .status(200)
                         .send({status:false, data:refundAll})
+        }
+        
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+cancelOrderAll = async (id, role, txlogisticid)=>{
+    try{
+        // const id = req.decoded.userid
+        // const role = req.decoded.role
+        // const txlogisticid = req.body.txlogisticid
+        const formData = {
+            "logistics_interface":{
+                "actiontype":"cancel",
+                "eccompanyid": ecom_id,
+                "customerid": customer_id,
+                "txlogisticid": txlogisticid,
+                "reason": "EZ"
+            },
+            "msg_type": "ORDERCANCEL",
+            "eccompanyid": ecom_id,
+        }
+        const findCancel = await orderAll.findOne({tracking_code:txlogisticid})
+            if(!findCancel){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txlogisticid ได้"})
+            }else if(findCancel.order_status == 'cancel'){
+                return res
+                        .status(200)
+                        .send({status:true, message:"ออเดอร์นี้ถูก Cancel ไปแล้ว"})
+            }
+        const newData = await generateJT(formData)
+            // console.log(newData)
+        const response = await axios.post(`${apiUrl}/order/cancel`,newData,{
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+            },
+        })
+            if(!response){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถใช้ได้"})
+            }
+        if(response.data.responseitems[0].success == 'false'){ //S12 = Cancel order interface, Order status is GOT can not cancel order
+                return res
+                        .status(400)
+                        .send({status:false, data:response.data, message:`ไม่สามารถทำการยกเลิกออเดอร์นี้ได้ (${response.data.responseitems[0].reason})`})
+        }else{
+                let refundAll = []
+                const findPno = await orderAll.findOneAndUpdate(
+                    {tracking_code:txlogisticid},
+                    {order_status:"cancel"},
+                    {new:true})
+                    if(!findPno){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Logisticid(J&T) หรืออัพเดทข้อมูลได้"})
+                    }
+
+                //SHOP Credit//
+                const findShop = await shopPartner.findOneAndUpdate(
+                            {_id:findPno.shop_id},
+                            { $inc: { credit: +findPno.cut_partner } },
+                            {new:true})
+                            if(!findShop){
+                                return res
+                                        .status(400)
+                                        .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+                                }
+                    let diff = findShop.credit - findPno.cut_partner
+                    let history = {
+                                shop_id: findShop._id,
+                                ID: id,
+                                role: role,
+                                shop_number: findPno.shop_number,
+                                orderid: txlogisticid,
+                                amount: findPno.cut_partner,
+                                before: diff,
+                                after: findShop.credit,
+                                type: 'J&T',
+                                remark: "ยกเลิกขนส่งสินค้า(J&T)"
+                        }
+                const historyShop = await historyWalletShop.create(history)
+                            if(!historyShop){
+                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                            }
+
+                //REFUND PARTNER//
+                let profitRefundTotal = findPno.profitAll[0].total + findPno.packing_price
+                const profitOne = await Partner.findOneAndUpdate(
+                        { _id: findShop.partnerID },
+                        { $inc: { 
+                                profit: -profitRefundTotal,
+                            }
+                        },
+                        {new:true, projection: { profit: 1  }})
+                        if(!profitOne){
+                                return res
+                                        .status(400)
+                                        .send({status:false,message:"ไม่สามารถค้นหาพาร์ทเนอร์และอัพเดทข้อมูลได้"})
+                        }
+                
+                const findTracking = await profitPartner.findOneAndUpdate(
+                    {
+                        wallet_owner : findShop.partnerID,
+                        orderid : txlogisticid
+                    },
+                    {
+                        status:"ยกเลิกออเดอร์"
+                    },
+                    {new:true})
+                    if(!findTracking){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
+                    }
+
+                // console.log(findTracking)
+                    if(findTracking.profitCOD != 0){
+                        let findTemplate = await profitTemplate.findOneAndUpdate(
+                            { orderid : txlogisticid},
+                            {
+                                status:"ยกเลิกออเดอร์"
+                            },{new:true, projection: { status: 1}})
+                            if(!findTemplate){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถหารายการโอนเงิน COD ได้"})
+                            }
+                        refundAll.push(findTemplate)
+                    }
+                refundAll = refundAll.concat(findPno, historyShop, profitOne, findTracking);
+
+                    for(const element of findPno.profitAll.slice(1)){//คืนเงินให้พาร์ทเนอร์ที่ทำการกระจาย(ไม่รวมตัวเอง)
+                        if(element.id == 'ICE'){
+                            const refundAdmin = await Admin.findOneAndUpdate(
+                                { username:'admin' },
+                                { $inc: { profit: -element.total } },
+                                {new:true, projection: { profit: 1 } })
+                                if(!refundAdmin){
+                                        return res
+                                                .status(400)
+                                                .send({status:false,message:"ไม่สามารถบันทึกกำไรคุณไอซ์ได้"})
+                                }
+                            const changStatusAdmin = await profitIce.findOneAndUpdate(
+                                {orderid: txlogisticid},
+                                {type:"ยกเลิกออเดอร์"},
+                                {new:true})
+                                if(!changStatusAdmin){
+                                    return res
+                                            .status(404)
+                                            .send({status:false, message:"ไม่สามารถค้นหาประวัติกำไรคุณไอซ์"})
+                                }
+                            refundAll.push(refundAdmin)
+                            refundAll.push(changStatusAdmin)
+                        }else{
+                            const refund = await Partner.findOneAndUpdate(
+                                { _id: element.id },
+                                { $inc: { 
+                                        profit: -element.total,
+                                        credits: -element.total,
+                                    }
+                                },{new:true, projection: { profit: 1, credits: 1  }})
+                                if(!refund){
+                                    return res
+                                            .status(404)
+                                            .send({status:false, message:"ไม่สามารถคืนเงินให้ พาร์ทเนอร์ได้"})
+                                }
+                            const findTracking = await profitPartner.findOneAndUpdate(
+                                {
+                                    wallet_owner : element.id,
+                                    orderid : txlogisticid
+                                },
+                                {
+                                    status:"ยกเลิกออเดอร์"
+                                },
+                                {new:true, projection: { status: 1  }})
+                                if(!findTracking){
+                                    return res
+                                            .status(400)
+                                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
+                                }
+                            refundAll.push(refund)
+                            refundAll.push(findTracking)
+                        }
+                    }
+                
+                return refundAll
         }
         
     }catch(err){
@@ -1941,4 +2145,4 @@ async function invoiceJNT(day) {
     return combinedData;
 }
 
-module.exports = {createOrder, trackingOrder, cancelOrder, label, priceList, getAll, getById, delend, getMeBooking, getPartnerBooking, getPartnerBooking}
+module.exports = {createOrder, trackingOrder, cancelOrder, cancelOrderAll, label, priceList, getAll, getById, delend, getMeBooking, getPartnerBooking, getPartnerBooking}

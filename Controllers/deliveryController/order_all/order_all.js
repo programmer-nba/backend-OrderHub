@@ -1,4 +1,5 @@
 const { orderAll } = require("../../../Models/Delivery/order_all");
+const { cancelOrderAll } = require("../J&T/J&T.controller");
 
 getAll = async(req, res)=>{
     try{
@@ -255,6 +256,7 @@ getCodeOrder = async(req, res)=>{
     try{
         const print_code = req.params.print_code
         const findOrder = await orderAll.find({print_code:print_code})
+        // console.log(findOrder)
             if(findOrder.length == 0){
                 return res
                         .status(400)
@@ -426,6 +428,40 @@ getOrderCancel = async(req, res)=>{
     }
 }
 
+cancelAll = async(req, res)=>{
+    try{
+        const id = req.decoded.userid
+        const role = req.decoded.role
+        const dayEnd = req.body.dayEnd
+        const txlogisticid = await orderAll.find({
+            order_status:"booking",
+            day_end: dayEnd
+        })
+            if(txlogisticid.length == 0){
+                return res
+                        .status(200)
+                        .send({status:true, data:[]})
+            }
+
+        let newData = await Promise.all(txlogisticid.map(async item => {
+            // console.log(item.express)
+            if(item.express == "J&T"){
+                let cancel = await cancelOrderAll(id, role, item.tracking_code);
+                // console.log(cancel)
+                return cancel
+            }
+        }));
+        // console.log(newData)
+        return res
+                .status(200)
+                .send({status:true, data:newData})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber() {
     try{
         let random = Math.floor(Math.random() * 1000000)
@@ -447,4 +483,4 @@ async function invoiceNumber() {
     }
 }
 
-module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel }
+module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll }
