@@ -71,7 +71,7 @@ async function checkAdmin(req, res){
                             lastname: Admin.lastname,
                             role: Admin.role
                         }
-                        const token = jwt.sign(payload, secretKey, { expiresIn: '3h'})
+                        const token = jwt.sign(payload, secretKey, { expiresIn: 60 * 1000 })
                         return res
                                 .status(200)
                                 .send({status:true,
