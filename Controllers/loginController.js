@@ -26,7 +26,7 @@ loginController = async(req,res) =>{
                             role: Partner.role,
                             status: Partner.status_partner
                         }
-                        const token = jwt.sign(payload, secretKey, { expiresIn: '3h'})
+                        const token = jwt.sign(payload, secretKey, { expiresIn: 60 * 1000})
                         return res
                                 .status(200)
                                 .send({status:true,
@@ -118,7 +118,7 @@ async function checkShopMember(req, res){
                             shop_number: memberShop.shop_number,
                             role: memberShop.role
                         }
-                        const token = jwt.sign(payload, secretKey, { expiresIn: '3h'})
+                        const token = jwt.sign(payload, secretKey, { expiresIn: 60 * 1000})
                         return res
                                 .status(200)
                                 .send({status:true,

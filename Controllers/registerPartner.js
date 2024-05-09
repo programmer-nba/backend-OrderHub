@@ -167,17 +167,37 @@ getAllPartner = async (req,res)=>{
 getPartnerByID = async (req,res)=>{//การทำ GET ME โดยใช้การ decoded จาก token
     try{
         const getid = req.decoded.userid
-        console.log(getid)
-        const findId = await Partner.findById(getid)
-        if(findId){
-            return res 
-                    .status(200)
-                    .send({ status: true, data: findId})
+        const role = req.decoded.role
+        let findId
+        if(role == 'admin'){
+          findId = await Admin.findById(getid)
+            if(!findId){
+              return res
+                      .status(404)
+                      .send({status:false, message:"ไม่สามารถ Get me (Admin) ได้"})
+            }
+        }else if(role == 'partner'){
+          findId = await Partner.findById(getid)
+            if(!findId){
+              return res
+                      .status(404)
+                      .send({status:false, message:"ไม่สามารถ Get me (Partner) ได้"})
+            }
+        }else if(role == 'shop_member'){
+          findId = await memberShop.findById(getid)
+            if(!findId){
+              return res
+                      .status(404)
+                      .send({status:false, message:"ไม่สามารถ Get me (Shop_member) ได้"})
+            }
         }else{
-            return res
-                    .status(400)
-                    .send({ status: false, message: "ดึงข้อมูลไม่สำเร็จ"})
+          return res
+                  .status(404)
+                  .send({status:false, message:"ไม่พบท่านในระบบ"})
         }
+        return res
+                .status(200)
+                .send({status:true, data:findId})
     }catch(err){
         console.log(err);
         return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
