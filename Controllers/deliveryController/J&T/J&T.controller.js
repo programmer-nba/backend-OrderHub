@@ -417,19 +417,28 @@ trackingOrder = async (req, res)=>{
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
             }})
-            if(!response){
+            if(response.data.responseitems == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
                 return res
                         .status(404)
-                        .send({status:false, message:"ไม่สามารถใช้ได้"})
+                        .send({
+                            status:false, 
+                            message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T",
+                            data: response.data
+                        })
             }
-        // return res
-        //         .status(200)
-        //         .send({status:true, data:response.data})
+
         let detailBulk = []
         let codBulk = []
         const detail = response.data.responseitems[0].tracesList
+        // console.log(detail)
         const detailMap = detail.map(item =>{
+            // console.log(item)
+                if(item == null){
+                    return
+                }
             const latestDetails = item.details[item.details.length - 1];
+
+            // console.log(latestDetails)
             let scantype
                 if(latestDetails.scantype == 'Picked Up'){
                     scantype = 'รับพัสดุแล้ว'
