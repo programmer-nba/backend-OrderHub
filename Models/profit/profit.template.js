@@ -39,6 +39,7 @@ const profitTemplateSchema = new Schema({
             return currentTime;
         }
     },
+    day_sign: {type:String, default: "", require:false},
 },{timestamps:true});
 
 const profitTemplate = mongoose.model("profit_template", profitTemplateSchema);

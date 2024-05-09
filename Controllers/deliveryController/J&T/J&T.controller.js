@@ -412,11 +412,12 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
             }})
+        // console.log(response)
             if(response.data.responseitems == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
                 return res
                         .status(404)
@@ -485,6 +486,116 @@ trackingOrder = async (req, res)=>{
                     detailBulk: bulkDetail,
                     codBulk:bulkCod
                 })
+    }catch(err){
+        console.log(err)
+        return res
+                .status(200)
+                .send({status:true, data:[]})
+    }
+}
+
+trackingOrderTest = async (req, res)=>{
+    try{
+        while (txlogisticids.length > 0) { // ทำการวนลูปจนกว่าจะหมดข้อมูลใน txlogisticids
+            const currentBatch = txlogisticids.splice(0, 19); // ดึงข้อมูลจำนวน 20 รายการออกมาในแต่ละรอบ
+            const formData = {
+                "logistics_interface":{
+                    "billcode": txlogisticid,
+                    "querytype":"2",
+                    "lang":"en",
+                    "customerid":customer_id
+                },
+                "msg_type": "TRACKQUERY",
+                "eccompanyid": ecom_id,
+            }
+            let apiUrlQuery = process.env.JT_URL_QUERY
+            // console.log(apiUrlQuery)
+            const newData = await generateJT(formData)
+                // console.log(newData)
+            const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                }})
+            // console.log(response)
+                if(response.data.responseitems == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
+                    return res
+                            .status(404)
+                            .send({
+                                status:false, 
+                                message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T",
+                                data: response.data
+                            })
+                }
+            // const response = await axios.post(
+            //     `${import.meta.env.VITE_VUE_APP_ORDERHUB}/JT/tracking`,
+            //     { txlogisticid: currentBatch.join(",") },
+            //     {
+            //         headers: {
+            //             "auth-token": localStorage.getItem('token'),
+            //         },
+            //     }
+            // );
+            let detailBulk = []
+            let codBulk = []
+            const detail = response.data.responseitems[0].tracesList
+            // console.log(detail)
+            const detailMap = detail.map(item =>{
+                // console.log(item)
+                    if(item == null){
+                        return
+                    }
+                const latestDetails = item.details[item.details.length - 1];
+    
+                // console.log(latestDetails)
+                let scantype
+                    if(latestDetails.scantype == 'Picked Up'){
+                        scantype = 'รับพัสดุแล้ว'
+                    }else if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
+                        scantype = 'ระหว่างการจัดส่ง'
+                    }else if(latestDetails.scantype == 'Signature'){
+                        scantype = 'เซ็นรับแล้ว'
+                    }else if(latestDetails.scantype == 'Return'){
+                        scantype = 'พัสดุตีกลับ'
+                    }else if(latestDetails.scantype == 'Problematic'){
+                        scantype = 'พัสดุมีปัญหา'
+                    }else{
+                        return;
+                    }
+                let changStatus = {
+                    updateOne: {
+                        filter: { mailno: item.billcode },
+                        update: { 
+                            $set: {
+                                order_status:scantype
+                            }
+                        }
+                    }
+                }
+                let changStatusCod = {
+                    updateOne: {
+                        filter: { 'template.partner_number': item.billcode },
+                        update: { 
+                            $set: {
+                                status:scantype
+                            }
+                        }
+                    }
+                }
+                detailBulk.push(changStatus)
+                codBulk.push(changStatusCod)
+            })
+            const bulkDetail = await orderAll.bulkWrite(detailBulk)
+            const bulkCod = await profitTemplate.bulkWrite(codBulk)
+        }
+
+        // return res
+        //         .status(200)
+        //         .send({status:true, 
+        //             data: response.data,
+        //             detailBulk: bulkDetail,
+        //             codBulk:bulkCod
+        //         })
     }catch(err){
         console.log(err)
         return res
@@ -2154,4 +2265,4 @@ async function invoiceJNT(day) {
     return combinedData;
 }
 
-module.exports = {createOrder, trackingOrder, cancelOrder, cancelOrderAll, label, priceList, getAll, getById, delend, getMeBooking, getPartnerBooking, getPartnerBooking}
+module.exports = {createOrder, trackingOrder, cancelOrder, cancelOrderAll, label, priceList, getAll, getById, delend, getMeBooking, getPartnerBooking, getPartnerBooking, trackingOrderTest}

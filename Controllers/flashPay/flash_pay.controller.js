@@ -67,7 +67,7 @@ QRCreate = async (req, res)=>{
         }
         const newData = await generateSign_FP(fromData)
         const formDataOnly = newData.newSortData
-             console.log(formDataOnly)
+            //  console.log(formDataOnly)
         const response = await axios.post(`${apiUrl}/upay/create-qrcode-payment`, formDataOnly, {
             headers: {
                     'Content-Type': 'application/json',
