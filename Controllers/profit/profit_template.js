@@ -262,6 +262,40 @@ calCod = async(req, res)=>{ //เช็คจำนวนผู้เซ็น�
     }
 }
 
+getSignDay = async(req, res)=>{
+    try{
+        const day = req.body.day
+        const status = req.body.status
+        const findTemplate = await profitTemplate.find({status:status, day_sign:day})
+            if(findTemplate.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:`ไม่พบข้อมูลการเซ็นรับในที่ ${day}`})
+            }
+        const totalAmount = findTemplate.reduce((accumulator, currentItem) =>{
+            // ตรวจสอบว่า currentItem.template.amount มีค่าหรือไม่
+            if (currentItem.template && currentItem.template.amount) {
+                // ถ้ามีให้เพิ่มค่า amount เข้ากับ accumulator
+                return accumulator + currentItem.template.amount;
+            } else {
+                // ถ้าไม่มีให้คืนค่าเดิมของ accumulator
+                return accumulator;
+            }
+        }, 0)
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    length:findTemplate.length,
+                    total: totalAmount,
+                    data:findTemplate})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 1000000)
@@ -281,4 +315,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod }
+module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod }
