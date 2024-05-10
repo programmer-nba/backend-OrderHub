@@ -508,7 +508,7 @@ trackingOrder = async (req, res)=>{
 
 trackingOrderTest = async (req, res)=>{
     try{
-        const findTxids = await profitTemplate.find({ status:"เซ็นรับแล้ว", day_sign:"" })
+        const findTxids = await profitTemplate.find({ status:"เซ็นรับแล้ว" })
             if(findTxids.length == 0){
                 return res
                         .status(404)

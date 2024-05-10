@@ -224,6 +224,44 @@ changStatus = async (req, res)=>{
     }
 }
 
+calCod = async(req, res)=>{ //เช็คจำนวนผู้เซ็นรับแล้ว กับ excel ของ J&T ที่คุณไอซ์ได้รับมา
+    try{
+        const data = [] //ใส่ รหัส order ของ J&T ทั้งหมดใน excel ที่เป็นรหัสร้านเรา โดยเอามาจากการแปลงเป็น JSON จากเว็ป https://jsoneditoronline.org/#right=local.reqiza&left=local.xocoru
+        let findThere = [];
+            console.log(data.length);
+            try {
+                const newData = await Promise.all(data.map(async item => {
+                    try {
+                        const findByOrderid = await profitTemplate.findOne({ orderid: item });
+                        if (!findByOrderid) {
+                            console.log(item);
+                            return item;
+                        } else {
+                            // console.log(findByOrderid);
+                            findThere.push(findByOrderid);
+                        }
+                    } catch (error) {
+                        // Handle error here
+                        console.error("Error occurred:", error);
+                        throw error;
+                    }
+                }));
+            
+                // รอให้ Promise.all() เสร็จสิ้นและทำการประมวลผลข้อมูลต่อไป
+                console.log(findThere.length);
+                return res.status(200).send({ status: false, data: findThere });
+            } catch (error) {
+                // Handle error here
+                console.error("Error occurred:", error);
+                return res.status(500).send({ error: "Internal Server Error" });
+            }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 1000000)
@@ -243,4 +281,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, getSumForMe, Withdrawal, changStatus, getCod }
+module.exports = { getAll, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod }

@@ -138,6 +138,7 @@ router.route('/orderhub/JT/getme').get( auth.checkToken, JT.getMeBooking )
 router.route('/orderhub/JT/getById/:txlogisticid').get( auth.checkToken, JT.getById )
 // router.route('/orderhub/JT/tracking/test').post( auth.checkToken,JT.trackingOrderTest )
 
+
 //J&T Admin
 router.route('/orderhub/JT/getAll').get( authAdmin.checkToken, JT.getAll )
 router.route('/orderhub/JT/getOne/:txlogisticid').get( authAdmin.checkToken, JT.getById )
@@ -184,11 +185,12 @@ router.route('/orderhub/best/del/:txLogisticId').delete( authAdmin.checkToken, b
 router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.getPartnerBooking )
 
 //profit partner
-const profitPN = require('../Controllers/profit/withdrawal_partner')
+const profitPN = require('../Controllers/profit/profit_template')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
 router.route('/orderhub/profitPartner/Withdrawal/:id').post( auth.checkToken, profitPN.Withdrawal )
 router.route('/orderhub/profitPartner/chang/wait').put( authAdmin.checkToken, profitPN.changStatus )
 router.route('/orderhub/profitPartner/get/cod').post( authAdmin.checkToken, profitPN.getCod )
+// router.route('/orderhub/profitPartner/check/cod').get( auth.checkToken, profitPN.calCod )
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')
@@ -252,6 +254,7 @@ router.route('/orderhub/orderall/get/code/:print_code').post( auth.checkToken, o
 router.route('/orderhub/orderall/get/order/date').post( auth.checkToken, orderAll.getOrderByDate )
 router.route('/orderhub/orderall/get/order/status').post( auth.checkToken, orderAll.getOrderStatus )
 router.route('/orderhub/orderall/cancel/order/all').post( auth.checkToken, orderAll.cancelAll )
+
 
 //insured
 const insured = require('../Controllers/deliveryController/Insured/insuredFee')

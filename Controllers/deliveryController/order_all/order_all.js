@@ -1,4 +1,5 @@
 const { orderAll } = require("../../../Models/Delivery/order_all");
+const { profitTemplate } = require("../../../Models/profit/profit.template");
 const { cancelOrderAll } = require("../J&T/J&T.controller");
 
 getAll = async(req, res)=>{
@@ -407,7 +408,8 @@ getOrderStatus = async(req, res)=>{
             $or: [
                 { order_status: "booking" },
                 { order_status: "รับพัสดุแล้ว" },
-                { order_status: "ระหว่างการจัดส่ง" }
+                { order_status: "ระหว่างการจัดส่ง" },
+                { order_status: "พัสดุมีปัญหา" }
               ]
         })
             if(findOrder.length == 0){
