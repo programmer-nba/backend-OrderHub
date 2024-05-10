@@ -63,6 +63,7 @@ const orderAllSchema = new Schema({
                     return dayjs().tz('Asia/Bangkok').add(7, 'day').format('YYYY-MM-DD');
                 }
         },
+        day_sign: {type : String, default: "", required : false},
         profitAll: {type: Array, required: false}
 },{timestamps:true})
 

@@ -412,7 +412,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -441,12 +441,21 @@ trackingOrder = async (req, res)=>{
 
             // console.log(latestDetails)
             let scantype
+            let day_pay = ""
+            let day_sign = ""
                 if(latestDetails.scantype == 'Picked Up'){
                     scantype = 'รับพัสดุแล้ว'
                 }else if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
                     scantype = 'ระหว่างการจัดส่ง'
                 }else if(latestDetails.scantype == 'Signature'){
+
                     scantype = 'เซ็นรับแล้ว'
+
+                    let datePart = latestDetails.scantime.substring(0, 10);
+                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    day_sign = datePart
+                    day_pay = newDate
+
                 }else if(latestDetails.scantype == 'Return'){
                     scantype = 'พัสดุตีกลับ'
                 }else if(latestDetails.scantype == 'Problematic'){
@@ -459,7 +468,8 @@ trackingOrder = async (req, res)=>{
                     filter: { mailno: item.billcode },
                     update: { 
                         $set: {
-                            order_status:scantype
+                            order_status:scantype,
+                            day_sign: day_sign,
                         }
                     }
                 }
@@ -469,7 +479,9 @@ trackingOrder = async (req, res)=>{
                     filter: { 'template.partner_number': item.billcode },
                     update: { 
                         $set: {
-                            status:scantype
+                            status:scantype,
+                            day_sign: day_sign,
+                            day_pay: day_pay
                         }
                     }
                 }
@@ -496,117 +508,122 @@ trackingOrder = async (req, res)=>{
 
 trackingOrderTest = async (req, res)=>{
     try{
-        const findTxids = await profitTemplate.find({status:"เซ็นรับแล้ว"})
+        const findTxids = await profitTemplate.find({ status:"เซ็นรับแล้ว", day_sign:"" })
             if(findTxids.length == 0){
                 return res
                         .status(404)
                         .send({status:false, message:"ไม่พบข้อมูลในระบบ"})
             }
-        let txlogisticids = findTxids.map(item => { item.orderid })
+        let txlogisticids = findTxids.map(item => item.orderid )
+        console.log(txlogisticids.length)
+
+        let detailBulk = []
+        let codBulk = []
+
         // console.log(txlogisticids)
+        while (txlogisticids.length > 0) { // ทำการวนลูปจนกว่าจะหมดข้อมูลใน txlogisticids
+            const currentBatch = txlogisticids.splice(0, 19); // ดึงข้อมูลจำนวน 20 รายการออกมาในแต่ละรอบ
+            // console.log(currentBatch.join(","))
+            const formData = {
+                "logistics_interface":{
+                    "billcode": currentBatch.join(","),
+                    "querytype":"2",
+                    "lang":"en",
+                    "customerid":customer_id
+                },
+                "msg_type": "TRACKQUERY",
+                "eccompanyid": ecom_id,
+            }
+            let apiUrlQuery = process.env.JT_URL_QUERY
+            // console.log(apiUrlQuery)
+            const newData = await generateJT(formData)
+                // console.log(newData)
+            const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                }})
+            // console.log(response)
+                if(response.data.responseitems == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
+                    return res
+                            .status(404)
+                            .send({
+                                status:false, 
+                                message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T",
+                                data: response.data
+                            })
+                }
+
+            const detail = response.data.responseitems[0].tracesList
+           
+            const detailMap = detail.map(item =>{
+                // console.log(item)
+                    if(item == null){
+                        return
+                    }
+                const latestDetails = item.details[item.details.length - 1];
+    
+                // console.log(latestDetails)
+                let day_pay = ""
+                let day_sign = ""
+                let scantype
+                    if(latestDetails.scantype == 'Picked Up'){
+                        scantype = 'รับพัสดุแล้ว'
+                    }else if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
+                        scantype = 'ระหว่างการจัดส่ง'
+                    }else if(latestDetails.scantype == 'Signature'){
+
+                        scantype = 'เซ็นรับแล้ว'
+
+                        let datePart = latestDetails.scantime.substring(0, 10);
+                        let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                        day_sign = datePart
+                        day_pay = newDate
+                        
+                    }else if(latestDetails.scantype == 'Return'){
+                        scantype = 'พัสดุตีกลับ'
+                    }else if(latestDetails.scantype == 'Problematic'){
+                        scantype = 'พัสดุมีปัญหา'
+                    }else{
+                        return;
+                    }
+                let changStatus = {
+                    updateOne: {
+                        filter: { mailno: item.billcode },
+                        update: { 
+                            $set: {
+                                order_status:scantype,
+                                day_sign: day_sign,
+                            }
+                        }
+                    }
+                }
+                let changStatusCod = {
+                    updateOne: {
+                        filter: { 'template.partner_number': item.billcode },
+                        update: { 
+                            $set: {
+                                status:scantype,
+                                day_sign: day_sign,
+                                day_pay: day_pay
+                            }
+                        }
+                    }
+                }
+                detailBulk.push(changStatus)
+                codBulk.push(changStatusCod)
+            })
+        }
+
+        let bulkDetail = await orderAll.bulkWrite(detailBulk)
+        let bulkCod = await profitTemplate.bulkWrite(codBulk)
+        // console.log(day_sign.length)
         return res
                 .status(200)
-                .send({status:false, data:txlogisticids})
-        // while (txlogisticids.length > 0) { // ทำการวนลูปจนกว่าจะหมดข้อมูลใน txlogisticids
-        //     const currentBatch = txlogisticids.splice(0, 19); // ดึงข้อมูลจำนวน 20 รายการออกมาในแต่ละรอบ
-        //     const formData = {
-        //         "logistics_interface":{
-        //             "billcode": currentBatch,
-        //             "querytype":"2",
-        //             "lang":"en",
-        //             "customerid":customer_id
-        //         },
-        //         "msg_type": "TRACKQUERY",
-        //         "eccompanyid": ecom_id,
-        //     }
-        //     let apiUrlQuery = process.env.JT_URL_QUERY
-        //     // console.log(apiUrlQuery)
-        //     const newData = await generateJT(formData)
-        //         // console.log(newData)
-        //     const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
-        //         headers: {
-        //             'Content-Type': 'application/x-www-form-urlencoded',
-        //             'Accept': 'application/json',
-        //         }})
-        //     // console.log(response)
-        //         if(response.data.responseitems == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
-        //             return res
-        //                     .status(404)
-        //                     .send({
-        //                         status:false, 
-        //                         message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T",
-        //                         data: response.data
-        //                     })
-        //         }
-        //     // const response = await axios.post(
-        //     //     `${import.meta.env.VITE_VUE_APP_ORDERHUB}/JT/tracking`,
-        //     //     { txlogisticid: currentBatch.join(",") },
-        //     //     {
-        //     //         headers: {
-        //     //             "auth-token": localStorage.getItem('token'),
-        //     //         },
-        //     //     }
-        //     // );
-        //     let detailBulk = []
-        //     let codBulk = []
-        //     const detail = response.data.responseitems[0].tracesList
-        //     // console.log(detail)
-        //     const detailMap = detail.map(item =>{
-        //         // console.log(item)
-        //             if(item == null){
-        //                 return
-        //             }
-        //         const latestDetails = item.details[item.details.length - 1];
-    
-        //         // console.log(latestDetails)
-        //         let scantype
-        //             if(latestDetails.scantype == 'Picked Up'){
-        //                 scantype = 'รับพัสดุแล้ว'
-        //             }else if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
-        //                 scantype = 'ระหว่างการจัดส่ง'
-        //             }else if(latestDetails.scantype == 'Signature'){
-        //                 scantype = 'เซ็นรับแล้ว'
-        //             }else if(latestDetails.scantype == 'Return'){
-        //                 scantype = 'พัสดุตีกลับ'
-        //             }else if(latestDetails.scantype == 'Problematic'){
-        //                 scantype = 'พัสดุมีปัญหา'
-        //             }else{
-        //                 return;
-        //             }
-        //         let changStatus = {
-        //             updateOne: {
-        //                 filter: { mailno: item.billcode },
-        //                 update: { 
-        //                     $set: {
-        //                         order_status:scantype
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         let changStatusCod = {
-        //             updateOne: {
-        //                 filter: { 'template.partner_number': item.billcode },
-        //                 update: { 
-        //                     $set: {
-        //                         status:scantype
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         detailBulk.push(changStatus)
-        //         codBulk.push(changStatusCod)
-        //     })
-        //     const bulkDetail = await orderAll.bulkWrite(detailBulk)
-        //     const bulkCod = await profitTemplate.bulkWrite(codBulk)
-        // }
-
-        // return res
-        //         .status(200)
-        //         .send({status:true, 
-        //             data: response.data,
-        //             detailBulk: bulkDetail,
-        //             codBulk:bulkCod
-        //         })
+                .send({status:true, 
+                    detailBulk: bulkDetail,
+                    codBulk:bulkCod
+                })
     }catch(err){
         console.log(err)
         return res
