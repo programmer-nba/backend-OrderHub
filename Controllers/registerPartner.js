@@ -246,7 +246,12 @@ upPartnerByID = async (req,res)=>{
       } else { //กรณีที่ได้ยิง password
           const salt = await bcrypt.genSalt(Number(process.env.SALT));
           const hashPassword = await bcrypt.hash(req.body.password, salt);
-          const updatePartner = await Partner.findByIdAndUpdate(upID, {...req.body,password: hashPassword}, {new:true}); //หา id ที่ต้องการจากนั้นทำการอัพเดท
+          const updatePartner = await Partner.findByIdAndUpdate(
+            upID, 
+            {
+              ...req.body,
+              password: hashPassword
+            }, {new:true}); //หา id ที่ต้องการจากนั้นทำการอัพเดท
         if(updatePartner){
           return res
             .status(200)

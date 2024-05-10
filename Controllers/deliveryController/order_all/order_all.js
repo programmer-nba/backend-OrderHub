@@ -181,7 +181,7 @@ getOrderMeAll = async(req, res)=>{
                             .status(200)
                             .send({status:true, data:findOrderID})
             }
-        }else{
+        }else if(orderer_id){
             if(express){
                 const findOrderID = await orderAll.find(
                     {
@@ -210,6 +210,25 @@ getOrderMeAll = async(req, res)=>{
                     return res
                             .status(200)
                             .send({status:true, data:findOrderID})
+            }
+        }else{
+            if(express){
+                const findOrderID = await orderAll.find(
+                    {
+                        express:express
+                    })
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีออเดอร์ของท่านในระบบ"})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }else{
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูลที่ท่านต้องการ"})
             }
         }
     }catch(err){

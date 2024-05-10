@@ -83,7 +83,6 @@ partnerSchema.pre('save',async function(next){   //ทำ Middleware การ H
           }
           // กำหนดหมายเลขให้กับ partnerNumber
           user.partnerNumber = randomShopNumber;
-
           try {
               // ทำการ hash password โดย bcrypt
               const hash = await bcrypt.hash(user.password, 10);

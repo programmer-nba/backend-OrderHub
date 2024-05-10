@@ -40,6 +40,7 @@ const profitTemplateSchema = new Schema({
         }
     },
     day_sign: {type:String, default: "", require:false},
+    day_pay: {type:String, default: "", require:false},
 },{timestamps:true});
 
 const profitTemplate = mongoose.model("profit_template", profitTemplateSchema);
