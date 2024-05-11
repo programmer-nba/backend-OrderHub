@@ -199,23 +199,36 @@ changStatus = async (req, res)=>{
         const orderids = req.body.orderid
         const status = req.body.status
         const code = await invoiceNumber(dayTime)
-        let orderBulk = orderids.map(item=>({
-            updateOne:{
-                filter:{ orderid : item },
-                update: { 
-                    $set: {
-                        status:status,
+
+        // ตรวจสอบว่าทุก orderid มี status เป็น "เซ็นรับแล้ว" หรือไม่
+        const allSigned = !orderids.some(async item => {
+            const order = await profitTemplate.findOne({ orderid: item });
+            return !order && order.status != "เซ็นรับแล้ว";
+        });
+
+        if (allSigned) {
+            let orderBulk = orderids.map(item=>({
+                updateOne:{
+                    filter:{ orderid : item },
+                    update: { 
+                        $set: {
+                            status:status,
+                            code:code
+                        }
+                }
+            }}))
+            const bulkOrder = await profitTemplate.bulkWrite(orderBulk)
+            return res
+                    .status(200)
+                    .send({status:true, 
+                        data:bulkOrder,
                         code:code
-                    }
-            }
-        }}))
-        const bulkOrder = await profitTemplate.bulkWrite(orderBulk)
-        return res
-                .status(200)
-                .send({status:true, 
-                    data:bulkOrder,
-                    code:code
-                })
+                    })
+        }else{
+            return res
+                    .status(400)
+                    .send({status:false, message:"ออเดอร์ของท่านยังไม่ได้รับการเซ็นรับ"})
+        }
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res  

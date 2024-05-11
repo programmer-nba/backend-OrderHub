@@ -1102,31 +1102,31 @@ priceList = async (req, res)=>{
 
             const tel = formData.from.tel;
 
-            // // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
-            // const regexWord = /^\d+$/;
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
 
-            //     // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
-            //     if (!regexWord.test(tel)) {
-            //         return res
-            //                     .status(400)
-            //                     .send({
-            //                         status:false, 
-            //                         type:"sender",
-            //                         message:"กรุณาอย่ากรอกเบอร์โทร ผู้ส่ง โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
-            //     }
+                // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+                if (!regexWord.test(tel)) {
+                    return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"sender",
+                                    message:"กรุณาอย่ากรอกเบอร์โทร ผู้ส่ง โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+                }
             
-            // // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
-            // const regex = /^(00|01)/;
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
                 
-            //     if (regex.test(tel) || tel.length < 9) {
-            //         // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
-            //         return res
-            //                 .status(400)
-            //                 .send({
-            //                     status:false, 
-            //                     type:"sender",
-            //                     message:"กรุณากรอกเบอร์โทร ผู้ส่ง ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
-            //     }
+                if (regex.test(tel) || tel.length < 9) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"sender",
+                                message:"กรุณากรอกเบอร์โทร ผู้ส่ง ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
 
             // console.log(data)
             let isValid = false;
@@ -1187,31 +1187,31 @@ priceList = async (req, res)=>{
 
             const telTo = formData.to.tel;
             
-            // // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
-            // const regexWord = /^\d+$/;
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
 
-            //     // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
-            //     if (!regexWord.test(telTo)) {
-            //         return res
-            //                     .status(400)
-            //                     .send({
-            //                         status:false, 
-            //                         type:"receive",
-            //                         message:"กรุณาอย่ากรอกเบอร์โทร ผู้รับ โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
-            //     }
+                // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+                if (!regexWord.test(telTo)) {
+                    return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"receive",
+                                    message:"กรุณาอย่ากรอกเบอร์โทร ผู้รับ โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+                }
             
-            // // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
-            // const regex = /^(00|01)/;
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
                 
-            //     if (regex.test(telTo) || telTo.length < 9) {
-            //         // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
-            //         return res
-            //                 .status(400)
-            //                 .send({
-            //                     status:false, 
-            //                     type:"receive",
-            //                     message:"กรุณากรอกเบอร์โทร ผู้รับ ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
-            //     }
+                if (regex.test(telTo) || telTo.length < 9) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"receive",
+                                message:"กรุณากรอกเบอร์โทร ผู้รับ ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
 
             // console.log(data)
             let isValid = false;
