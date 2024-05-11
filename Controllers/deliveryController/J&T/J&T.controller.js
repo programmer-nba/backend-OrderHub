@@ -139,7 +139,7 @@ createOrder = async (req, res)=>{
             }else if(response.data.responseitems[0].reason == "B0101"){
                 return res
                         .status(404)
-                        .send({status:false, message:"กรุณาใส่หมายเลขโทรศัพท์ให้ถูกต้อง(10 หลัก)"})
+                        .send({status:false, message:"ผู้ส่งกรุณาใส่หมายเลขโทรศัพท์ให้ถูกต้อง(10 หลัก) และ ห้ามตั้งเบอร์ขึ้นต้นด้วย 00 หรือ 01"})
             }else if(response.data.responseitems[0].success == 'false'){
                 return res
                         .status(404)
@@ -1099,6 +1099,35 @@ priceList = async (req, res)=>{
                             .status(404)
                             .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
                 }
+
+            const tel = formData.from.tel;
+
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
+
+            // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            if (!regexWord.test(tel)) {
+                return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"sender",
+                                message:"กรุณาอย่ากรอกเบอร์โทร ผู้ส่ง โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+            }
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
+                
+                if (regex.test(tel) || tel.length < 9) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"sender",
+                                message:"กรุณากรอกเบอร์โทร ผู้ส่ง ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
+
             // console.log(data)
             let isValid = false;
             let errorMessage = 'ผู้ส่ง:';
@@ -1155,6 +1184,35 @@ priceList = async (req, res)=>{
                             .status(404)
                             .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
                 }
+
+            const telTo = formData.to.tel;
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
+
+            // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            if (!regexWord.test(telTo)) {
+                return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"receive",
+                                message:"กรุณาอย่ากรอกเบอร์โทร ผู้รับ โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+            }
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
+                
+                if (regex.test(telTo) || telTo.length < 9) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"receive",
+                                message:"กรุณากรอกเบอร์โทร ผู้รับ ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
+
             // console.log(data)
             let isValid = false;
             let errorMessage = 'ผู้รับ:';
@@ -1198,7 +1256,7 @@ priceList = async (req, res)=>{
             if (!isValid) {
                 return res
                         .status(400)
-                        .send({staus:false, message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+                        .send({staus:false, type:"receive", message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
             } 
         }catch(err){
             console.log(err)
