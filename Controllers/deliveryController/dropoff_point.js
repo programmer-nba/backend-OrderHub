@@ -166,8 +166,9 @@ getSenderAll = async (req, res)=>{
 
 getOneSender = async (req, res)=>{
     try{
-        const id = req.params.id
-        const findOneSender = await dropOffs.findOne({_id:id ,status:"ผู้ส่ง"})
+        const shop_number = req.body.shop_number
+        const tel = req.body.tel
+        const findOneSender = await dropOffs.findOne({tel:tel, shop_id:shop_number ,status:"ผู้ส่ง"})
             if(!findOneSender){
                 return res
                         .status(400)
