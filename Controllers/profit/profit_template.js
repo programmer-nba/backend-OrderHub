@@ -317,30 +317,30 @@ getDayPay = async(req, res)=>{
         const day = req.body.day
         const partner_id = req.body.partner_id
         if(partner_id){
-            const data = await profitTemplate.find({
-                owner_id: partner_id, 
-                day_sign: { $regex: new RegExp('^' + day) }
-            })
-                if(data.length == 0){
-                    return res
-                            .status(200)
-                            .send({status:true, message:[]})
-                }
-            return res
-                    .status(200)
-                    .send({status:true, data: data})
+                const data = await profitTemplate.find({
+                    owner_id: partner_id, 
+                    day_sign: { $regex: new RegExp('^' + day) }
+                })
+                    if(data.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, message:[]})
+                    }
+                return res
+                        .status(200)
+                        .send({status:true, data: data})
         }else{
-            const data = await profitTemplate.find({ 
-                day_sign: { $regex: new RegExp('^' + day) }
-            })
-                if(data.length == 0){
-                    return res
-                            .status(200)
-                            .send({status:true, message:[]})
-                }
-            return res
-                    .status(200)
-                    .send({status:true, data: data})
+                const data = await profitTemplate.find({ 
+                    day_sign: { $regex: new RegExp('^' + day) }
+                })
+                    if(data.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, message:[]})
+                    }
+                return res
+                        .status(200)
+                        .send({status:true, data: data})
         }
     }catch(err){
         return res  

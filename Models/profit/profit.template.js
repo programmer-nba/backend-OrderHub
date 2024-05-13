@@ -31,6 +31,7 @@ const profitTemplateSchema = new Schema({
     },
     status: {type:String, default: "รอดำเนินการ", require:false},
     code: {type:String, default: "", require:false},
+    express: {type:String, default: "", require:false},
     day: {
         type: String,
         required: false,

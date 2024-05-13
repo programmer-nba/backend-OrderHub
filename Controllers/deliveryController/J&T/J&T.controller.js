@@ -367,7 +367,8 @@ createOrder = async (req, res)=>{
                     'template.amount':cod_amount,
                     'template.phone_number': updatedDocument.tel,
                     'template.email':updatedDocument.email,
-                    status:"รอรถเข้ารับ"
+                    status:"รอรถเข้ารับ",
+                    express: "J&T"
             }
             createTemplate = await profitTemplate.create(pfSenderTemplate)
                 if(!createTemplate){
@@ -412,7 +413,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -1118,7 +1119,7 @@ priceList = async (req, res)=>{
             // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
             const regex = /^(00|01)/;
                 
-                if (regex.test(tel) || tel.length < 9) {
+                if (regex.test(tel) || tel.length < 10) {
                     // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
                     return res
                             .status(400)
@@ -1203,7 +1204,7 @@ priceList = async (req, res)=>{
             // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
             const regex = /^(00|01)/;
                 
-                if (regex.test(telTo) || telTo.length < 9) {
+                if (regex.test(telTo) || telTo.length < 10) {
                     // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
                     return res
                             .status(400)

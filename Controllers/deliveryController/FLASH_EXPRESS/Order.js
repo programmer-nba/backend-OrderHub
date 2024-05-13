@@ -344,7 +344,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     'template.amount':cod_integer,
                     'template.phone_number': updatedDocument.tel,
                     'template.email':updatedDocument.email,
-                    status:"รอรถเข้ารับ"
+                    status:"รอรถเข้ารับ",
+                    express: "FLASH"
             }
             createTemplate = await profitTemplate.create(pfSenderTemplate)
                 if(!createTemplate){
