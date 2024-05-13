@@ -319,32 +319,24 @@ getDayPay = async(req, res)=>{
         if(partner_id){
             const data = await profitTemplate.find({
                 owner_id: partner_id, 
-                day: { $regex: new RegExp('^' + day) },
-                $or: [
-                    { status: "โอนสำเร็จ" },
-                    { status: "เซ็นรับแล้ว" }
-                ]
+                day_sign: { $regex: new RegExp('^' + day) }
             })
                 if(data.length == 0){
                     return res
-                            .status(404)
-                            .send({status:false, message:"ไม่พบข้อมูลที่ท่านต้องการเรียกใช้"})
+                            .status(200)
+                            .send({status:true, message:[]})
                 }
             return res
                     .status(200)
                     .send({status:true, data: data})
         }else{
             const data = await profitTemplate.find({ 
-                day: { $regex: new RegExp('^' + day) },
-                $or: [
-                    { status: "โอนสำเร็จ" },
-                    { status: "เซ็นรับแล้ว" }
-                ]
+                day_sign: { $regex: new RegExp('^' + day) }
             })
                 if(data.length == 0){
                     return res
-                            .status(404)
-                            .send({status:false, message:"ไม่พบข้อมูลที่ท่านต้องการเรียกใช้"})
+                            .status(200)
+                            .send({status:true, message:[]})
                 }
             return res
                     .status(200)
