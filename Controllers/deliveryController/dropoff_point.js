@@ -1,6 +1,7 @@
 const { dropOffs, validate} = require("../../Models/Delivery/dropOff");
 const { Partner } = require("../../Models/partner");
-const axios = require('axios')
+const axios = require('axios');
+const { shopPartner } = require("../../Models/shop/shop_partner");
 
 create = async (req, res)=>{
     try{
@@ -166,8 +167,15 @@ getSenderAll = async (req, res)=>{
 
 getOneSender = async (req, res)=>{
     try{
-        const shop_number = req.body.shop_number
+        const shop_id = req.body.shop_id
         const tel = req.body.tel
+        const findShop = await shopPartner.findOne({_id:shop_id})
+            if(!findShop){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถค้นหาร้านค้าของท่านได้"})
+            }
+        let shop_number = findShop.shop_number
         const findOneSender = await dropOffs.findOne({tel:tel, shop_id:shop_number ,status:"ผู้ส่ง"})
             if(!findOneSender){
                 return res

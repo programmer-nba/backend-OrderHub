@@ -23,12 +23,14 @@ router.route('/orderhub/shop/upPicture/:id').post( auth.checkToken, shop.uploadP
 router.route('/orderhub/shop/getOne/:id').get( auth.checkToken, shop.getShopOne ) //ดึงข้อมูลร้านค้าเดียวที่สนใจ
 router.route('/orderhub/shop/tranfer/shop/:id_shop').put( auth.checkToken, shop.tranfersCreditsToShop ) //ย้ายเงินจาก partner เข้า shop ที่ต้องการ
 router.route('/orderhub/shop/tranfer/partner/:id_shop').put( auth.checkToken, shop.tranfersShopToPartner )//ย้ายเงินจาก shop กลับเข้า partner ที่ต้องการ
+router.route('/orderhub/shop/tranfer/admin').put( auth.checkToken, shop.tranfersPartnertoAdmin )//ย้ายเงินจาก shop กลับเข้า partner ที่ต้องการ
 router.route('/orderhub/shop/update/express/:id_shop').put( auth.checkToken, shop.editExpress )
 router.route('/orderhub/shop/update/expressAll/:id_shop').put( auth.checkToken, shop.editExpressAll )
 router.route('/orderhub/shop/edit/weight/').put( auth.checkToken, shop.fixNameExpress )
 router.route('/orderhub/shop/updateContract').put( authAdmin.checkToken, shop.statusContract )
 router.route('/orderhub/shop/find/downline/:id').get( auth.checkToken, shop.findShopDownLine )
 router.route('/orderhub/shop/fix/credit/:id').put( auth.checkToken, shop.fixCredits )
+
 
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน

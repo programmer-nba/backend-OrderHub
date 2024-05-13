@@ -747,6 +747,72 @@ tranfersShopToPartner = async (req, res)=>{
     }
 }
 
+tranfersPartnertoAdmin = async(req, res)=>{
+    try{
+        const id = req.decoded.userid
+        // console.log(id)
+        const amount = req.body.amount
+            if (!amount || isNaN(amount) || amount < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
+                return res.status(400).send({ status: false, message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
+            }else if (!/^(\d+(\.\d{1,2})?)$/.test(amount.toString())){
+                return res
+                        .status(400)
+                        .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
+            }
+        const findPartner = await Partner.findOne({_id:id})
+            if(!findPartner){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่มีพาร์ทเนอร์ในระบบ"})
+            }else if(findPartner.credits <= 0){
+                return res
+                        .status(400)
+                        .send({status:false, message:"พาร์ทเนอร์นี้ยังไม่มี credits ให้ทำการโยกย้ายเงิน"})
+            }else if(findPartner.credits < amount){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณาระบุจำนวนเงินไม่เกิน credits ที่พาร์ทเนอร์มี"})
+            }
+
+        //ตัดเงิน Partner
+        const cutCredtisPartner = await Partner.findOneAndUpdate(
+            {_id:id},
+            {
+                $inc: { credits: -amount }
+            },
+            {new:true})
+            if(!cutCredtisPartner){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถลบเงิน Partner ได้"})
+            }
+
+        //เพิ่มเงิน Admin
+        const findAdmin = await Admin.findOneAndUpdate(
+            {_id:"65a66b27c43f442cf0367bed"},
+            {
+                $inc: { wallet: +amount }
+            },
+            {new:true})
+            if(!findAdmin){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถหา ADMIN พบ"})
+            }
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    partner:cutCredtisPartner,
+                    admin:findAdmin
+                })
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 editExpress = async (req, res)=>{
     try{
         const id_shop = req.params.id_shop
@@ -1374,6 +1440,6 @@ async function invoiceSTP(date) {
 
 module.exports = {create, updateShop, delend, getAll, getShopPartner, getShopOne, 
                 getShopPartnerByAdmin, findShopMember, uploadPicture, tranfersCreditsToShop, tranfersShopToPartner, editExpress
-                , editExpressAll ,pushExpress, statusContract, fixNameExpress, findShopDownLine, fixCredits}
+                , editExpressAll ,pushExpress, statusContract, fixNameExpress, findShopDownLine, fixCredits, tranfersPartnertoAdmin}
 
 

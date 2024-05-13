@@ -9,6 +9,7 @@ const adminSchema = new Schema({
     username: {type:String, require: true},
     password: {type:String, require: true},
     profit:{type:Number, default: 0, require: false},
+    wallet:{type:Number, default: 0, require: false},
     role: {type:String, default: "admin", require: true},
 },{timestamps: true});
 
