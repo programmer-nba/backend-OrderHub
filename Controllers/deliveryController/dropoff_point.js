@@ -143,6 +143,27 @@ getSender = async (req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
+getSenderAll = async (req, res)=>{
+    try{
+        const findSender = await dropOffs.find({status:"ผู้ส่ง"})
+                .sort({ createdAt : -1})
+        if(findSender.length == 0){
+            return res
+                    .status(200)
+                    .send({status:true, message:[]})
+        }
+        return res
+                .status(200)
+                .send({status:true, message:findSender})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 getOneSender = async (req, res)=>{
     try{
         const id = req.params.id
@@ -203,4 +224,4 @@ editBookbank = async (req, res)=>{
     }
 }
 
-module.exports = { getAll, create, update, delend, getReceive, getSender, editBookbank, getOneSender}
+module.exports = { getAll, create, update, delend, getReceive, getSender, editBookbank, getOneSender, getSenderAll}

@@ -73,6 +73,7 @@ router.route('/orderhub/dropReceive/:shop_id').get( auth.checkToken, drop.getRec
 router.route('/orderhub/dropSender/:shop_id').get( auth.checkToken, drop.getSender )
 router.route('/orderhub/drop/edit/bookbank/:id').put( auth.checkToken, drop.editBookbank )
 router.route('/orderhub/drop/getOne/:id').get( auth.checkToken, drop.getOneSender )
+router.route('/orderhub/dropSender/all').post( auth.checkToken, drop.getSenderAll )
 //router.route('/orderhub/flash').post( flash.getData )
 
 module.exports = router;
