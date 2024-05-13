@@ -312,6 +312,51 @@ getSignDay = async(req, res)=>{
     }
 }
 
+getDayPay = async(req, res)=>{
+    try{
+        const day = req.body.day
+        const partner_id = req.body.partner_id
+        if(partner_id){
+            const data = await profitTemplate.find({
+                owner_id: partner_id, 
+                day: { $regex: new RegExp('^' + day) },
+                $or: [
+                    { status: "โอนสำเร็จ" },
+                    { status: "เซ็นรับแล้ว" }
+                ]
+            })
+                if(data.length == 0){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่พบข้อมูลที่ท่านต้องการเรียกใช้"})
+                }
+            return res
+                    .status(200)
+                    .send({status:true, data: data})
+        }else{
+            const data = await profitTemplate.find({ 
+                day: { $regex: new RegExp('^' + day) },
+                $or: [
+                    { status: "โอนสำเร็จ" },
+                    { status: "เซ็นรับแล้ว" }
+                ]
+            })
+                if(data.length == 0){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่พบข้อมูลที่ท่านต้องการเรียกใช้"})
+                }
+            return res
+                    .status(200)
+                    .send({status:true, data: data})
+        }
+    }catch(err){
+        return res  
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 1000000)
@@ -331,4 +376,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod }
+module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay }
