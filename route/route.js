@@ -30,8 +30,8 @@ router.route('/orderhub/getid/:id').get(main.getPartnerByID)
 router.route('/orderhub/update/:id').put(main.upPartnerByID)
 router.route('/orderhub/del/:id').delete(main.deleteById)
 router.route('/orderhub/getById/:id').get(auth.checkToken, main.getByID)
-router.route('/orderhub/add/sub_role/:id').put(authAdmin.checkToken, main.addSubRole)
-router.route('/orderhub/del/sub_role/:id').delete(authAdmin.checkToken, main.delSubRole)
+// router.route('/orderhub/add/sub_role/:id').put(authAdmin.checkToken, main.addSubRole)
+// router.route('/orderhub/del/sub_role/:id').delete(authAdmin.checkToken, main.delSubRole)
 
 //Login
 router.route('/orderhub/login').post( login.loginController )

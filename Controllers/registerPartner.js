@@ -403,69 +403,69 @@ getByID = async (req,res)=>{//การทำ GET ME โดยใช้การ
   }
 }
 
-addSubRole = async(req, res)=>{
-  try{
-      const role = req.body.role
-      const id = req.params.id
-      const findPartner = await Partner.findOneAndUpdate(
-        {
-          _id:id
-        },
-        {
-          $addToSet:{
-            sub_role:{ role : role}
-          }
-        },
-        {
-          new:true
-        })
-        if(!findPartner){
-          return res
-                  .status(404)
-                  .send({status:false, message:"ไม่พบพาร์ทเนอร์ที่คุณต้องการ"})
-        }
-      return res
-              .status(200)
-              .send({status:false, data:findPartner})
-  }catch(err){
-      return res
-              .status(500)
-              .send({status:false, message:err})
-  }
-}
+// addSubRole = async(req, res)=>{
+//   try{
+//       const role = req.body.role
+//       const id = req.params.id
+//       const findPartner = await Partner.findOneAndUpdate(
+//         {
+//           _id:id
+//         },
+//         {
+//           $addToSet:{
+//             sub_role:{ role : role}
+//           }
+//         },
+//         {
+//           new:true
+//         })
+//         if(!findPartner){
+//           return res
+//                   .status(404)
+//                   .send({status:false, message:"ไม่พบพาร์ทเนอร์ที่คุณต้องการ"})
+//         }
+//       return res
+//               .status(200)
+//               .send({status:false, data:findPartner})
+//   }catch(err){
+//       return res
+//               .status(500)
+//               .send({status:false, message:err})
+//   }
+// }
 
-delSubRole = async(req, res)=>{
-  try{
-      const id = req.params.id
-      const id_role = req.body.id_role
-      let id_role_object = new mongoose.Types.ObjectId(id_role)
-      console.log(id_role_object)
-      const findPartner = await Partner.findOneAndUpdate(
-        {
-          _id:id
-        },
-        { 
-          $pull: { 
-            sub_role: { _id: id_role_object }
-          } 
-        },{new:true})
-        if(!findPartner){
-          return res
-                  .status(400)
-                  .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์ได้"})
-        }
-      return res
-              .status(200)
-              .send({status:true, data:findPartner})
-  }catch(err){
-      return res  
-              .status(500)
-              .send({status:false, message:err})
-  }
-}
+// delSubRole = async(req, res)=>{
+//   try{
+//       const id = req.params.id
+//       const id_role = req.body.id_role
+//       let id_role_object = new mongoose.Types.ObjectId(id_role)
+//       console.log(id_role_object)
+//       const findPartner = await Partner.findOneAndUpdate(
+//         {
+//           _id:id
+//         },
+//         { 
+//           $pull: { 
+//             sub_role: { _id: id_role_object }
+//           } 
+//         },{new:true})
+//         if(!findPartner){
+//           return res
+//                   .status(400)
+//                   .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์ได้"})
+//         }
+//       return res
+//               .status(200)
+//               .send({status:true, data:findPartner})
+//   }catch(err){
+//       return res  
+//               .status(500)
+//               .send({status:false, message:err})
+//   }
+// }
 
 module.exports = { createPartner, 
 getAllPartner, getPartnerByID, 
 upPartnerByID, deleteById,
 uploadPicture, approveMemberShop,
-cancelMemberShop, getByID, addSubRole, delSubRole};
+cancelMemberShop, getByID};

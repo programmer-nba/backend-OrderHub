@@ -117,6 +117,7 @@ router.route('/orderhub/percent/del/:id').delete( authAdmin.checkToken, percent.
 
 //flash_pay
 router.route('/orderhub/flashpay/qrcreate').post( auth.checkToken, FP.QRCreate )
+router.route('/orderhub/flashpay/qrcreate/test').post( auth.checkToken, FP.QRCreateTest )
 router.route('/orderhub/flashpay/payment/results').post( auth.checkToken, FP.paymentResults )
 router.route('/orderhub/flashpay/payment/transaction').get( auth.checkToken, FP.transactionResult )
 router.route('/orderhub/flashpay/payment/notify').post( auth.checkToken, FP.notifyTransaction )

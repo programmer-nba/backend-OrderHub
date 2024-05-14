@@ -16,14 +16,26 @@ const multer = require("multer");
 const dayjs = require('dayjs')
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
+const { profitIce } = require("../../Models/profit/profit.ice");
+
+// เพิ่มปลั๊กอินสำหรับ UTC และ timezone ใน dayjs
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 const storage = multer.diskStorage({
     filename: function (req, file, cb) {
       cb(null, Date.now() + "-");
     },
   });
-
-const dayjsTimestamp = dayjs(Date.now());
-const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
+let dayjsTimestamp
+let dayTime
+function updateRealTime() {
+    dayjsTimestamp = dayjs().tz('Asia/Bangkok');
+    dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
+    // console.log(dayTime)
+}
+// เรียกใช้ฟังก์ชัน updateRealTime() ทุก 1 วินาที
+setInterval(updateRealTime, 5000);
 
 create = async (req, res)=>{
     try{
@@ -572,7 +584,7 @@ tranfersCreditsToShop = async (req, res)=>{
                         .send({status:false, message:"ไม่สามารถเพิ่มเงิน Shop ได้"})
             }
         let plus = tranferToShop.credit - amount
-        const partnerToShop = await invoicePTS()
+        const partnerToShop = await invoicePTS(dayTime)
             const dataHistoryShop = {
                     partnerID: partner_id,
                     shop_number: tranferToShop.shop_number,
@@ -696,7 +708,7 @@ tranfersShopToPartner = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
                 }
-            const ShopToPartner = await invoiceSTP(dayjsTimestamp)
+            const ShopToPartner = await invoiceSTP(dayTime)
             const dataHistoryShop = {
                     partnerID: partner_id,
                     shop_number: cutCredtisShop.shop_number,
@@ -750,6 +762,7 @@ tranfersShopToPartner = async (req, res)=>{
 tranfersPartnertoAdmin = async(req, res)=>{
     try{
         const id = req.decoded.userid
+        const role = req.decoded.role
         // console.log(id)
         const amount = req.body.amount
             if (!amount || isNaN(amount) || amount < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
@@ -799,12 +812,35 @@ tranfersPartnertoAdmin = async(req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถหา ADMIN พบ"})
             }
+        let orderid = await invoicePTA(dayTime)
+        let before = cutCredtisPartner.credits + amount
+        let v = {
+            partnerID:id,
+            role:role,
+            shop_number:"-",
+            orderid:orderid,
+            outTradeNo:"-",
+            firstname:cutCredtisPartner.firstname,
+            lastname:cutCredtisPartner.lastname,
+            amount:amount,
+            after:"PARTNER TO ADMIN",
+            before:before,
+            money_now:cutCredtisPartner.credits,
+            type:"เงินออก"
+        }
+        const createCredits = await historyWallet.create(v)
+            if(!createCredits){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถสร้างประวัติการเงินได้"})
+            }
         return res
                 .status(200)
                 .send({
                     status:true, 
                     partner:cutCredtisPartner,
-                    admin:findAdmin
+                    admin:findAdmin,
+                    createCredits:createCredits
                 })
     }catch(err){
         return res
@@ -1420,6 +1456,26 @@ async function invoicePTS(date) {
 
 async function invoiceSTP(date) {
     let data = `STP`
+    date = `${dayjs(date).format("YYYYMMDD")}`
+    let random = Math.floor(Math.random() * 10000000000)
+    const combinedData = data + date + random;
+    const findInvoice = await historyWallet.find({orderid:combinedData})
+
+    while (findInvoice && findInvoice.length > 0) {
+        // สุ่ม random ใหม่
+        random = Math.floor(Math.random() * 10000000000);
+        combinedData = data + date + random;
+
+        // เช็คใหม่
+        findInvoice = await historyWallet.find({orderid: combinedData});
+    }
+
+    console.log(combinedData);
+    return combinedData;
+}
+
+async function invoicePTA(date) {
+    let data = `PTA`
     date = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 10000000000)
     const combinedData = data + date + random;

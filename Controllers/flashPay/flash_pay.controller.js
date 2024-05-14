@@ -1,4 +1,5 @@
 const { generateSign_FP, generateVetify } = require('./generate.signFP')
+const { generateSign_FP_test } = require('./generate.signFP_test')
 const axios = require('axios')
 const dayjs = require('dayjs');
 const fs = require('fs');
@@ -105,7 +106,101 @@ QRCreate = async (req, res)=>{
         const history = await historyWallet.create(new_data)
         return res
                 .status(200)
-                .send({status:true, data: response.data, history: history})
+                .send({
+                    status:true, 
+                    data: response.data, 
+                    history: history
+                })
+
+    }catch(err){
+        console.log(err)
+        return res 
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+QRCreateTest = async (req, res)=>{
+    try{
+        const number = req.decoded.number
+        const KEY = process.env.FLASHPAY_KEY
+        const apiUrl = process.env.FLASHPAY_URL
+        const amount = req.body.amount
+        const id = req.decoded.userid
+
+        const findPartner = await Partner.findById({_id:id})
+            if(!findPartner){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์เจอ"})
+            }
+        
+        const outTradeNo = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
+            console.log('invoice : '+outTradeNo);
+        const amountBath = amount * 100 //เปลี่ยนบาท เป็น สตางค์
+        console.log(dayTimePlusOneHour)
+        const fromData = {
+            appKey : KEY,
+            charset : 'UTF-8',
+            data:{
+                "outUserId": number,
+                "outTradeNo": outTradeNo,
+                "outTradeTime": dayTime,
+                "paymentAmount": amountBath,
+                "cur": "THB",
+                "subject": "พาร์ทเนอร์เติมเงินเข้าระบบ",
+                "body": "ORDER HUB สแกนเติมเงิน",
+                "expireTime": dayTimePlusOneHour, //2024-02-21 00:00:00
+                "notifyUrl": "http://api.tossaguns.online/orderhub/flashpay/payment/vertify",
+            },
+            time: dayTime,
+            version: 1.1
+        }
+        const newData = await generateSign_FP_test(fromData)
+        const formDataOnly = newData.newSortData
+            //  console.log(formDataOnly)
+        const response = await axios.post(`${apiUrl}/upay/create-qrcode-payment`, formDataOnly, {
+            headers: {
+                    'Content-Type': 'application/json',
+                    'Accept-Language': 'TH',
+            },
+        });
+        // if(response.data.code == 0){
+        //     return res
+        //             .status(400)
+        //             .send({status:false, message:"ไม่สามารถ"})
+        // }
+        // const qrRawData  = response.data.data.qrRawData
+        // console.log(qrRawData)
+        // const qrCodeFilePath = `D:\\QRCODE\\${outTradeNo}.png`
+        // // สร้าง QR Code จากข้อมูล
+        // qrcode.toFile(`D:\QRCODE/${outTradeNo}.png`, qrRawData, { type: 'png' }, (err) => {
+        //     if (err) {
+        //         console.error('Error creating QR Code:', err);
+        //     } else {
+        //         console.log('QR Code created and saved successfully:', qrCodeFilePath);
+        //     }
+        // });
+
+        const new_data = {
+            partnerID:findPartner._id,
+            shop_number: '-',
+            orderid:response.data.data.tradeNo,
+            outTradeNo: outTradeNo,
+            firstname: findPartner.firstname,
+            lastname: findPartner.lastname,
+            amount: amount,
+            before: findShop.credits,
+            type: "QRCODE FLASHPAY"
+        }
+        const history = await historyWallet.create(new_data)
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    data: response.data, 
+                    history: history
+                })
 
     }catch(err){
         console.log(err)
@@ -439,4 +534,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { QRCreate, paymentResults, transactionResult, notifyTransaction}
+module.exports = { QRCreate, paymentResults, transactionResult, notifyTransaction, QRCreateTest}
