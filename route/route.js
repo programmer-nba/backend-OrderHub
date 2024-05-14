@@ -78,4 +78,8 @@ router.route('/orderhub/drop/getOne').post( auth.checkToken, drop.getOneSender )
 router.route('/orderhub/dropSender/all').post( auth.checkToken, drop.getSenderAll )
 //router.route('/orderhub/flash').post( flash.getData )
 
+//search location
+let srcLocation = require('../src location/index')
+router.route('/orderhub/spread/address').post( auth.checkToken, srcLocation.split )
+
 module.exports = router;
