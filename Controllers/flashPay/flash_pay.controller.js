@@ -322,6 +322,118 @@ paymentResults = async (req, res)=>{
     }
 }
 
+paymentResultsTest = async (req, res)=>{
+    try{
+        const id = req.decoded.number
+        const KEY = process.env.FLASHPAY_KEY
+        const apiUrl = process.env.FLASHPAY_URL
+        const trade_No = req.body.tradeNo
+        const fromData = {
+            appKey : KEY,
+            charset : 'UTF-8',
+            data:{
+                "tradeNo": trade_No
+            },
+            time: dayTime,
+            version: 1.1
+        }
+        
+        const newData = await generateSign_FP_test(fromData)
+        const formDataOnly = newData.newSortData
+        
+        const response = await axios.post(`${apiUrl}/upay/get-payment-result`, formDataOnly, {
+                headers:{
+                            'Content-Type': 'application/json',
+                            'Accept-Language': 'TH',
+                        },
+        });
+        const receivedData = response.data
+        const tradeNo = receivedData.data.tradeNo
+        const tradeStatus = receivedData.data.tradeStatus
+        const amount = receivedData.data.paymentAmount / 100
+            let findTradeNo
+                if(tradeStatus == 3){
+                    const currentWallet = await historyWallet.findOne({ orderid: tradeNo });
+                        if(!currentWallet){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลข tradeNo ได้"})
+                        }
+                    const findBefore = await Partner.findOneAndUpdate(
+                        {_id:currentWallet.partnerID},
+                        { $inc: { credits: +amount }},
+                        {new:true})
+                        if(!findBefore){
+                            return res 
+                                    .status(404)
+                                    .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์เจอ"})
+                        }
+                    let walletBefore = Number(findBefore.credits) - amount
+                    findTradeNo = await historyWallet.findOneAndUpdate(
+                        {orderid:tradeNo},
+                        {
+                            before: walletBefore,
+                            after: 'เติมเงินสำเร็จ',
+                            money_now: findBefore.credits
+                        },
+                        {new:true})
+                        if(!findTradeNo){
+                                return res
+                                        .status(400)
+                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้"})
+                        }
+                }else if(tradeStatus == 2){
+                    findTradeNo = await historyWallet.findOneAndUpdate(
+                        {orderid:tradeNo},
+                        {
+                            after:"กำลังประมวลผล"
+                        }, 
+                        {new:true})
+                    if(!findTradeNo){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้(2)"})
+                    }
+                }else if(tradeStatus == 4){
+                    findTradeNo = await historyWallet.findOneAndUpdate(
+                        {orderid:tradeNo},
+                        {
+                            after:"รายการเติมเงินล้มเหลว"
+                        }, 
+                        {new:true})
+                    if(!findTradeNo){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้(4)"})
+                    }
+                }else if(tradeStatus == 5){
+                    findTradeNo = await historyWallet.findOneAndUpdate(
+                        {orderid:tradeNo},
+                        {
+                            after:"QR CODE หมดอายุ"
+                        }, 
+                        {new:true})
+                    if(!findTradeNo){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้(5)"})
+                    }
+                }
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    data: response.data, 
+                    history: findTradeNo
+                })
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 transactionResult = async (req, res)=>{
     try{
         const id = req.decoded.number
@@ -534,4 +646,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { QRCreate, paymentResults, transactionResult, notifyTransaction, QRCreateTest}
+module.exports = { QRCreate, paymentResults, transactionResult, notifyTransaction, QRCreateTest, paymentResultsTest}
