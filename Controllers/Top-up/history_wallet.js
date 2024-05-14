@@ -86,4 +86,24 @@ findShop = async (req, res)=>{
     }
 }
 
-module.exports = {getAll, findId, findIdForUser, findShop}
+findAmountAll = async(req, res)=>{
+    try{
+        const partner_id = req.body.partner_id
+        const findPartner = await historyWallet.find({partnerID:partner_id, after:"เติมเงินสำเร็จ"})
+            if(findPartner.length == 0){
+                return res
+                        .status(200)
+                        .send({status:true, data:[]})
+            }
+        const totalAmount = findPartner.reduce((sum, record) => sum + record.amount, 0);
+        console.log(`Total Amount: ${totalAmount}`);
+        return res
+                .status(200)
+                .send({status:true,total: totalAmount, data:findPartner})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+module.exports = {getAll, findId, findIdForUser, findShop, findAmountAll}

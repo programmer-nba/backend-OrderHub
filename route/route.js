@@ -59,6 +59,7 @@ router.route('/orderhub/history/:id').get( authAdmin.checkToken ,his.findId )
 //history topup แสดงประวัติการเติมเงินของตัวเอง(partner)
 router.route('/orderhub/his/partner').get( auth.checkToken, his.findIdForUser )
 router.route('/orderhub/his/shop/:shop_number').get( auth.checkToken, his.findShop )
+router.route('/orderhub/his/amount/all').post( his.findAmountAll )
 
 //topup แสดงรายการเติมเงินที่แอดมินต้องยืนยัน
 router.route('/orderhub/topup/getall').get( authAdmin.checkToken, topup.getAll )
