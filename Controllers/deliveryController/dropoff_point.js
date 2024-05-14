@@ -184,7 +184,7 @@ getOneSender = async (req, res)=>{
             }
         return res
                 .status(200)
-                .send({status:true, message:findOneSender})
+                .send({status:true, data:findOneSender})
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res
