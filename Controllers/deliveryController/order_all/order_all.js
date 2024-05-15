@@ -519,27 +519,29 @@ getOrderCancel = async(req, res)=>{
 
 cancelAll = async(req, res)=>{
     try{
-        const id = req.decoded.userid
-        const role = req.decoded.role
         const dayEnd = req.body.dayEnd
         const txlogisticid = await orderAll.find({
             order_status:"booking",
-            day_end: dayEnd
+            day_end: { $lte: dayEnd }
         })
             if(txlogisticid.length == 0){
                 return res
                         .status(200)
                         .send({status:true, data:[]})
             }
-
+        console.log(txlogisticid.length)
+        // return res
+        //         .status(200)
+        //         .send({status:false, message:txlogisticid})
         let newData = await Promise.all(txlogisticid.map(async item => {
             // console.log(item.express)
             if(item.express == "J&T"){
-                let cancel = await cancelOrderAll(id, role, item.tracking_code);
+                let cancel = await cancelOrderAll(item.tracking_code);
                 // console.log(cancel)
                 return cancel
             }
         }));
+
         // console.log(newData)
         return res
                 .status(200)

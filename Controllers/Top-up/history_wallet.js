@@ -89,12 +89,32 @@ findShop = async (req, res)=>{
 findAmountAll = async(req, res)=>{
     try{
         const partner_id = req.body.partner_id
-        const findPartner = await historyWallet.find({partnerID:partner_id, after:"เติมเงินสำเร็จ"})
-            if(findPartner.length == 0){
-                return res
-                        .status(200)
-                        .send({status:true, data:[]})
-            }
+        const day_start = req.body.day_start
+        const day_end = req.body.day_end
+        let findPartner
+        if(day_start || day_end){
+            findPartner = await historyWallet.find({
+                partnerID:partner_id, 
+                after:"เติมเงินสำเร็จ",
+                day: { $gte: day_start, $lte: day_end } 
+            })
+                if(findPartner.length == 0){
+                    return res
+                            .status(200)
+                            .send({status:true, data:[]})
+                }
+        }else{
+            findPartner = await historyWallet.find({
+                partnerID:partner_id, 
+                after:"เติมเงินสำเร็จ"
+            })
+                if(findPartner.length == 0){
+                    return res
+                            .status(200)
+                            .send({status:true, data:[]})
+                }
+        }
+        
         const totalAmount = findPartner.reduce((sum, record) => sum + record.amount, 0);
         console.log(`Total Amount: ${totalAmount}`);
         return res

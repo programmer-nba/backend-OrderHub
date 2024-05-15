@@ -827,7 +827,7 @@ cancelOrder = async (req, res)=>{
     }
 }
 
-cancelOrderAll = async (id, role, txlogisticid)=>{
+cancelOrderAll = async (txlogisticid)=>{
     try{
         // const id = req.decoded.userid
         // const role = req.decoded.role
@@ -845,13 +845,9 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
         }
         const findCancel = await orderAll.findOne({tracking_code:txlogisticid})
             if(!findCancel){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลข txlogisticid ได้"})
+                return `${txlogisticid} ไม่สามารถค้นหาหมายเลขได้`
             }else if(findCancel.order_status == 'cancel'){
-                return res
-                        .status(200)
-                        .send({status:true, message:"ออเดอร์นี้ถูก Cancel ไปแล้ว"})
+                return `${txlogisticid} ถูก Cancel ไปแล้ว`
             }
         const newData = await generateJT(formData)
             // console.log(newData)
@@ -862,14 +858,10 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
             },
         })
             if(!response){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่สามารถใช้ได้"})
+                return `${txlogisticid}ไม่สามารถยิง API J&T ได้`
             }
         if(response.data.responseitems[0].success == 'false'){ //S12 = Cancel order interface, Order status is GOT can not cancel order
-                return res
-                        .status(400)
-                        .send({status:false, data:response.data, message:`ไม่สามารถทำการยกเลิกออเดอร์นี้ได้ (${response.data.responseitems[0].reason})`})
+                return `${txlogisticid} ไม่สามารถทำการยกเลิกออเดอร์ได้ (${response.data.responseitems[0].reason})`
         }else{
                 let refundAll = []
                 const findPno = await orderAll.findOneAndUpdate(
@@ -877,9 +869,7 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                     {order_status:"cancel"},
                     {new:true})
                     if(!findPno){
-                        return res
-                                .status(400)
-                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Logisticid(J&T) หรืออัพเดทข้อมูลได้"})
+                        return `${txlogisticid} ไม่สามารถค้นหาหมายเลขหรืออัพเดทข้อมูลได้`
                     }
 
                 //SHOP Credit//
@@ -888,15 +878,13 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                             { $inc: { credit: +findPno.cut_partner } },
                             {new:true})
                             if(!findShop){
-                                return res
-                                        .status(400)
-                                        .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
+                                return `${txlogisticid} ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้`
                                 }
                     let diff = findShop.credit - findPno.cut_partner
                     let history = {
                                 shop_id: findShop._id,
-                                ID: id,
-                                role: role,
+                                ID: findPno.owner_id,
+                                role: findPno.role,
                                 shop_number: findPno.shop_number,
                                 orderid: txlogisticid,
                                 amount: findPno.cut_partner,
@@ -907,7 +895,7 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                         }
                 const historyShop = await historyWalletShop.create(history)
                             if(!historyShop){
-                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                                return `${txlogisticid} ไม่สามารถสร้างประวัติการเงินของร้านค้าได้`
                             }
 
                 //REFUND PARTNER//
@@ -920,9 +908,7 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                         },
                         {new:true, projection: { profit: 1  }})
                         if(!profitOne){
-                                return res
-                                        .status(400)
-                                        .send({status:false,message:"ไม่สามารถค้นหาพาร์ทเนอร์และอัพเดทข้อมูลได้"})
+                                return `${txlogisticid} ไม่สามารถค้นหาพาร์ทเนอร์และอัพเดทข้อมูลได้`
                         }
                 
                 const findTracking = await profitPartner.findOneAndUpdate(
@@ -935,9 +921,7 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                     },
                     {new:true})
                     if(!findTracking){
-                        return res
-                                .status(400)
-                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
+                        return `${txlogisticid} ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ`
                     }
 
                 // console.log(findTracking)
@@ -948,9 +932,7 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                                 status:"ยกเลิกออเดอร์"
                             },{new:true, projection: { status: 1}})
                             if(!findTemplate){
-                                return res
-                                        .status(400)
-                                        .send({status:false, message:"ไม่สามารถหารายการโอนเงิน COD ได้"})
+                                return `${txlogisticid} ไม่สามารถหารายการโอนเงิน COD ได้`
                             }
                         refundAll.push(findTemplate)
                     }
@@ -963,18 +945,14 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                                 { $inc: { profit: -element.total } },
                                 {new:true, projection: { profit: 1 } })
                                 if(!refundAdmin){
-                                        return res
-                                                .status(400)
-                                                .send({status:false,message:"ไม่สามารถบันทึกกำไรคุณไอซ์ได้"})
+                                        return `${txlogisticid} ไม่สามารถบันทึกกำไรคุณไอซ์ได้`
                                 }
                             const changStatusAdmin = await profitIce.findOneAndUpdate(
                                 {orderid: txlogisticid},
                                 {type:"ยกเลิกออเดอร์"},
                                 {new:true})
                                 if(!changStatusAdmin){
-                                    return res
-                                            .status(404)
-                                            .send({status:false, message:"ไม่สามารถค้นหาประวัติกำไรคุณไอซ์"})
+                                    return `${txlogisticid} ไม่สามารถค้นหาประวัติกำไรคุณไอซ์`
                                 }
                             refundAll.push(refundAdmin)
                             refundAll.push(changStatusAdmin)
@@ -987,9 +965,7 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                                     }
                                 },{new:true, projection: { profit: 1, credits: 1  }})
                                 if(!refund){
-                                    return res
-                                            .status(404)
-                                            .send({status:false, message:"ไม่สามารถคืนเงินให้ พาร์ทเนอร์ได้"})
+                                    return `${txlogisticid} ไม่สามารถคืนเงินให้ พาร์ทเนอร์ได้`
                                 }
                             const findTracking = await profitPartner.findOneAndUpdate(
                                 {
@@ -1001,9 +977,7 @@ cancelOrderAll = async (id, role, txlogisticid)=>{
                                 },
                                 {new:true, projection: { status: 1  }})
                                 if(!findTracking){
-                                    return res
-                                            .status(400)
-                                            .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
+                                    return `${txlogisticid} ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ`
                                 }
                             refundAll.push(refund)
                             refundAll.push(findTracking)
