@@ -22,7 +22,7 @@ let dayTimePlusOneHour
  function updateRealTime() {
     dayjsTimestamp = dayjs().tz('Asia/Bangkok');
     dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss');
-    dayTimePlusOneHour = dayjs(dayTime).add(2, 'minute').format('YYYY-MM-DD HH:mm:ss');
+    dayTimePlusOneHour = dayjs(dayTime).add(10, 'minute').format('YYYY-MM-DD HH:mm:ss');
 }
 // เรียกใช้ฟังก์ชัน updateRealTime() ทุก 1 วินาที
 setInterval(updateRealTime, 1000);
