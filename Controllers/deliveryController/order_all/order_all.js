@@ -298,6 +298,7 @@ getOrderByDate = async(req, res)=>{
         const dayEnd = req.body.dayEnd
         const express = req.body.express
         const shop_id = req.body.shop_id
+        const orderer = req.body.orderer
         const partner_id = req.body.partner_id
         // console.log(dayStart, dayEnd)
         if(shop_id){
@@ -376,6 +377,45 @@ getOrderByDate = async(req, res)=>{
                             .status(200)
                             .send({status:true, data:findOrderID})
             }
+        }else if(orderer){
+            if(express){
+                const findOrderID = await orderAll.find(
+                    {
+                        orderer_id:orderer,
+                        express:express,
+                        $and: [
+                            { day: { $gte: dayStart } },
+                            { day: { $lte: dayEnd } }
+                        ]
+                    })
+                    // console.log(findOrderID)
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[]})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }else{
+                const findOrderID = await orderAll.find(
+                    {
+                        orderer_id:orderer,
+                        $and: [
+                            { day: { $gte: dayStart } },
+                            { day: { $lte: dayEnd } }
+                        ]
+                    })
+                    // console.log(findOrderID)
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[]})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }
         }else{
             const findOrderID = await orderAll.find(
                 {
@@ -416,6 +456,34 @@ getOrderStatus = async(req, res)=>{
                 return res
                         .status(200)
                         .send({status:true, data:[]})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findOrder})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getOrderBySearch = async(req, res)=>{
+    try{
+        const order = req.body.order
+        const findOrder = await orderAll.find(
+            {
+                $or:[
+                    {tracking_code: order},
+                    {mailno: order},
+                    {"to.tel": order},
+                    {print_code: order}
+                ]
+            })
+        // console.log(findOrder)
+            if(findOrder.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, data:[]})
             }
         return res
                 .status(200)
@@ -504,4 +572,5 @@ async function invoiceNumber() {
     }
 }
 
-module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll }
+module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, 
+    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch }

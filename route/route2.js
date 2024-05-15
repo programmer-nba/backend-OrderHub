@@ -260,7 +260,7 @@ router.route('/orderhub/orderall/get/code/:print_code').post( auth.checkToken, o
 router.route('/orderhub/orderall/get/order/date').post( auth.checkToken, orderAll.getOrderByDate )
 router.route('/orderhub/orderall/get/order/status').post( auth.checkToken, orderAll.getOrderStatus )
 router.route('/orderhub/orderall/cancel/order/all').post( auth.checkToken, orderAll.cancelAll )
-
+router.route('/orderhub/orderall/get/order/search').post( auth.checkToken, orderAll.getOrderBySearch )
 
 //insured
 const insured = require('../Controllers/deliveryController/Insured/insuredFee')
