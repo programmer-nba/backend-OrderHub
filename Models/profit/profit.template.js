@@ -8,7 +8,12 @@ require('dayjs/plugin/utc');
 dayjs.extend(require('dayjs/plugin/timezone'));
 dayjs.extend(require('dayjs/plugin/utc'));
 
-const currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
+let currentTime
+function updateRealTime() {
+    currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
+}
+// เรียกใช้ฟังก์ชัน updateRealTime() ทุก 5 วินาที
+setInterval(updateRealTime, 5000);
 
 const profitTemplateSchema = new Schema({
     orderid: {type:String, require: false},
