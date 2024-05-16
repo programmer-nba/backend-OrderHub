@@ -202,6 +202,43 @@ editBookbank = async (req, res)=>{
         const name_best = req.body.name_best
         const card_best = req.body.card_best
         const id = req.params.id
+
+        // Function to check if a string contains only alphabetic characters
+        function isAlphabetic(str) {
+            return /^[A-Za-z\s]+$/.test(str);
+        }
+
+        //เช็คตัวเลขว่ามีตัวอักษรอยู่หรือเปล่า
+        function isNumeric(str) {
+            return /^[0-9]+$/.test(str);
+        }
+        
+        if(name){
+            if (!isAlphabetic(name)) {
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณากรอกชื่อบัญชีเป็นตัวอักษร(FlashPay)"});
+            }
+            if(!isNumeric(card_flash)){
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณากรอกหมายเลขบัญชีเป็นตัวเลข(FlashPay)"});
+            }
+        }
+        if(name_best){
+            if (!isAlphabetic(name_best)) {
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณากรอกชื่อบัญชีเป็นตัวอักษร(BEST)"});
+            }
+            if (!isNumeric(card_best)) {
+                return res
+                        .status(400)
+                        .send({status:false, message:"กรุณากรอกหมายเลขบัญชีเป็นตัวเลข(BEST)"});
+            }
+        }
+
+        
         const fixBookbank = await dropOffs.findOneAndUpdate(
             {
                 _id:id

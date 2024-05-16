@@ -9,6 +9,7 @@ const timezone = require('dayjs/plugin/timezone');
 const { Partner } = require('../../Models/partner');
 const { historyWallet } = require('../../Models/topUp/history_topup');
 const { shopPartner } = require("../../Models/shop/shop_partner");
+const qrcode = require('qrcode');
 
 // เพิ่มปลั๊กอินสำหรับ UTC และ timezone ใน dayjs
 dayjs.extend(utc);
@@ -75,11 +76,11 @@ QRCreate = async (req, res)=>{
                     'Accept-Language': 'TH',
             },
         });
-        // if(response.data.code == 0){
-        //     return res
-        //             .status(400)
-        //             .send({status:false, message:"ไม่สามารถ"})
-        // }
+            // if(response.data.code == 0){
+            //     return res
+            //             .status(400)
+            //             .send({status:false, message:"ไม่สามารถยิง API ได้"})
+            // }
         // const qrRawData  = response.data.data.qrRawData
         // console.log(qrRawData)
         // const qrCodeFilePath = `D:\\QRCODE\\${outTradeNo}.png`
