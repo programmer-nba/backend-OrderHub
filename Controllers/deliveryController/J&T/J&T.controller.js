@@ -57,6 +57,17 @@ createOrder = async (req, res)=>{
         const shop = req.body.shop_number
         const weight = data.parcel.weight //หน่วยเป็น kg อยู่แล้วไม่ต้องแก้ไข
         // txlogisticid = "JNT2024043066453"
+        const findCredit = await shopPartner.findOne({shop_number:shop})
+            if(!findCredit){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่พบร้านค้าของท่าน"})
+            }
+        if(findCredit.credit < cut_partner){
+            return res
+                    .status(400)
+                    .send({status:false, message:`Credits ปัจจุบันของร้านค้า ${findCredit.shop_name} ไม่เพียงพอต่อการส่งสินค้า`})
+        }
         const txlogisticid = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+txlogisticid);
         const invoice = await invoiceJNT(dayjsTimestamp)
@@ -1576,7 +1587,7 @@ priceList = async (req, res)=>{
                     cost_hub = resultP.costBangkok_metropolitan
                     price = resultP.salesBangkok_metropolitan
                     // profitSaleMartket = price - resultBase.salesBangkok_metropolitan
-                    cut_partner = resultP.costBangkok_metropolitan
+                    cut_partner = parseFloat(resultP.costBangkok_metropolitan.toFixed(2))
                     cost_base = resultBase.salesBangkok_metropolitan
                     profit_partner = price - cost_hub
 
@@ -1596,7 +1607,7 @@ priceList = async (req, res)=>{
                     price = resultP.salesUpcountry
                     // profitSaleMartket = price - resultBase.salesUpcountry
                     profit_partner = price - cost_hub
-                    cut_partner = resultP.costUpcountry
+                    cut_partner = parseFloat(resultP.costUpcountry.toFixed(2))
                     cost_base = resultBase.salesUpcountry
 
                     let cost = resultP.costUpcountry
@@ -1720,10 +1731,12 @@ priceList = async (req, res)=>{
                                 if(price_remote_area != undefined){
                                     let total1 = total + price_remote_area
                                         v.total = parseFloat(total1.toFixed(2))
-                                        v.cut_partner = cut_partner + price_remote_area + insuranceFee + formattedFee
+                                        let cut = cut_partner + price_remote_area + insuranceFee + formattedFee
+                                        v.cut_partner = parseFloat(cut.toFixed(2))
                                         v.price_remote_area = price_remote_area
                                 }else{
-                                    v.cut_partner = cut_partner + insuranceFee + formattedFee
+                                    let cut = cut_partner + insuranceFee + formattedFee
+                                    v.cut_partner = parseFloat(cut.toFixed(2))
                                     v.total = parseFloat(total.toFixed(2))
                                 }
                             new_data.push(v);

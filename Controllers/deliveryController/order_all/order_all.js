@@ -554,6 +554,34 @@ cancelAll = async(req, res)=>{
     }
 }
 
+pickOrder = async(req, res)=>{
+    try{
+        const orderid = req.body.orderid
+        const newData = await Promise.all(orderid.map(async item => {
+            const findOrder = await orderAll.findOne({tracking_code:item})
+            // console.log(findOrder)
+                if(!findOrder){
+                    return `${item} ไม่พบในฐานข้อมูล`
+                }
+            let newMailno = {
+                mailno: findOrder.mailno,
+                amount: findOrder.cut_partner
+            }
+            return newMailno
+        }))
+        const totalProfit = newData.reduce((total, document) => {
+                return total + document.amount;
+        }, 0);
+        return res
+                .status(200)
+                .send({status:true, amountAll:parseFloat(totalProfit).toFixed(2), data:newData})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber() {
     try{
         let random = Math.floor(Math.random() * 1000000)
@@ -576,4 +604,4 @@ async function invoiceNumber() {
 }
 
 module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, 
-    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch }
+    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch, pickOrder }
