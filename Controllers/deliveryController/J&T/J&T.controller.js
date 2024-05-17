@@ -413,7 +413,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -439,11 +439,28 @@ trackingOrder = async (req, res)=>{
                     return
                 }
             const latestDetails = item.details[item.details.length - 1];
-
+            const findReturn = item.details.find(item => item.scantype == 'Return')
+            
             // console.log(latestDetails)
             let scantype
             let day_pay = ""
             let day_sign = ""
+            if(findReturn){
+                if(latestDetails.scantype == 'Signature'){
+
+                    scantype = 'เซ็นรับแล้ว'
+
+                    let datePart = latestDetails.scantime.substring(0, 10);
+                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    day_sign = datePart
+                    day_pay = newDate
+
+                }else if(latestDetails.scantype == 'Return Signature'){
+                    scantype = 'เซ็นรับพัสดุตีกลับ'
+                }else{
+                    scantype = 'พัสดุตีกลับ'
+                }
+            }else{
                 if(latestDetails.scantype == 'Picked Up'){
                     scantype = 'รับพัสดุแล้ว'
                 }else if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
@@ -464,6 +481,8 @@ trackingOrder = async (req, res)=>{
                 }else{
                     return;
                 }
+            }
+            // console.log("scan:",scantype,"day_sign:",day_sign,"day_pay:",day_pay)
             let changStatus = {
                 updateOne: {
                     filter: { mailno: item.billcode },

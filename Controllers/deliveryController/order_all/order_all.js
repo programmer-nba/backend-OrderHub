@@ -449,7 +449,8 @@ getOrderStatus = async(req, res)=>{
                 { order_status: "booking" },
                 { order_status: "รับพัสดุแล้ว" },
                 { order_status: "ระหว่างการจัดส่ง" },
-                { order_status: "พัสดุมีปัญหา" }
+                { order_status: "พัสดุมีปัญหา" },
+                { order_status: "พัสดุตีกลับ" },
               ]
         })
             if(findOrder.length == 0){
