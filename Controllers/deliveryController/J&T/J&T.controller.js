@@ -53,7 +53,8 @@ createOrder = async (req, res)=>{
         const cost_base = req.body.cost_base
         const profitAll = req.body.profitAll
         const price_remote_area = req.body.price_remote_area //ราคาพื้นที่ห่างไกล J&T ไม่มีบอกน้าา
-        const cut_partner = req.body.cut_partner
+        let cut = req.body.cut_partner
+        const cut_partner = parseFloat(cut.toFixed(2))
         const shop = req.body.shop_number
         const weight = data.parcel.weight //หน่วยเป็น kg อยู่แล้วไม่ต้องแก้ไข
         // txlogisticid = "JNT2024043066453"
@@ -175,9 +176,10 @@ createOrder = async (req, res)=>{
                             .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
                 }
  
-            console.log(findShop.credit)
-                
-            const plus = findShop.credit + cut_partner
+            // console.log(findShop.credit)
+            let credit = parseFloat(findShop.credit.toFixed(2))
+            const plus = credit + cut_partner
+            let plusFloat = parseFloat(plus.toFixed(2))
             const history = {
                     shop_id: findShop._id,
                     ID: id,
@@ -185,8 +187,8 @@ createOrder = async (req, res)=>{
                     shop_number: shop,
                     orderid: new_data.txlogisticid,
                     amount: cut_partner,
-                    before: plus,
-                    after: findShop.credit,
+                    before: plusFloat,
+                    after: credit,
                     type: 'J&T',
                     remark: "ขนส่งสินค้า(J&T)"
                 }
@@ -223,7 +225,8 @@ createOrder = async (req, res)=>{
                 }
             // console.log(id)
             // console.log(profitAll)  
-            let profitTotal = profitAll[0].total + packing_price
+            let profitTotalAll = profitAll[0].total + packing_price
+            let profitTotal = parseFloat(profitTotalAll.toFixed(2))
             let profitOne = await Partner.findOneAndUpdate(
                     { _id: id },
                     { $inc: { 
