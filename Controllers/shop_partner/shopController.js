@@ -519,6 +519,7 @@ uploadPicture = async (req,res)=>{
 tranfersCreditsToShop = async (req, res)=>{
     try{
         const partner_id = req.decoded.userid
+        const role = req.decoded.role
         const id_shop = req.params.id_shop
         const amount = req.body.amount
             if (!amount || isNaN(amount) || amount < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
@@ -586,7 +587,9 @@ tranfersCreditsToShop = async (req, res)=>{
         let plus = tranferToShop.credit - amount
         const partnerToShop = await invoicePTS(dayTime)
             const dataHistoryShop = {
-                    partnerID: partner_id,
+                    shop_id: tranferToShop._id,
+                    ID: partner_id,
+                    role: role,
                     shop_number: tranferToShop.shop_number,
                     orderid: partnerToShop,
                     amount: amount,
@@ -603,7 +606,9 @@ tranfersCreditsToShop = async (req, res)=>{
                 }
 
             const dataHistoryPartner = {
-                    partnerID: partner_id,
+                    shop_id: tranferToShop._id,
+                    ID: partner_id,
+                    role: role,
                     shop_number: tranferToShop.shop_number,
                     orderid: partnerToShop,
                     amount: amount,
@@ -638,6 +643,7 @@ tranfersCreditsToShop = async (req, res)=>{
 tranfersShopToPartner = async (req, res)=>{
     try{
             const partner_id = req.decoded.userid
+            const role = req.decoded.role
             const id_shop = req.params.id_shop
             const amount = req.body.amount
                 if (!amount || isNaN(amount) || amount < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
@@ -710,7 +716,9 @@ tranfersShopToPartner = async (req, res)=>{
                 }
             const ShopToPartner = await invoiceSTP(dayTime)
             const dataHistoryShop = {
-                    partnerID: partner_id,
+                    shop_id: cutCredtisShop._id,
+                    ID: partner_id,
+                    role: role,
                     shop_number: cutCredtisShop.shop_number,
                     orderid: ShopToPartner,
                     amount: amount,
@@ -727,7 +735,9 @@ tranfersShopToPartner = async (req, res)=>{
                 }
 
             const dataHistoryPartner = {
-                    partnerID: partner_id,
+                    shop_id: cutCredtisShop._id,
+                    ID: partner_id,
+                    role: role,
                     shop_number: cutCredtisShop.shop_number,
                     orderid: ShopToPartner,
                     amount: amount,

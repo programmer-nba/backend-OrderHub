@@ -83,4 +83,25 @@ getById = async (req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
-module.exports = { getAll, getOne, getById }
+
+getCreditDis = async(req, res)=>{
+    try{
+        const shop_number = req.body.shop_number
+        const day = req.body.day
+
+        const findHistory = await historyWalletShop.find({shop_number:shop_number, day:day})
+            if(findHistory.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, data:[]})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findHistory})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+module.exports = { getAll, getOne, getById, getCreditDis }

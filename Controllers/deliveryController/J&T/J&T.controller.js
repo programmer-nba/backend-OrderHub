@@ -427,7 +427,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -511,7 +511,7 @@ trackingOrder = async (req, res)=>{
             let changStatusCod = {
                 updateOne: {
                     filter: { 'template.partner_number': item.billcode },
-                    update: { 
+                    update: {
                         $set: {
                             status:scantype,
                             day_sign: day_sign,
