@@ -18,6 +18,7 @@ const { orderAll } = require('../../../Models/Delivery/order_all');
 const { bangkokMetropolitan } = require('../../../Models/postcal_bangkok/postcal.bangkok');
 const { priceBase } = require('../../../Models/Delivery/weight/priceBase.express');
 const { codPercent } = require('../../../Models/COD/cod.shop.model');
+const { postalThailand } = require('../../../Models/postal.thailand/postal.thai.model');
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -414,24 +415,39 @@ createOrder = async(req, res)=>{
 createPDFOrder = async(req, res)=>{
     try{
         const txLogistic = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
-            console.log('txLogisticId : '+txLogistic);
+            // console.log('txLogisticId : '+txLogistic);
         const id = req.decoded.userid
         const role = req.decoded.role
         const shop = req.body.shop_number
-        const cost = req.body.cost
         const cost_hub = req.body.cost_hub
         const fee_cod = req.body.fee_cod
         const total = req.body.total
+        const remark = req.body.remark
+        const packing_price = req.body.packing_price
         const insuranceFee = req.body.insuranceFee
         const declared_value = req.body.declared_value
-        const priceOne = req.body.priceOne
+        const cost_base = req.body.cost_base
+        const profitAll = req.body.profitAll
         const cod_amount = req.body.cod_amount
         const price = req.body.price
         const data = req.body
         const weight = data.parcel.weight
-        const cut_partner = req.body.cut_partner 
+        let cut = req.body.cut_partner
+        const cut_partner = parseFloat(cut.toFixed(2))
         const price_remote_area = req.body.price_remote_area
 
+        const findCredit = await shopPartner.findOne({shop_number:shop})
+            if(!findCredit){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่พบร้านค้าของท่าน"})
+            }
+        if(findCredit.credit < cut_partner){
+            return res
+                    .status(400)
+                    .send({status:false, message:`Credits ปัจจุบันของร้านค้า ${findCredit.shop_name} ไม่เพียงพอต่อการส่งสินค้า`})
+        }
+        
         const invoice = await invoiceBST()
         //ผู้ส่ง
         const senderTel = data.from.tel; 
@@ -1165,6 +1181,33 @@ priceList = async (req, res)=>{
                             .status(404)
                             .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
                 }
+            const tel = formData.from.tel;
+
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
+
+                // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+                if (!regexWord.test(tel)) {
+                    return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"sender",
+                                    message:"กรุณาอย่ากรอกเบอร์โทร ผู้ส่ง โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+                }
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
+                
+                if (regex.test(tel) || tel.length < 10) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"sender",
+                                message:"กรุณากรอกเบอร์โทร ผู้ส่ง ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
             // console.log(data)
             let isValid = false;
             let errorMessage = 'ผู้ส่ง:';
@@ -1221,6 +1264,35 @@ priceList = async (req, res)=>{
                             .status(404)
                             .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
                 }
+
+            const telTo = formData.to.tel;
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
+
+                // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+                if (!regexWord.test(telTo)) {
+                    return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"receive",
+                                    message:"กรุณาอย่ากรอกเบอร์โทร ผู้รับ โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+                }
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
+
+                if (regex.test(telTo) || telTo.length < 10) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"receive",
+                                message:"กรุณากรอกเบอร์โทร ผู้รับ ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
+
             // console.log(data)
             let isValid = false;
             let errorMessage = 'ผู้รับ:';
@@ -1264,7 +1336,7 @@ priceList = async (req, res)=>{
             if (!isValid) {
                 return res
                         .status(400)
-                        .send({staus:false, message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+                        .send({staus:false,type:"receive", message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
             } 
         }catch(err){
             console.log(err)
@@ -1298,7 +1370,7 @@ priceList = async (req, res)=>{
                     .status(400)
                     .send({
                         status: false,
-                        message: `ลำดับที่ ${no} กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`});
+                        message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`});
         }
 
         if(!Number.isInteger(packing_price)){
@@ -1550,17 +1622,25 @@ priceList = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                 }
-
-                //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
-                if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ 
+                const findPartner = await Partner.findById(id)
+                if(!findPartner){
                     return res
-                            .status(400)
-                            .send({status:false, message:`ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
-                }else if(resultP.costUpcountry > resultBase.salesUpcountry){
-                    return res
-                            .status(400)
-                            .send({status:false, message:`ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                            .status(404)
+                            .send({status:false, message:"ไม่มีข้อมูลของท่านในระบบ"})
                 }
+                let findRole = findPartner.sub_role.find(item => item.role == 'ONLINE SELLER')
+                    if(!findRole){
+                        //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
+                        if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ 
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:`ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                        }else if(resultP.costUpcountry > resultBase.salesUpcountry){
+                            return res
+                                    .status(400)
+                                    .send({status:false, message:`ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                        }
+                    }
 
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub
@@ -1581,17 +1661,16 @@ priceList = async (req, res)=>{
                 if(priceBangkok){
                         cost_hub = resultP.costBangkok_metropolitan
                         price = resultP.salesBangkok_metropolitan
-                        profitSaleMartket = price - resultBase.salesBangkok_metropolitan
-                        profit_partner = resultBase.salesBangkok_metropolitan - cost_hub
-                        cut_partner = resultBase.salesBangkok_metropolitan
+                        // profitSaleMartket = price - resultBase.salesBangkok_metropolitan
+                        cut_partner = parseFloat(resultP.costBangkok_metropolitan.toFixed(2))
+                        cost_base = resultBase.salesBangkok_metropolitan
+                        profit_partner = price - cost_hub
 
-                        //cost ต้องบวกกับ กำไร cod ของผู้ส่ง เพราะว่า เค้าเก็บเงินหน้าร้านมาแล้ว สมมุติ ค่าธรรมเนียม COD อยู่ที่ 15 บาท กำไร COD ของเขาคือ 2 บาท 
-                        //เขาเก็บเงินจากผู้ส่ง หน้าร้าน มาแล้ว ดังนั้นเวลาหัก Wallet ต้องหัก กำไร COD ของ Partner ผู้ทำการสั่ง ORDER ด้วย เพราะเขาได้เงินจากหน้าร้านมาแล้ว
                         let cost = resultP.costBangkok_metropolitan
-
                         let total = profit_partner + cod_profit
                             let dataOne = {
                                 id: result.owner_id,
+                                cost_price: parseFloat(price.toFixed(2)),
                                 cost: parseFloat(cost.toFixed(2)),
                                 profit: parseFloat(profit_partner.toFixed(2)),
                                 cod_profit: parseFloat(cod_profit.toFixed(2)),
@@ -1600,22 +1679,24 @@ priceList = async (req, res)=>{
                         profit.push(dataOne)
                 }else{
                         cost_hub = resultP.costUpcountry
-                        // console.log(cost_hub)
                         price = resultP.salesUpcountry
-                        profitSaleMartket = price - resultBase.salesUpcountry
-                        profit_partner = resultBase.salesUpcountry - cost_hub
-                        cut_partner = resultBase.salesUpcountry
+                        // profitSaleMartket = price - resultBase.salesUpcountry
+                        profit_partner = price - cost_hub
+                        cut_partner = parseFloat(resultP.costUpcountry.toFixed(2))
+                        cost_base = resultBase.salesUpcountry
+
                         let cost = resultP.costUpcountry
                         let total = profit_partner + cod_profit
                             let dataOne = {
                                 id: result.owner_id,
+                                cost_price: parseFloat(price.toFixed(2)),
                                 cost: parseFloat(cost.toFixed(2)),
                                 profit: parseFloat(profit_partner.toFixed(2)),
                                 cod_profit: parseFloat(cod_profit.toFixed(2)),
                                 total: parseFloat(total.toFixed(2))
                             }
                         profit.push(dataOne)
-                    }
+                }
                 // console.log(profit)
                 let shop_line = result.shop_line
                 if(shop_line != 'ICE'){
@@ -1623,7 +1704,7 @@ priceList = async (req, res)=>{
                         const findHead = await weightAll.findOne(
                                 {
                                     shop_id: shop_line,
-                                    express:"BEST"
+                                    express:"J&T"
                                 })
                         let profitOne 
                         let cod_profit
@@ -1646,6 +1727,7 @@ priceList = async (req, res)=>{
                         let total = profitOne + cod_profit
                         let data = {
                                     id: findHead.owner_id,
+                                    cost_price: parseFloat(cost_hub.toFixed(2)),
                                     cost: parseFloat(cost.toFixed(2)),
                                     profit: parseFloat(profitOne.toFixed(2)),
                                     cod_profit: parseFloat(cod_profit.toFixed(2)),
@@ -1665,44 +1747,47 @@ priceList = async (req, res)=>{
                         cod_iceprofit = findIce.cod_profit
                     }
 
-                if(priceBangkok){
-                    // console.log(cost_hub)
-                    let cost = resultBase.costBangkok_metropolitan
-                    let profitTwo = cost_hub - resultBase.costBangkok_metropolitan
-                    let total = profitTwo + cod_iceprofit
-                    let dataICE = {
-                        id:"ICE",
-                        cost: parseFloat(cost.toFixed(2)),
-                        profit: parseFloat(profitTwo.toFixed(2)),
-                        cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
-                        total: parseFloat(total.toFixed(2))
+                    if(priceBangkok){
+                        // console.log(cost_hub)
+                        let cost = resultBase.costBangkok_metropolitan
+                        let profitTwo = cost_hub - resultBase.costBangkok_metropolitan
+                        let total = profitTwo + cod_iceprofit
+                        let dataICE = {
+                            id:"ICE",
+                            cost_price: parseFloat(cost_hub.toFixed(2)),
+                            cost: parseFloat(cost.toFixed(2)),
+                            profit: parseFloat(profitTwo.toFixed(2)),
+                            cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
+                            total: parseFloat(total.toFixed(2))
+                        }
+                        profit.push(dataICE)
+                        cost_hub -= profitTwo
+                    }else{
+                        let cost = resultBase.costUpcountry
+                        let profitTwo = cost_hub - resultBase.costUpcountry
+                        let total = profitTwo + cod_iceprofit
+                        let dataICE = {
+                            id:"ICE",
+                            cost_price: parseFloat(cost_hub.toFixed(2)),
+                            cost: parseFloat(cost.toFixed(2)),
+                            profit: parseFloat(profitTwo.toFixed(2)),
+                            cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
+                            total: parseFloat(total.toFixed(2))
+                        }
+                        profit.push(dataICE)
+                        cost_hub -= profitTwo
+                        // console.log(cost_hub)
                     }
-                    profit.push(dataICE)
-                    cost_hub -= profitTwo
-                }else{
-                    let cost = resultBase.costUpcountry
-                    let profitTwo = cost_hub - resultBase.costUpcountry
-                    let total = profitTwo + cod_iceprofit
-                    let dataICE = {
-                        id:"ICE",
-                        cost: parseFloat(cost.toFixed(2)),
-                        profit: parseFloat(profitTwo.toFixed(2)),
-                        cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
-                        total: parseFloat(total.toFixed(2))
-                    }
-                    profit.push(dataICE)
-                    cost_hub -= profitTwo
-                }
                 // console.log(profit)
                 v = {
                         ...req.body,
                         express: "BEST",
                         price_remote_area: 0,
                         cost_hub: cost_hub,
-                        cost_base: cut_partner,
+                        cost_base: cost_base,
                         fee_cod: 0,
                         price: Number(price.toFixed()),
-                        profitSaleMartket: profitSaleMartket,
+                        // profitSaleMartket: profitSaleMartket,
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,
                         packing_price: packing_price,
@@ -1715,17 +1800,19 @@ priceList = async (req, res)=>{
                     // console.log(v)
                     // if (cod !== undefined) {
                     let formattedFee = parseFloat(fee_cod_total.toFixed(2));
-                    let total = price + formattedFee  + packing_price + insuranceFee
+                    let total = price + formattedFee  + packing_price + insuranceFee + packing_price
                         v.fee_cod = formattedFee
                             // v.profitPartner = profitPartner
                             if(price_remote_area != undefined){
                                 let total1 = total + price_remote_area
-                                    v.total = total1
-                                    v.cut_partner = cut_partner + price_remote_area + insuranceFee + formattedFee
+                                    v.total = parseFloat(total1.toFixed(2))
+                                    let cut = cut_partner + price_remote_area + insuranceFee + formattedFee
+                                    v.cut_partner = parseFloat(cut.toFixed(2))
                                     v.price_remote_area = price_remote_area
                             }else{
-                                    v.cut_partner = cut_partner + insuranceFee + formattedFee
-                                    v.total = total
+                                    let cut = cut_partner + insuranceFee + formattedFee
+                                    v.cut_partner = parseFloat(cut.toFixed(2))
+                                    v.total = parseFloat(total.toFixed(2))
                             }
                         new_data.push(v);  
                             try {

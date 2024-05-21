@@ -38,7 +38,6 @@ createOrder = async (req, res)=>{
     try{
         const id = req.decoded.userid
         const role = req.decoded.role
-        const no = req.body.no
         const data = req.body
         const cod_amount = req.body.cod_amount
         const price = req.body.price
@@ -46,7 +45,6 @@ createOrder = async (req, res)=>{
         const fee_cod = req.body.fee_cod
         const total = req.body.total
         const remark = req.body.remark
-        const profitSaleMartket = req.body.profitSaleMartket
         const packing_price = req.body.packing_price
         const declared_value = req.body.declared_value
         const insuranceFee = req.body.insuranceFee
@@ -142,12 +140,9 @@ createOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถส่งคำร้องขอไปยัง J&T ได้"})
             }else if(response.data.responseitems[0].reason == "S10"){
-                // return res
-                //         .status(404)
-                //         .send({status:false, message:"หมายเลขรหัสการสั่งซื้อเกิดการซ้ำกัน"})
-                let newbe = await createOrder(req, res)
-                console.log("หมายเลขรหัสการสั่งซื้อเกิดการซ้ำกัน")
-                return newbe
+                return res
+                        .status(404)
+                        .send({status:false, message:"หมายเลขรหัสการสั่งซื้อเกิดการซ้ำกันกรุณากดสั่งอีกครั้ง"})
             }else if(response.data.responseitems[0].reason == "B0101"){
                 return res
                         .status(404)
@@ -155,7 +150,7 @@ createOrder = async (req, res)=>{
             }else if(response.data.responseitems[0].success == 'false'){
                 return res
                         .status(404)
-                        .send({status:false, message:`ลำดับ ${no} ไม่สามารถสร้างออเดอร์ได้เนื่องจากมีความผิดพลาด กรุณาตรวจสอบ น้ำหนัก,ที่อยู่ของ ผู้รับ, ผู้ส่ง และ เบอร์โทร ว่าท่านได้กรอกถูกต้องหรือไม่(${response.data.responseitems[0].reason})`})
+                        .send({status:false, message:`ไม่สามารถสร้างออเดอร์ได้เนื่องจากมีความผิดพลาด กรุณาตรวจสอบ น้ำหนัก,ที่อยู่ของ ผู้รับ, ผู้ส่ง และ เบอร์โทร ว่าท่านได้กรอกถูกต้องหรือไม่(${response.data.responseitems[0].reason})`})
             }
         const new_data = response.data.responseitems[0]
 
@@ -175,7 +170,7 @@ createOrder = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
                 }
- 
+
             // console.log(findShop.credit)
             let credit = parseFloat(findShop.credit.toFixed(2))
             const plus = credit + cut_partner
@@ -185,7 +180,7 @@ createOrder = async (req, res)=>{
                     ID: id,
                     role: role,
                     shop_number: shop,
-                    orderid: new_data.txlogisticid,
+                    orderid: new_data.mailno,
                     amount: cut_partner,
                     before: plusFloat,
                     after: credit,
@@ -351,7 +346,6 @@ createOrder = async (req, res)=>{
                 total: total,
                 cut_partner: cut_partner,
                 packing_price: packing_price,
-                profitSaleMartket: profitSaleMartket,
                 price_remote_area: price_remote_area,
                 price: price,
                 declared_value: declared_value,

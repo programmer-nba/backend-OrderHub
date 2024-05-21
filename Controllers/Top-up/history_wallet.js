@@ -1,4 +1,5 @@
 const { Partner } = require('../../Models/partner')
+const { historyWalletShop } = require('../../Models/shop/shop_history')
 const { historyWallet } = require('../../Models/topUp/history_topup')
 const { getContractByID } = require('../contractController')
 const { getById } = require('./topupController')
@@ -126,4 +127,28 @@ findAmountAll = async(req, res)=>{
                 .send({status:false, message:err})
     }
 }
-module.exports = {getAll, findId, findIdForUser, findShop, findAmountAll}
+
+findShopAmountAll = async(req, res)=>{
+    try{
+        const shop_id = req.body.shop_id
+        const findShop = await historyWalletShop.find({shop_id:shop_id, remark:"ยกเลิกขนส่งสินค้า(J&T)"})
+            if(findShop.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, data:[]})
+            }
+        const totalAmount = findShop.reduce((sum, record) => sum + record.amount, 0);
+        console.log(`Total Amount: ${totalAmount}`);
+        return res
+                .status(200)
+                .send({
+                    status:true,
+                    total:totalAmount, 
+                    data:findShop})
+    }catch(err){
+        return res  
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+module.exports = {getAll, findId, findIdForUser, findShop, findAmountAll, findShopAmountAll}
