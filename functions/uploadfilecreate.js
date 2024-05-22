@@ -33,12 +33,12 @@ async function uploadFileCreate(file, res, { i, reqFiles }) {
       media: media,
     });
 
-    generatePublicUrl(response.data.id);
+    await generatePublicUrl(response.data.id);
     reqFiles.push(response.data.id);
     console.log(response.data.id);
     return response.data.id;
   } catch (error) {
-    res.status(500).send({ message: "Internal Server Error" });
+    res.status(500).send({ message: error.message });
   }
 }
 

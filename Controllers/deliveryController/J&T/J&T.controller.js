@@ -421,7 +421,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -1120,14 +1120,14 @@ priceList = async (req, res)=>{
             // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
             const regex = /^(00|01)/;
                 
-                if (regex.test(tel) || tel.length < 10) {
+                if (regex.test(tel) || tel.length != 10) {
                     // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
                     return res
                             .status(400)
                             .send({
                                 status:false, 
                                 type:"sender",
-                                message:"กรุณากรอกเบอร์โทร ผู้ส่ง ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                                message:"กรุณากรอกเบอร์โทร ผู้ส่ง ให้ครบ 10 หลัก(อย่าเกิน)และอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
                 }
 
             // console.log(data)
@@ -1205,14 +1205,14 @@ priceList = async (req, res)=>{
             // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
             const regex = /^(00|01)/;
                 
-                if (regex.test(telTo) || telTo.length < 10) {
+                if (regex.test(telTo) || telTo.length != 10) {
                     // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
                     return res
                             .status(400)
                             .send({
                                 status:false, 
                                 type:"receive",
-                                message:"กรุณากรอกเบอร์โทร ผู้รับ ให้ครบ 10 หลักและอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                                message:"กรุณากรอกเบอร์โทร ผู้รับ ให้ครบ 10 หลัก(อย่าเกิน)และอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
                 }
 
             // console.log(data)
