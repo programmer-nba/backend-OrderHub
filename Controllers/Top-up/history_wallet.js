@@ -1,4 +1,5 @@
 const { Partner } = require('../../Models/partner')
+const { profitPartner } = require('../../Models/profit/profit.partner')
 const { historyWalletShop } = require('../../Models/shop/shop_history')
 const { historyWallet } = require('../../Models/topUp/history_topup')
 const { getContractByID } = require('../contractController')
@@ -92,28 +93,88 @@ findAmountAll = async(req, res)=>{
         const partner_id = req.body.partner_id
         const day_start = req.body.day_start
         const day_end = req.body.day_end
+        const status = req.body.status
         let findPartner
-        if(day_start || day_end){
-            findPartner = await historyWallet.find({
-                partnerID:partner_id, 
-                after:"เติมเงินสำเร็จ",
-                day: { $gte: day_start, $lte: day_end } 
-            })
-                if(findPartner.length == 0){
-                    return res
-                            .status(200)
-                            .send({status:true, data:[]})
+        if(partner_id){
+            if(day_start && day_end){
+                if(status){
+                    findPartner = await historyWallet.find({
+                        partnerID:partner_id, 
+                        after:status,
+                        day: { $gte: day_start, $lte: day_end } 
+                    })
+                        if(findPartner.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:true, data:[]})
+                        }
+                }else{
+                    findPartner = await historyWallet.find({
+                        partnerID:partner_id, 
+                        day: { $gte: day_start, $lte: day_end } 
+                    })
+                        if(findPartner.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:true, data:[]})
+                        }
                 }
+            }else if(status){
+                findPartner = await historyWallet.find({
+                    partnerID:partner_id, 
+                    after:status
+                })
+                    if(findPartner.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[]})
+                    }
+            }else{
+                findPartner = await historyWallet.find({
+                    partnerID:partner_id, 
+                })
+                    if(findPartner.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[]})
+                    }
+            }
+        }else if(!partner_id){
+            if(day_start && day_end){
+                if(status){
+                    findPartner = await historyWallet.find({
+                        after:status,
+                        day: { $gte: day_start, $lte: day_end } 
+                    })
+                        if(findPartner.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:true, data:[]})
+                        }
+                }else{
+                    findPartner = await historyWallet.find({
+                        day: { $gte: day_start, $lte: day_end } 
+                    })
+                        if(findPartner.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:true, data:[]})
+                        }
+                }
+            }else if(status){
+                findPartner = await historyWallet.find({
+                    after:status,
+                })
+                    if(findPartner.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[]})
+                    }
+            }
         }else{
-            findPartner = await historyWallet.find({
-                partnerID:partner_id, 
-                after:"เติมเงินสำเร็จ"
-            })
-                if(findPartner.length == 0){
-                    return res
-                            .status(200)
-                            .send({status:true, data:[]})
-                }
+            return res
+                    .status(404)
+                    .send({status:false, message:"ไม่พบข้อมูลที่ต้องการ"})
         }
         
         const totalAmount = findPartner.reduce((sum, record) => sum + record.amount, 0);
@@ -130,21 +191,45 @@ findAmountAll = async(req, res)=>{
 
 findShopAmountAll = async(req, res)=>{
     try{
-        const shop_id = req.body.shop_id
-        const findShop = await historyWalletShop.find({shop_id:shop_id, remark:"ยกเลิกขนส่งสินค้า(J&T)"})
-            if(findShop.length == 0){
-                return res
-                        .status(404)
-                        .send({status:false, data:[]})
-            }
-        const totalAmount = findShop.reduce((sum, record) => sum + record.amount, 0);
-        console.log(`Total Amount: ${totalAmount}`);
+        const id = req.params.id
+        const findData = await profitPartner.find({
+            wallet_owner:"6639eceffeaaad9370b7bf8e",
+            status:"เงินเข้า",
+            $or:[
+                {day:"2024-05-20"},
+                {day:"2024-05-21"}
+            ]
+        })
+
+        const totalCOD = findData.reduce((sum, record) => sum + record.profitCOD, 0);
+        const totalCOST = findData.reduce((sum, record) => sum + record.profitCost, 0);
+        const totalPROFIT = findData.reduce((sum, record) => sum + record.profit, 0);
+        console.log(findData.length)
         return res
                 .status(200)
                 .send({
                     status:true,
-                    total:totalAmount, 
-                    data:findShop})
+                    totalCOD:parseFloat(totalCOD.toFixed(2)), 
+                    totalCOST:totalCOST,
+                    totalPROFIT:parseFloat(totalPROFIT.toFixed(2))
+                })
+        
+        //ค้นหาสินค้าจากนั้นนำ amount มาบวกกัน
+        // const shop_id = req.body.shop_id
+        // const findShop = await historyWalletShop.find({shop_id:shop_id, remark:"ขนส่งสินค้า(J&T)"})
+        //     if(findShop.length == 0){
+        //         return res
+        //                 .status(404)
+        //                 .send({status:false, data:[]})
+        //     }
+        // const totalAmount = findShop.reduce((sum, record) => sum + record.amount, 0);
+        // console.log(`Total Amount: ${totalAmount}`);
+        // return res
+        //         .status(200)
+        //         .send({
+        //             status:true,
+        //             total:totalAmount, 
+        //             data:findShop})
     }catch(err){
         return res  
                 .status(500)

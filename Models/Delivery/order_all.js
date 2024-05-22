@@ -44,7 +44,7 @@ const orderAllSchema = new Schema({
         pdfStream: {type : String, required : false},
         bill_status : {type : String, default: "พักบิล", required : false},
         order_status : {type: String, default: "booking", required: false},
-        remark: {type : String, required : false},
+        remark: {type : String, default: "", required : false},
         print_code : {type : String, default: "", required : false},
         day: {
                 type: String,
