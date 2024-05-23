@@ -535,6 +535,7 @@ cancelAll = async(req, res)=>{
         // return res
         //         .status(200)
         //         .send({status:false, message:txlogisticid})
+
         let newData = await Promise.all(txlogisticid.map(async item => {
             // console.log(item.express)
             if(item.express == "J&T"){

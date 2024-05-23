@@ -22,6 +22,7 @@ const historySchema = new Schema({
     role:{type:String, require: false},
     shop_number:{type:String, require: false},
     orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
+    mailno:{type:String, require: false},
     amount:{type:Number, require: false},
     before:{type:String, require: false},
     after:{type:String, require: false, default: ""},

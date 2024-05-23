@@ -195,10 +195,10 @@ findShopAmountAll = async(req, res)=>{
         const findData = await profitPartner.find({
             wallet_owner:"6639eceffeaaad9370b7bf8e",
             status:"เงินเข้า",
-            $or:[
-                {day:"2024-05-20"},
-                {day:"2024-05-21"}
-            ]
+            day: {
+                $gte: "2024-05-20",
+                $lte: "2024-05-22"
+            }
         })
 
         const totalCOD = findData.reduce((sum, record) => sum + record.profitCOD, 0);
@@ -236,4 +236,5 @@ findShopAmountAll = async(req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
+
 module.exports = {getAll, findId, findIdForUser, findShop, findAmountAll, findShopAmountAll}
