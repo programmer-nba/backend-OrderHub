@@ -1,6 +1,8 @@
+const { orderAll } = require('../../Models/Delivery/order_all')
 const { Partner } = require('../../Models/partner')
 const { profitPartner } = require('../../Models/profit/profit.partner')
 const { historyWalletShop } = require('../../Models/shop/shop_history')
+const { shopPartner } = require('../../Models/shop/shop_partner')
 const { historyWallet } = require('../../Models/topUp/history_topup')
 const { getContractByID } = require('../contractController')
 const { getById } = require('./topupController')
@@ -191,28 +193,59 @@ findAmountAll = async(req, res)=>{
 
 findShopAmountAll = async(req, res)=>{
     try{
-        const id = req.params.id
-        const findData = await profitPartner.find({
-            wallet_owner:"6639eceffeaaad9370b7bf8e",
-            status:"เงินเข้า",
-            day: {
-                $gte: "2024-05-20",
-                $lte: "2024-05-22"
+        const day = req.body.day
+        const findHistory = await historyWallet.find({after:"พาร์ทเนอร์นำเงินออกร้านค้า"})
+            if(findHistory.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, data:[]})
             }
-        })
-
-        const totalCOD = findData.reduce((sum, record) => sum + record.profitCOD, 0);
-        const totalCOST = findData.reduce((sum, record) => sum + record.profitCost, 0);
-        const totalPROFIT = findData.reduce((sum, record) => sum + record.profit, 0);
-        console.log(findData.length)
+        const findMap = await Promise.all(findHistory.map(async item => {
+            let findShop = await shopPartner.findOne({shop_number:item.shop_number})
+                if(!findShop){
+                    return `${item.shop_number} ไม่มีในระบบ`
+                }
+                let v = {
+                    updateOne:{
+                        filter:{orderid: item.orderid},
+                        update:{
+                            $set:{
+                                partnerID: findShop.partnerID,
+                                firstname: findShop.firstname,
+                                lastname: findShop.lastname
+                            }
+                        }
+                    }
+                }
+                return v
+        }))
+        console.log(findHistory.length)
+        const bulkWrite = await historyWallet.bulkWrite(findMap)
         return res
                 .status(200)
-                .send({
-                    status:true,
-                    totalCOD:parseFloat(totalCOD.toFixed(2)), 
-                    totalCOST:totalCOST,
-                    totalPROFIT:parseFloat(totalPROFIT.toFixed(2))
-                })
+                .send({status:true, data:bulkWrite})
+        // const id = req.params.id
+        // const findData = await profitPartner.find({
+        //     wallet_owner:"6639eceffeaaad9370b7bf8e",
+        //     status:"เงินเข้า",
+        //     day: {
+        //         $gte: "2024-05-20",
+        //         $lte: "2024-05-22"
+        //     }
+        // })
+
+        // const totalCOD = findData.reduce((sum, record) => sum + record.profitCOD, 0);
+        // const totalCOST = findData.reduce((sum, record) => sum + record.profitCost, 0);
+        // const totalPROFIT = findData.reduce((sum, record) => sum + record.profit, 0);
+        // console.log(findData.length)
+        // return res
+        //         .status(200)
+        //         .send({
+        //             status:true,
+        //             totalCOD:parseFloat(totalCOD.toFixed(2)), 
+        //             totalCOST:totalCOST,
+        //             totalPROFIT:parseFloat(totalPROFIT.toFixed(2))
+        //         })
         
         //ค้นหาสินค้าจากนั้นนำ amount มาบวกกัน
         // const shop_id = req.body.shop_id

@@ -516,6 +516,7 @@ uploadPicture = async (req,res)=>{
     }
 }
 
+
 tranfersCreditsToShop = async (req, res)=>{
     try{
         const partner_id = req.decoded.userid
@@ -606,11 +607,11 @@ tranfersCreditsToShop = async (req, res)=>{
                 }
 
             const dataHistoryPartner = {
-                    shop_id: tranferToShop._id,
-                    ID: partner_id,
-                    role: role,
+                    partnerID: partner_id,
                     shop_number: tranferToShop.shop_number,
                     orderid: partnerToShop,
+                    firstname: cutCredtisPartner.firstname,
+                    lastname: cutCredtisPartner.lastname,
                     amount: amount,
                     before: findPartner.credits,
                     after: "พาร์ทเนอร์นำเงินเข้าร้านค้า",
@@ -735,11 +736,11 @@ tranfersShopToPartner = async (req, res)=>{
                 }
 
             const dataHistoryPartner = {
-                    shop_id: cutCredtisShop._id,
-                    ID: partner_id,
-                    role: role,
+                    partnerID: tranferToPartner._id,
                     shop_number: cutCredtisShop.shop_number,
                     orderid: ShopToPartner,
+                    firstname: tranferToPartner.firstname,
+                    lastname: tranferToPartner.lastname,
                     amount: amount,
                     before: findPartner.credits,
                     after: "พาร์ทเนอร์นำเงินออกร้านค้า",
@@ -826,7 +827,6 @@ tranfersPartnertoAdmin = async(req, res)=>{
         let before = cutCredtisPartner.credits + amount
         let v = {
             partnerID:id,
-            role:role,
             shop_number:"-",
             orderid:orderid,
             outTradeNo:"-",
