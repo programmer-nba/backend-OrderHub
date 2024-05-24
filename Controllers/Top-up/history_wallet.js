@@ -219,7 +219,7 @@ findShopAmountAll = async(req, res)=>{
                 }
                 return v
         }))
-        console.log(findHistory.length)
+        // console.log(findHistory.length)
         const bulkWrite = await historyWallet.bulkWrite(findMap)
         return res
                 .status(200)
