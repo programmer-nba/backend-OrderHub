@@ -194,36 +194,41 @@ findAmountAll = async(req, res)=>{
 findShopAmountAll = async(req, res)=>{
     try{
         const day = req.body.day
-        const findHistory = await historyWallet.find({after:"พาร์ทเนอร์นำเงินออกร้านค้า"})
+        const findHistory = await historyWalletShop.find(
+            {remark:"ยกเลิกขนส่งสินค้า(J&T)"},
+            {projection: { orderid:1 }})
             if(findHistory.length == 0){
                 return res
                         .status(404)
                         .send({status:false, data:[]})
             }
-        const findMap = await Promise.all(findHistory.map(async item => {
-            let findShop = await shopPartner.findOne({shop_number:item.shop_number})
-                if(!findShop){
-                    return `${item.shop_number} ไม่มีในระบบ`
-                }
-                let v = {
-                    updateOne:{
-                        filter:{orderid: item.orderid},
-                        update:{
-                            $set:{
-                                partnerID: findShop.partnerID,
-                                firstname: findShop.firstname,
-                                lastname: findShop.lastname
-                            }
-                        }
-                    }
-                }
-                return v
-        }))
-        // console.log(findHistory.length)
-        const bulkWrite = await historyWallet.bulkWrite(findMap)
+        console.log(findHistory.length)
+        // const findMap = await Promise.all(findHistory.map(item => ({
+        //     deleteOne: {
+        //         filter: { orderid: item.orderid, remark: "ขนส่งสินค้า(J&T)" },
+        //     }
+        // })));
+        // console.log(findMap.length)
+        // const batchSize = 1000;
+        // const totalBatches = Math.ceil(findMap.length / batchSize);
+        // for (let i = 0; i < totalBatches; i++) {
+        //     const startIndex = i * batchSize;
+        //     const endIndex = Math.min(startIndex + batchSize, findMap.length);
+            
+        //     const batch = findMap.slice(startIndex, endIndex);
+        
+        //     // ส่ง batch ไปทำ bulkWrite
+        //     try {
+        //         const result = await historyWalletShop.bulkWrite(batch);
+        //         console.log(`Batch ${i + 1} bulkWrite result:`, result);
+        //     } catch (error) {
+        //         console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
+        //     }
+        // }
+        // ส่ง response เมื่อการลบเสร็จสิ้น
         return res
                 .status(200)
-                .send({status:true, data:bulkWrite})
+                .json({ message: 'Documents deleted successfully' });
         // const id = req.params.id
         // const findData = await profitPartner.find({
         //     wallet_owner:"6639eceffeaaad9370b7bf8e",

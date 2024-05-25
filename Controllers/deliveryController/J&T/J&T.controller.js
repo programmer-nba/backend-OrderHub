@@ -186,7 +186,7 @@ createOrder = async (req, res)=>{
                     before: plusFloat,
                     after: credit,
                     type: 'J&T',
-                    remark: "ขนส่งสินค้า(J&T)"
+                    remark: "ขนส่งสินค้า"
                 }
             // console.log(history)
             const historyShop = await historyWalletShop.create(history)
@@ -729,22 +729,28 @@ cancelOrder = async (req, res)=>{
                                         .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
                                 }
                     let diff = findShop.credit - findPno.cut_partner
+                    let before = parseFloat(diff.toFixed(2));
+                    let after = findShop.credit.toFixed(2)
                     let history = {
-                                shop_id: findShop._id,
-                                ID: id,
-                                role: role,
-                                shop_number: findPno.shop_number,
-                                orderid: txlogisticid,
                                 amount: findPno.cut_partner,
-                                before: diff,
-                                after: findShop.credit,
+                                before: before,
+                                after: after,
                                 type: 'J&T',
-                                remark: "ยกเลิกขนส่งสินค้า(J&T)"
+                                remark: "ยกเลิกขนส่งสินค้า"
                         }
-                const historyShop = await historyWalletShop.create(history)
-                            if(!historyShop){
-                                console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
-                            }
+                const historyShop = await historyWalletShop.findOneAndUpdate(
+                    {
+                        orderid:txlogisticid,
+                    },{
+                        ...history
+                    },{
+                        new:true
+                    })
+                        if(!historyShop){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีหมายเลข txlogisticid ที่ท่านต้องการยกเลิก"})
+                        }
 
                 //REFUND PARTNER//
                 let profitRefundTotal = findPno.profitAll[0].total + findPno.packing_price
@@ -847,7 +853,7 @@ cancelOrder = async (req, res)=>{
                     
                 return res
                         .status(200)
-                        .send({status:false, data:refundAll})
+                        .send({status:true, data:refundAll})
         }
         
     }catch(err){
@@ -911,22 +917,26 @@ cancelOrderAll = async (txlogisticid)=>{
                                 return `${txlogisticid} ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้`
                                 }
                     let diff = findShop.credit - findPno.cut_partner
+                    let before = parseFloat(diff.toFixed(2));
+                    let after = findShop.credit.toFixed(2)
                     let history = {
-                                shop_id: findShop._id,
-                                ID: findPno.owner_id,
-                                role: findPno.role,
-                                shop_number: findPno.shop_number,
-                                orderid: txlogisticid,
                                 amount: findPno.cut_partner,
-                                before: diff,
-                                after: findShop.credit,
+                                before: before,
+                                after: after,
                                 type: 'J&T',
-                                remark: "ยกเลิกขนส่งสินค้า(J&T)"
+                                remark: "ยกเลิกขนส่งสินค้า"
                         }
-                const historyShop = await historyWalletShop.create(history)
-                            if(!historyShop){
-                                return `${txlogisticid} ไม่สามารถสร้างประวัติการเงินของร้านค้าได้`
-                            }
+                const historyShop = await historyWalletShop.findOneAndUpdate(
+                    {
+                        orderid:txlogisticid,
+                    },{
+                        ...history
+                    },{
+                        new:true
+                    })
+                        if(!historyShop){
+                            return `${txlogisticid} ไม่มีหมายเลขที่ท่านต้องการยกเลิก`
+                        }
 
                 //REFUND PARTNER//
                 let profitRefundTotal = findPno.profitAll[0].total + findPno.packing_price
@@ -1267,7 +1277,7 @@ priceList = async (req, res)=>{
             console.log(err)
         }
 
-        if(weight == 0 || weight == undefined){
+        if(weight <= 0 || weight == undefined){
             return res
                     .status(400)
                     .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
