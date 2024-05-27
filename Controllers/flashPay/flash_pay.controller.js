@@ -101,7 +101,7 @@ QRCreate = async (req, res)=>{
             firstname: findPartner.firstname,
             lastname: findPartner.lastname,
             amount: amount,
-            before: findShop.credits,
+            before: findPartner.credits,
             type: "QRCODE FLASHPAY"
         }
         const history = await historyWallet.create(new_data)
@@ -191,7 +191,7 @@ QRCreateTest = async (req, res)=>{
             firstname: findPartner.firstname,
             lastname: findPartner.lastname,
             amount: amount,
-            before: findShop.credits,
+            before: findPartner.credits,
             type: "QRCODE FLASHPAY"
         }
         const history = await historyWallet.create(new_data)
