@@ -76,11 +76,15 @@ QRCreate = async (req, res)=>{
                     'Accept-Language': 'TH',
             },
         });
-            // if(response.data.code == 0){
-            //     return res
-            //             .status(400)
-            //             .send({status:false, message:"ไม่สามารถยิง API ได้"})
-            // }
+        if(response.data.code != 0){
+            return res
+                    .status(400)
+                    .send({
+                        status:false, 
+                        message:"คำขอที่ส่งไปยัง FlashPay ล้มเหลว",
+                        data: response.data
+                    })
+        }
         // const qrRawData  = response.data.data.qrRawData
         // console.log(qrRawData)
         // const qrCodeFilePath = `D:\\QRCODE\\${outTradeNo}.png`
@@ -166,11 +170,15 @@ QRCreateTest = async (req, res)=>{
                     'Accept-Language': 'TH',
             },
         });
-        // if(response.data.code == 0){
-        //     return res
-        //             .status(400)
-        //             .send({status:false, message:"ไม่สามารถ"})
-        // }
+        if(response.data.code != 0){
+            return res
+                    .status(400)
+                    .send({
+                        status:false, 
+                        message:"คำขอที่ส่งไปยัง FlashPay ล้มเหลว",
+                        data: response.data
+                    })
+        }
         // const qrRawData  = response.data.data.qrRawData
         // console.log(qrRawData)
         // const qrCodeFilePath = `D:\\QRCODE\\${outTradeNo}.png`

@@ -1556,7 +1556,13 @@ priceList = async (req, res)=>{
                                 .status(400)
                                 .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }
-                const findPartner = await Partner.findById(id)
+                let idReal
+                if(role == 'partner'){
+                    idReal = id
+                }else if(role == 'shop_member'){
+                    idReal = req.decoded.id_ownerShop
+                }
+                const findPartner = await Partner.findById(idReal)
                     if(!findPartner){
                         return res
                                 .status(404)
