@@ -224,8 +224,14 @@ createOrder = async (req, res)=>{
             // console.log(profitAll)  
             let profitTotalAll = profitAll[0].total + packing_price
             let profitTotal = parseFloat(profitTotalAll.toFixed(2))
+            let idReal
+                if(role == 'partner'){
+                    idReal = id
+                }else if(role == 'shop_member'){
+                    idReal = req.decoded.id_ownerShop
+                }
             let profitOne = await Partner.findOneAndUpdate(
-                    { _id: id },
+                    { _id: idReal },
                     { $inc: { 
                             profit: +profitTotal,
                         } 
@@ -1073,6 +1079,7 @@ priceList = async (req, res)=>{
         const no = req.body.no
         const formData = req.body
         const id = req.decoded.userid
+        const role = req.decoded.role
         const shop = formData.shop_number
         const weight = formData.parcel.weight
         const declared_value = formData.declared_value
@@ -1561,6 +1568,7 @@ priceList = async (req, res)=>{
                     idReal = id
                 }else if(role == 'shop_member'){
                     idReal = req.decoded.id_ownerShop
+                    console.log(idReal)
                 }
                 const findPartner = await Partner.findById(idReal)
                     if(!findPartner){
