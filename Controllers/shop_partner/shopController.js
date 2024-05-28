@@ -516,7 +516,6 @@ uploadPicture = async (req,res)=>{
     }
 }
 
-
 tranfersCreditsToShop = async (req, res)=>{
     try{
         const partner_id = req.decoded.userid

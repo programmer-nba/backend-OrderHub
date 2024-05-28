@@ -20,7 +20,7 @@ let dayTime
 let dayTimePlusOneHour
 
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
- function updateRealTime() {
+function updateRealTime() {
     dayjsTimestamp = dayjs().tz('Asia/Bangkok');
     dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss');
     dayTimePlusOneHour = dayjs(dayTime).add(10, 'minute').format('YYYY-MM-DD HH:mm:ss');

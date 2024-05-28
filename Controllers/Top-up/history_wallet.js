@@ -195,17 +195,26 @@ findShopAmountAll = async(req, res)=>{
     try{
         // const day = req.body.day
         // const findHistory = await historyWalletShop.find(
-        //     {remark:"ยกเลิกขนส่งสินค้า(J&T)"},
-        //     {projection: { orderid:1 }})
+        //     { mailno: "" },
+        //     { orderid: 1} // เลือกฟิลด์ที่ต้องการ และยกเว้น _id
+        // ).exec();
         //     if(findHistory.length == 0){
         //         return res
         //                 .status(404)
         //                 .send({status:false, data:[]})
         //     }
-        // console.log(findHistory.length)
-        // const findMap = await Promise.all(findHistory.map(item => ({
-        //     deleteOne: {
-        //         filter: { orderid: item.orderid, remark: "ขนส่งสินค้า(J&T)" },
+        // const orderIdsToUpdate = findHistory.map(doc => doc.orderid);
+        // console.log(orderIdsToUpdate.length)
+        // const orderAllDocs = await orderAll.find({ tracking_code: { $in: orderIdsToUpdate } },{tracking_code:1, mailno:1}).exec()
+        // console.log(orderAllDocs[0])
+        // const findMap = await Promise.all(orderAllDocs.map(item => ({
+        //     updateOne: {
+        //         filter: { orderid: item.tracking_code },
+        //         update:{
+        //             $set:{
+        //                 mailno: item.mailno
+        //             }
+        //         }
         //     }
         // })));
         // console.log(findMap.length)
@@ -225,34 +234,35 @@ findShopAmountAll = async(req, res)=>{
         //         console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
         //     }
         // }
-        // ส่ง response เมื่อการลบเสร็จสิ้น
+        // // ส่ง response เมื่อการลบเสร็จสิ้น
         // return res
         //         .status(200)
-        //         .json({ message: 'Documents deleted successfully' });
-        // const id = req.params.id
-        const day_start = req.body.day_start
-        const day_end = req.body.day_end
-        const findData = await profitPartner.find({
-            wallet_owner:"6639eceffeaaad9370b7bf8e",
-            status:"เงินเข้า",
-            day: {
-                $gte: day_start,
-                $lte: day_end
-            }
-        })
+        //         .json({ message: 'Documents fixed successfully' });
 
-        const totalCOD = findData.reduce((sum, record) => sum + record.profitCOD, 0);
-        const totalCOST = findData.reduce((sum, record) => sum + record.profitCost, 0);
-        const totalPROFIT = findData.reduce((sum, record) => sum + record.profit, 0);
-        console.log(findData.length)
-        return res
-                .status(200)
-                .send({
-                    status:true,
-                    totalCOD:parseFloat(totalCOD.toFixed(2)), 
-                    totalCOST:totalCOST,
-                    totalPROFIT:parseFloat(totalPROFIT.toFixed(2))
-                })
+        // const id = req.params.id
+        // const day_start = req.body.day_start
+        // const day_end = req.body.day_end
+        // const findData = await profitPartner.find({
+        //     wallet_owner:"6639eceffeaaad9370b7bf8e",
+        //     status:"เงินเข้า",
+        //     day: {
+        //         $gte: day_start,
+        //         $lte: day_end
+        //     }
+        // })
+
+        // const totalCOD = findData.reduce((sum, record) => sum + record.profitCOD, 0);
+        // const totalCOST = findData.reduce((sum, record) => sum + record.profitCost, 0);
+        // const totalPROFIT = findData.reduce((sum, record) => sum + record.profit, 0);
+        // console.log(findData.length)
+        // return res
+        //         .status(200)
+        //         .send({
+        //             status:true,
+        //             totalCOD:parseFloat(totalCOD.toFixed(2)), 
+        //             totalCOST:totalCOST,
+        //             totalPROFIT:parseFloat(totalPROFIT.toFixed(2))
+        //         })
         
         //ค้นหาสินค้าจากนั้นนำ amount มาบวกกัน
         // const shop_id = req.body.shop_id

@@ -31,7 +31,6 @@ router.route('/orderhub/shop/updateContract').put( authAdmin.checkToken, shop.st
 router.route('/orderhub/shop/find/downline/:id').get( auth.checkToken, shop.findShopDownLine )
 router.route('/orderhub/shop/fix/credit/:id').put( auth.checkToken, shop.fixCredits )
 
-
 //SHOP ADMIN
 router.route('/orderhub/shopAdmin/getAll').get( auth.checkToken, shop.getAll ) //ดึงข้อมูลร้านค้าทั้งหมดของทุกคน
 router.route('/orderhub/shopAdmin/getPartner/:id').get( authAdmin.checkToken, shop.getShopPartnerByAdmin ) //ดึงข้อมูลร้านค้าทั้งหมดของคนๆนั้น
@@ -198,6 +197,7 @@ router.route('/orderhub/profitPartner/get/cod').post( authAdmin.checkToken, prof
 // router.route('/orderhub/profitPartner/check/cod').get( auth.checkToken, profitPN.calCod )
 router.route('/orderhub/profitPartner/get/sign/day').post( auth.checkToken, profitPN.getSignDay )
 router.route('/orderhub/profitPartner/get/day/pay').post( auth.checkToken, profitPN.getDayPay )
+router.route('/orderhub/profitPartner/upload/excel').post( auth.checkToken, profitPN.uploadExcel )
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')

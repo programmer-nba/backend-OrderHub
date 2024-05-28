@@ -5,6 +5,14 @@ const { shopPartner } = require("../../Models/shop/shop_partner");
 const dayjs = require('dayjs');
 const mongoose = require('mongoose');
 const { profitTemplate } = require("../../Models/profit/profit.template");
+const { uploadFileCreate, deleteFile } = require("../../functions/uploadfileExcel");
+const multer = require("multer");
+
+const storage = multer.diskStorage({
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + "-");
+    },
+  });
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -349,6 +357,45 @@ getDayPay = async(req, res)=>{
     }
 }
 
+uploadExcel = async (req,res)=>{
+    try {
+      let upload = multer({ storage: storage })
+      const fields = [
+        {name: 'excel', maxCount: 1}
+        // {name: 'pictureTwo', maxCount: 1}
+      ]
+      const uploadMiddleware = upload.fields(fields);
+      uploadMiddleware(req, res, async function (err) {
+        const reqFiles = [];
+        const result = [];
+        if (!req.files) {
+          return res.status(400).send({ message: 'No files were uploaded.' });
+        }
+        const url = req.protocol + "://" + req.get("host");
+        for (const fieldName in req.files) {
+          const files = req.files[fieldName];
+          for (var i = 0; i < files.length; i++) {
+            const src = await uploadFileCreate(files[i], res, { i, reqFiles });
+            result.push(src);
+          }
+        }
+        console.log(result[0])
+    
+        return res
+                .status(200)
+                .send({
+                    message: "เพิ่มรูปภาพสำเร็จ",
+                    status: true,
+                    data: result[0]
+                });
+
+      });
+      
+    } catch (error) {
+      return res.status(500).send({ status: false, error: error.message });
+    }
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 1000000)
@@ -368,4 +415,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay }
+module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay, uploadExcel }

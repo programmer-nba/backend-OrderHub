@@ -2,6 +2,13 @@ const { orderAll } = require("../../../Models/Delivery/order_all");
 const { Partner } = require("../../../Models/partner");
 const { profitTemplate } = require("../../../Models/profit/profit.template");
 const { cancelOrderAll } = require("../J&T/J&T.controller");
+const cron = require('node-cron');
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 getAll = async(req, res)=>{
     try{
@@ -555,6 +562,25 @@ cancelAll = async(req, res)=>{
                 .send({status:false, message:err})
     }
 }
+
+// ตั้งเวลาให้รันฟังก์ชันทุกวันเวลา 10:00 (เวลาประเทศไทย)
+cron.schedule('0 10 * * *', async () => {
+    const now = dayjs().tz("Asia/Bangkok");
+    const dayEnd = now.subtract(1, 'day').format('YYYY-MM-DD');
+    console.log(dayEnd)
+    const req = { body: { dayEnd: dayEnd } }; // สร้าง request mock object
+    const res = {
+        status: (code) => ({
+            send: (response) => console.log('Response:', response)
+        })
+    }; // สร้าง response mock object
+
+    await cancelAll(req, res);
+    console.log('cancelAll function executed at 10:00 PM Bangkok time');
+}, {
+    scheduled: true,
+    timezone: "Asia/Bangkok"
+});
 
 pickOrder = async(req, res)=>{
     try{
