@@ -167,7 +167,7 @@ Withdrawal = async (req, res)=>{
 
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
-        return res  
+        return res
                 .status(500)
                 .send({status:false, message:err})
     }
@@ -380,7 +380,7 @@ uploadExcel = async (req,res)=>{
           }
         }
         console.log(result[0])
-    
+
         return res
                 .status(200)
                 .send({

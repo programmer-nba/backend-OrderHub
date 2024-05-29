@@ -576,7 +576,7 @@ cron.schedule('0 10 * * *', async () => {
     }; // สร้าง response mock object
 
     await cancelAll(req, res);
-    console.log('cancelAll function executed at 10:00 PM Bangkok time');
+    console.log('cancelAll function executed at 10:00 AM Bangkok time');
 }, {
     scheduled: true,
     timezone: "Asia/Bangkok"

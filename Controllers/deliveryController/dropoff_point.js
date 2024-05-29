@@ -205,7 +205,7 @@ editBookbank = async (req, res)=>{
 
         // Function to check if a string contains only alphabetic characters
         function isAlphabetic(str) {
-            return /^[A-Za-z\s]+$/.test(str);
+            return /^[A-Za-z\u0E00-\u0E7F\s]+$/.test(str);
         }
 
         //เช็คตัวเลขว่ามีตัวอักษรอยู่หรือเปล่า
