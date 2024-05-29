@@ -198,6 +198,7 @@ router.route('/orderhub/profitPartner/get/cod').post( authAdmin.checkToken, prof
 router.route('/orderhub/profitPartner/get/sign/day').post( auth.checkToken, profitPN.getSignDay )
 router.route('/orderhub/profitPartner/get/day/pay').post( auth.checkToken, profitPN.getDayPay )
 router.route('/orderhub/profitPartner/upload/excel').post( auth.checkToken, profitPN.uploadExcel )
+router.route('/orderhub/profitPartner/send/email').post( auth.checkToken, profitPN.uploadFileExcel, profitPN.sendEmail )
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')

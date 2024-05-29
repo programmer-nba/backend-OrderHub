@@ -7,6 +7,8 @@ const mongoose = require('mongoose');
 const { profitTemplate } = require("../../Models/profit/profit.template");
 const { uploadFileCreate, deleteFile } = require("../../functions/uploadfileExcel");
 const multer = require("multer");
+const nodemailer = require('nodemailer');
+const fs = require('fs');
 
 const storage = multer.diskStorage({
     filename: function (req, file, cb) {
@@ -14,9 +16,92 @@ const storage = multer.diskStorage({
     },
   });
 
+const upload = multer({ dest: 'uploads/' });
+
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 
+// Function to read and encode image file to base64
+const encodeImageToBase64 = (imagePath) => {
+    const imageData = fs.readFileSync(imagePath, { encoding: 'base64' });
+    return `data:image/jpeg;base64,${imageData}`;
+};
+
+const deleteUploadedExcel = (filePath) => {
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            console.error('Error deleting uploaded Excel file:', err);
+        } else {
+            console.log('Uploaded Excel file deleted successfully');
+        }
+    });
+};
+
+uploadFileExcel = upload.single('file')
+
+sendEmail = async (req, res)=>{
+    try{
+        let imagePath = './output.png'
+        const excelFile = req.file;
+
+            if (!excelFile) {
+                return res.status(400).send('กรุณาอัพโหลดไฟล์ Excel');
+            }
+
+        try {
+            // Read and encode image file to base64
+            const imageBase64 = encodeImageToBase64(imagePath);
+    
+            // Create nodemailer transporter
+            let transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                auth: {
+                    user: 'oorderhub@gmail.com',
+                    pass: '14955733'
+                },
+                tls: {
+                    rejectUnauthorized: false
+                }
+            });
+    
+            // Email options
+            let mailOptions = {
+                from: 'oorderhub@gmail.com>',
+                to: 'crowsnop4@gmail.com',
+                subject: 'Test Email with Excel and Embedded Image',
+                html: `<p>นี่คือรูปภาพที่แทรกในเนื้อหาข้อความ:</p><img src="${imageBase64}" alt="รูปภาพ">`,
+                attachments: [
+                    {
+                        filename: excelFile.originalname,
+                        path: excelFile.path
+                    }
+                ]
+            };
+    
+            // Send email
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    return res.status(500).send(error);
+                }
+                console.log('Email sent:', info.response);
+
+                deleteUploadedExcel(excelFile.path);
+
+                res.status(200).send('Email sent successfully');
+            });
+
+        } catch (error) {
+            console.error('Error:', error);
+            res.status(500).send('Error processing files');
+        }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
 getAll = async (req, res)=>{
     try{
         const findAll = await profitPartner.find()
@@ -415,4 +500,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay, uploadExcel }
+module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay, uploadExcel, sendEmail, uploadFileExcel }
