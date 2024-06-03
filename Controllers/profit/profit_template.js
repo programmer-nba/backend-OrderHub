@@ -43,7 +43,8 @@ sendEmail = async (req, res)=>{
     try{
         let imagePath = './output.png'
         const excelFile = req.file;
-
+        const USERID = process.env.ID_GMAIL
+        const PASSWORD = process.env.PASS_GMAIL
             if (!excelFile) {
                 return res.status(400).send('กรุณาอัพโหลดไฟล์ Excel');
             }
@@ -58,8 +59,8 @@ sendEmail = async (req, res)=>{
                 port: 587,
                 secure: false,
                 auth: {
-                    user: 'oorderhub@gmail.com',
-                    pass: '14955733'
+                    user: USERID,
+                    pass: PASSWORD
                 },
                 tls: {
                     rejectUnauthorized: false
@@ -68,14 +69,19 @@ sendEmail = async (req, res)=>{
     
             // Email options
             let mailOptions = {
-                from: 'oorderhub@gmail.com>',
+                from: USERID,
                 to: 'crowsnop4@gmail.com',
-                subject: 'Test Email with Excel and Embedded Image',
-                html: `<p>นี่คือรูปภาพที่แทรกในเนื้อหาข้อความ:</p><img src="${imageBase64}" alt="รูปภาพ">`,
+                subject: 'COD REMITTANCE | Order Hub',
+                html: `<img src="cid:imageCid" alt="รูปภาพ">
+                <p>นี่คือรูปภาพที่แทรกในเนื้อหาข้อความ:</p>`,
                 attachments: [
                     {
                         filename: excelFile.originalname,
                         path: excelFile.path
+                    },{
+                        filename: 'output.png',
+                        path: imagePath,
+                        cid: 'imageCid' // same cid value as in the html img src
                     }
                 ]
             };

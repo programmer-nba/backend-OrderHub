@@ -17,18 +17,18 @@ const drop = require('../Controllers/deliveryController/dropoff_point')
 router.route('/orderhub/regis').post(main.createPartner)//ใช้กำหนด path ที่ต้องการทำให้ไม่ต้องไปประกาศใน File Server แล้ว
 
 //จัดการข้อมูล Admin
-router.route('/orderhub/admin').post(admin.createAdmin)
-router.route('/orderhub/admin/findAll').get(admin.findAllAdmin)
-router.route('/orderhub/admin/update/:id').put(admin.updateAdmin)
-router.route('/orderhub/admin/del/:id').delete(admin.delAdmin)
+router.route('/orderhub/admin').post(authAdmin.checkToken, admin.createAdmin)
+router.route('/orderhub/admin/findAll').get(authAdmin.checkToken,admin.findAllAdmin)
+router.route('/orderhub/admin/update/:id').put(authAdmin.checkToken,admin.updateAdmin)
+router.route('/orderhub/admin/del/:id').delete(authAdmin.checkToken,admin.delAdmin)
 router.route('/orderhub/admin/getMe').get(authAdmin.checkToken, admin.getMe)
 
 //Admin Partner
 router.route('/orderhub/post').post(main.createPartner)
-router.route('/orderhub/getall').get(main.getAllPartner)
-router.route('/orderhub/getid/:id').get(main.getPartnerByID)
-router.route('/orderhub/update/:id').put(main.upPartnerByID)
-router.route('/orderhub/del/:id').delete(main.deleteById)
+router.route('/orderhub/getall').get(auth.checkToken,main.getAllPartner)
+router.route('/orderhub/getid/:id').get(auth.checkToken,main.getPartnerByID)
+router.route('/orderhub/update/:id').put(auth.checkToken,main.upPartnerByID)
+router.route('/orderhub/del/:id').delete(auth.checkToken,main.deleteById)
 router.route('/orderhub/getById/:id').get(auth.checkToken, main.getByID)
 // router.route('/orderhub/add/sub_role/:id').put(authAdmin.checkToken, main.addSubRole)
 // router.route('/orderhub/del/sub_role/:id').delete(authAdmin.checkToken, main.delSubRole)
