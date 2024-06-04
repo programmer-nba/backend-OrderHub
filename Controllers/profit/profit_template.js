@@ -6,6 +6,7 @@ const dayjs = require('dayjs');
 const mongoose = require('mongoose');
 const { profitTemplate } = require("../../Models/profit/profit.template");
 const { uploadFileCreate, deleteFile } = require("../../functions/uploadfileExcel");
+const xlsx = require('xlsx');
 const multer = require("multer");
 const nodemailer = require('nodemailer');
 const fs = require('fs');
@@ -41,17 +42,32 @@ uploadFileExcel = upload.single('file')
 
 sendEmail = async (req, res)=>{
     try{
-        let imagePath = './output.png'
+        let imagePath = './unnamed.jpg'
         const excelFile = req.file;
+        const date = req.body.date
         const USERID = process.env.ID_GMAIL
         const PASSWORD = process.env.PASS_GMAIL
             if (!excelFile) {
                 return res.status(400).send('กรุณาอัพโหลดไฟล์ Excel');
             }
+        // อ่านไฟล์ Excel
+        const workbook = xlsx.readFile(excelFile.path);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
 
+        // ดึงข้อมูล Email
+        const emailData = worksheet[`H2`].v
+       
+        // ดึงข้อมูลจากคอลัมน์ F ตั้งแต่แถวที่ 2 เป็นต้นไป
+        let totalAmount = 0;
+        for (let i = 2; ; i++) {
+            const cellAddress = `F${i}`;
+            const cell = worksheet[cellAddress];
+            if (!cell) break;
+            const cellValue = cell.v;
+            totalAmount += cellValue;
+        }
         try {
-            // Read and encode image file to base64
-            const imageBase64 = encodeImageToBase64(imagePath);
     
             // Create nodemailer transporter
             let transporter = nodemailer.createTransport({
@@ -70,16 +86,22 @@ sendEmail = async (req, res)=>{
             // Email options
             let mailOptions = {
                 from: USERID,
-                to: 'crowsnop4@gmail.com',
+                to: emailData,
                 subject: 'COD REMITTANCE | Order Hub',
-                html: `<img src="cid:imageCid" alt="รูปภาพ">
-                <p>นี่คือรูปภาพที่แทรกในเนื้อหาข้อความ:</p>`,
+                html: `<img src="cid:imageCid" alt="รูปภาพ" width="300" height="200">
+                <p>สรุปยอดพัสดุ COD ของท่าน ที่นำจ่ายพัสดุเรียบร้อยแล้ว ในวันที่ ${date}</p>
+                <p>รวมเป็นยอดเงินจำนวน ${totalAmount}.- บาท</p>
+                <p>ทางบริษัทฯ จะโอนเงินเข้าบัญชีของท่านภายในวันทำการถัดไป</p>
+                <p>ตรวจสอบรายละเอียดเพิ่มเติม หรือศูนย์บริการลูกค้า Call Center โทร. 098-162-6161</p>
+                <p>ขอบพระคุณที่ใช้บริการ</p>
+                <p>ขอแสดงความนับถือ</p>
+                <p>Order Hub</p>`,
                 attachments: [
                     {
                         filename: excelFile.originalname,
                         path: excelFile.path
                     },{
-                        filename: 'output.png',
+                        filename: 'unnamed.jpg',
                         path: imagePath,
                         cid: 'imageCid' // same cid value as in the html img src
                     }
