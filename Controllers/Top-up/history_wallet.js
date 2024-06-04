@@ -194,31 +194,34 @@ findAmountAll = async(req, res)=>{
 findShopAmountAll = async(req, res)=>{
     try{
         const day = req.body.day
-        const findHistory = await profitPartner.find(
-            { mailno: "" },
-            { orderid: 1} // เลือกฟิลด์ที่ต้องการ และยกเว้น _id
+        const findHistory = await orderAll.find(
+            {
+                day: "2024-05-07",
+                order_status:"cancel"
+            },{tracking_code:1}
         ).exec();
             if(findHistory.length == 0){
                 return res
                         .status(404)
                         .send({status:false, data:[]})
             }
-        console.log("findHistory:",findHistory[0])
-        const orderIdsToUpdate = findHistory.map(doc => doc.orderid);
-        console.log("orderIdsToUpdate:",orderIdsToUpdate.length)
-        const orderAllDocs = await orderAll.find({ tracking_code: { $in: orderIdsToUpdate } },{tracking_code:1, mailno:1}).exec()
-        console.log("orderAllDocs:",orderAllDocs.length)
-        const findMap = await Promise.all(orderAllDocs.map(item => ({
-            updateOne: {
-                filter: { orderid: item.tracking_code,mailno:"" },
-                update:{
-                    $set:{
-                        mailno: item.mailno
-                    }
-                }
-            }
-        })));
-        console.log(findMap.length)
+        
+        console.log("findHistory:",findHistory.length)
+        // const orderIdsToUpdate = findHistory.map(doc => doc.orderid);
+        // console.log("orderIdsToUpdate:",orderIdsToUpdate.length)
+        // const orderAllDocs = await orderAll.find({ tracking_code: { $in: orderIdsToUpdate } },{tracking_code:1, mailno:1}).exec()
+        // console.log("orderAllDocs:",orderAllDocs.length)
+        // const findMap = await Promise.all(orderAllDocs.map(item => ({
+        //     updateOne: {
+        //         filter: { orderid: item.tracking_code,mailno:"" },
+        //         update:{
+        //             $set:{
+        //                 mailno: item.mailno
+        //             }
+        //         }
+        //     }
+        // })));
+        // console.log(findMap.length)
         // const batchSize = 1000;
         // const totalBatches = Math.ceil(findMap.length / batchSize);
         // for (let i = 0; i < totalBatches; i++) {

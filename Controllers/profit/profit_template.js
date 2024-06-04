@@ -82,12 +82,15 @@ sendEmail = async (req, res)=>{
                     rejectUnauthorized: false
                 }
             });
-    
+
+            // สร้าง Message-ID ที่ไม่ซ้ำกัน
+            let messageId = `${Date.now()}@thevolumebiz.com`;
+
             // Email options
             let mailOptions = {
                 from: USERID,
                 to: emailData,
-                subject: 'COD REMITTANCE | Order Hub',
+                subject: `COD REMITTANCE | Order Hub ${date}`,
                 html: `<img src="cid:imageCid" alt="รูปภาพ" width="300" height="200">
                 <p>สรุปยอดพัสดุ COD ของท่าน ที่นำจ่ายพัสดุเรียบร้อยแล้ว ในวันที่ ${date}</p>
                 <p>รวมเป็นยอดเงินจำนวน ${totalAmount}.- บาท</p>
@@ -105,7 +108,12 @@ sendEmail = async (req, res)=>{
                         path: imagePath,
                         cid: 'imageCid' // same cid value as in the html img src
                     }
-                ]
+                ],
+                headers: {
+                    'Message-ID': messageId,
+                    'In-Reply-To': '',
+                    'References': ''
+                }
             };
     
             // Send email
