@@ -322,15 +322,15 @@ changStatus = async (req, res)=>{
         const code = await invoiceNumber(dayTime)
 
         // ตรวจสอบว่าทุก orderid มี status เป็น "เซ็นรับแล้ว" หรือไม่
-        const allSign = await Promise.all(orderids.map(async item => {
-            const order = await profitTemplate.findOne({ orderid: item });
-            // console.log(order)
-            return order && order.status == "เซ็นรับแล้ว";
-        }));
-        console.log(allSign)
-        const allSigned = allSign.every(status => status);
+        // const allSign = await Promise.all(orderids.map(async item => {
+        //     const order = await profitTemplate.findOne({ orderid: item });
+        //     // console.log(order)
+        //     return order && order.status == "เซ็นรับแล้ว";
+        // }));
+        // console.log(allSign)
+        // const allSigned = allSign.every(status => status);
 
-        if (allSigned) {
+        // if (allSigned) {
             let orderBulk = orderids.map(item=>({
                 updateOne:{
                     filter:{ orderid : item },
@@ -348,11 +348,11 @@ changStatus = async (req, res)=>{
                         data:bulkOrder,
                         code:code
                     })
-        }else{
-            return res
-                    .status(400)
-                    .send({status:false, message:"ออเดอร์ของท่านยังไม่ได้รับการเซ็นรับ"})
-        }
+        // }else{
+        //     return res
+        //             .status(400)
+        //             .send({status:false, message:"ออเดอร์ของท่านยังไม่ได้รับการเซ็นรับ"})
+        // }
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res  
