@@ -184,6 +184,18 @@ getSumAdmin = async (req, res)=>{
                             .status(404)
                             .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
                 }
+            }else{
+                findMe = await profitIce.find({
+                    day:{ 
+                            $gte: day_start, 
+                            $lte: day_end 
+                        }
+                    })
+                if(findMe.length == 0){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
+                }
             }
         }else{
             return res  

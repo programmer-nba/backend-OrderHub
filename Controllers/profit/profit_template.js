@@ -426,6 +426,18 @@ getProfitPartner = async (req, res)=>{
                             .status(404)
                             .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(22)"})
                 }
+            }else{
+                findMe = await profitPartner.find({
+                    day:{
+                        $gte:day_start, 
+                        $lte:day_end
+                    }
+                })
+                if(findMe.length == 0){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(23)"})
+                }
             }
         }else{
             return res
