@@ -188,7 +188,7 @@ router.route('/orderhub/best/getOne/:txLogisticId').get( authAdmin.checkToken, b
 router.route('/orderhub/best/del/:txLogisticId').delete( authAdmin.checkToken, best.delend )
 router.route('/orderhub/best/getPartner/:id').get( authAdmin.checkToken, best.getPartnerBooking )
 
-//profit partner
+//profit template
 const profitPN = require('../Controllers/profit/profit_template')
 router.route('/orderhub/profitPartner/getSumMe').get( auth.checkToken, profitPN.getSumForMe )
 router.route('/orderhub/profitPartner/Withdrawal/:id').post( auth.checkToken, profitPN.Withdrawal )
@@ -197,13 +197,14 @@ router.route('/orderhub/profitPartner/get/cod').post( authAdmin.checkToken, prof
 // router.route('/orderhub/profitPartner/check/cod').get( auth.checkToken, profitPN.calCod )
 router.route('/orderhub/profitPartner/get/sign/day').post( auth.checkToken, profitPN.getSignDay )
 router.route('/orderhub/profitPartner/get/day/pay').post( auth.checkToken, profitPN.getDayPay )
+router.route('/orderhub/profitPartner/get/profit/partner').post( auth.checkToken, profitPN.getProfitPartner )
 router.route('/orderhub/profitPartner/upload/excel').post( auth.checkToken, profitPN.uploadExcel )
 router.route('/orderhub/profitPartner/send/email').post( auth.checkToken, profitPN.uploadFileExcel, profitPN.sendEmail )
 
 //profit admin(ICE)
 const profitAM = require('../Controllers/profit/profit_ice')
 router.route('/orderhub/profitPartner/getAll').get( authAdmin.checkToken, profitPN.getAll )//เรียกดูกำไร Partner ทุกคน
-router.route('/orderhub/profitAdmin/getSumAdmin').get( authAdmin.checkToken, profitAM.getSumAdmin )
+router.route('/orderhub/profitAdmin/getSumAdmin').post( authAdmin.checkToken, profitAM.getSumAdmin )
 router.route('/orderhub/profitAdmin/getSumCOD').get( authAdmin.checkToken, profitAM.getSumCod )
 router.route('/orderhub/profitAdmin/getSumCost').get( authAdmin.checkToken, profitAM.getSumCost )
 router.route('/orderhub/profitAdmin/get/withdrawal').get( authAdmin.checkToken, profitAM.getWithdrawal )

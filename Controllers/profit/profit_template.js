@@ -181,6 +181,268 @@ getSumForMe = async (req, res)=>{
     }
 }
 
+getProfitPartner = async (req, res)=>{
+    try{
+        const wallet_owner = req.body.wallet_owner
+        const orderer = req.body.orderer
+        const shop_number = req.body.shop_number
+        const express = req.body.express
+        const day_start = req.body.day_start
+        const day_end = req.body.day_end
+        let findMe = []
+        if(!day_start && !day_end){
+            if(wallet_owner){
+                if(!express && !shop_number){
+                    findMe = await profitPartner.find({wallet_owner:wallet_owner})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
+                        }
+                }else if(express){
+                    findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
+                        }
+                }else if(shop_number){
+                    findMe = await profitPartner.find({wallet_owner:wallet_owner, shop_number:shop_number})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
+                        }
+                }else if(express && shop_number){
+                    findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express, shop_number:shop_number})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
+                        }
+                }
+            }else if(orderer){
+                if(!express && !shop_number){
+                    findMe = await profitPartner.find({Orderer:orderer})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
+                        }
+                }else if(express){
+                    findMe = await profitPartner.find({Orderer:orderer, express:express})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(6)"})
+                        }
+                }else if(shop_number){
+                    findMe = await profitPartner.find({Orderer:orderer, shop_number:shop_number})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
+                        }
+                }else if(express && shop_number){
+                    findMe = await profitPartner.find({Orderer:orderer, express:express, shop_number:shop_number})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
+                        }
+                }
+            }else if(shop_number){
+                if(!express){
+                    findMe = await profitPartner.find({shop_number:shop_number})
+                    if(findMe.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
+                    }
+                }else if(express){
+                    findMe = await profitPartner.find({shop_number:shop_number, express:express})
+                    if(findMe.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
+                    }
+                }
+            }else if(express){
+                findMe = await profitPartner.find({express:express})
+                if(findMe.length == 0){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
+                }
+            }
+        }else if(day_start && day_end){
+            if(wallet_owner){
+                if(!express && !shop_number){
+                    findMe = await profitPartner.find({
+                        wallet_owner:wallet_owner, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
+                        }
+                }else if(express){
+                    findMe = await profitPartner.find({
+                        wallet_owner:wallet_owner, 
+                        express:express, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
+                        }
+                }else if(shop_number){
+                    findMe = await profitPartner.find({
+                        wallet_owner:wallet_owner, 
+                        shop_number:shop_number, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
+                        }
+                }else if(express && shop_number){
+                    findMe = await profitPartner.find({
+                        wallet_owner:wallet_owner, 
+                        express:express, 
+                        shop_number:shop_number, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
+                        }
+                }
+            }else if(orderer){
+                if(!express && !shop_number){
+                    findMe = await profitPartner.find({
+                        Orderer:orderer, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(16)"})
+                        }
+                }else if(express){
+                    findMe = await profitPartner.find({
+                        Orderer:orderer, 
+                        express:express, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(17)"})
+                        }
+                }else if(shop_number){
+                    findMe = await profitPartner.find({
+                        Orderer:orderer, 
+                        shop_number:shop_number, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(18)"})
+                        }
+                }else if(express && shop_number){
+                    findMe = await profitPartner.find({
+                        Orderer:orderer, 
+                        express:express, 
+                        shop_number:shop_number, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(19)"})
+                        }
+                }
+            }else if(shop_number){
+                if(!express){
+                    findMe = await profitPartner.find({
+                        shop_number:shop_number, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }
+                    })
+                    if(findMe.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(20)"})
+                    }
+                }else if(express){
+                    findMe = await profitPartner.find({
+                        shop_number:shop_number, 
+                        express:express, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }
+                    })
+                    if(findMe.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(21)"})
+                    }
+                }
+                
+            }else if(express){
+                findMe = await profitPartner.find({
+                    express:express, 
+                    day:{
+                        $gte:day_start, 
+                        $lte:day_end
+                    }})
+                if(findMe.length == 0){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(22)"})
+                }
+            }
+        }else{
+            return res
+                    .status(200)
+                    .send({status:false, data:[]})
+        }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        console.log("มีบางอย่างผิดพลาด")
+        return res 
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 Withdrawal = async (req, res)=>{
     try{
         const idBank = req.params.id
@@ -536,4 +798,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay, uploadExcel, sendEmail, uploadFileExcel }
+module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay, uploadExcel, sendEmail, uploadFileExcel, getProfitPartner }

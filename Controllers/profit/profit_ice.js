@@ -22,31 +22,177 @@ getAll = async (req, res)=>{
 
 getSumAdmin = async (req, res)=>{
     try{
-        const findMe = await profitIce.find()
-            if(!findMe){
-                return res
-                        .status(404)
-                        .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ"})
+        const orderer = req.body.orderer
+        const express = req.body.express
+        const shop_number = req.body.shop_number
+        const day_start = req.body.day_start
+        const day_end = req.body.day_end
+        let findMe = []
+        if(!day_start && !day_end){
+            if(orderer){
+                if(!express && !shop_number){
+                    findMe = await profitIce.find({Orderer:orderer})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
+                        }
+                }else if(express){
+                    findMe = await profitIce.find({Orderer:orderer, express:express})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
+                        }
+                }else if(shop_number){
+                    findMe = await profitIce.find({Orderer:orderer, shop_number:shop_number})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
+                        }
+                }else if(express && shop_number){
+                    findMe = await profitIce.find({Orderer:orderer, express:express, shop_number:shop_number})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
+                        }
+                }
+            }else if(shop_number){
+                if(!express){
+                    findMe = await profitIce.find({shop_number:shop_number})
+                    if(findMe.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
+                    }
+                }else if(express){
+                    findMe = await profitIce.find({shop_number:shop_number, express:express})
+                    if(findMe.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(6)"})
+                    }
+                }
+            }else if(express){
+                findMe = await profitIce.find({express:express})
+                if(findMe.length == 0){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
+                }
             }
-        const totalProfit = findMe.reduce((total, document) => {
-            if (document.type !== "COD(SENDER)") {
-                // console.log(total)
-                return total + document.profit;
-            } else {
-                return total;
+        }else if(day_start && day_end){
+            if(orderer){
+                if(!express && !shop_number){
+                    findMe = await profitIce.find({
+                        Orderer:orderer,
+                        day:{ 
+                                $gte: day_start, 
+                                $lte: day_end 
+                            }
+                        })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
+                        }
+                }else if(express){
+                    findMe = await profitIce.find({
+                        Orderer:orderer, 
+                        express:express, 
+                        day:{ 
+                                $gte: day_start, 
+                                $lte: day_end 
+                            }
+                        })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
+                        }
+                }else if(shop_number){
+                    findMe = await profitIce.find({
+                        Orderer:orderer, 
+                        shop_number:shop_number, 
+                        day:{ 
+                                $gte: day_start, 
+                                $lte: day_end 
+                            }
+                        })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
+                        }
+                }else if(express && shop_number){
+                    findMe = await profitIce.find({
+                        Orderer:orderer, 
+                        express:express, 
+                        shop_number:shop_number, 
+                        day:{ 
+                                $gte: day_start, 
+                                $lte: day_end 
+                            }
+                        })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
+                        }
+                }
+            }else if(shop_number){
+                if(!express){
+                    findMe = await profitIce.find({
+                        shop_number:shop_number, 
+                        day:{ 
+                                $gte: day_start, 
+                                $lte: day_end 
+                            }
+                        })
+                    if(findMe.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
+                    }
+                }else if(express){
+                    findMe = await profitIce.find({
+                        shop_number:shop_number, 
+                        express:express, 
+                        day:{ 
+                                $gte: day_start, 
+                                $lte: day_end 
+                            }
+                        })
+                    if(findMe.length == 0){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
+                    }
+                }
+            }else if(express){
+                findMe = await profitIce.find({
+                    express:express, 
+                    day:{ 
+                            $gte: day_start, 
+                            $lte: day_end 
+                        }
+                    })
+                if(findMe.length == 0){
+                    return res
+                            .status(404)
+                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
+                }
             }
-        }, 0);
-        const totalProfitWithDecimal = totalProfit.toFixed(2);
-        console.log(totalProfit)
-        const totalProfitAsNumber = parseFloat(totalProfitWithDecimal);
-        // console.log(totalProfit)
+        }else{
+            return res  
+                    .status(200)
+                    .send({status:false, data:[]})
+        }
         return res
                 .status(200)
-                .send({
-                    status:true, 
-                    data:findMe,
-                    sum: totalProfitAsNumber
-                })
+                .send({status:true, data:findMe})
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")
         return res 
