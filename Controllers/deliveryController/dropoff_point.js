@@ -237,7 +237,12 @@ editBookbank = async (req, res)=>{
                         .send({status:false, message:"กรุณากรอกหมายเลขบัญชีเป็นตัวเลข(BEST)"});
             }
         }
-
+        // const findBankNunber = await dropOffs.findOne({"flash_pay.card_number":card_flash})
+        //     if(findBankNunber){
+        //         return res
+        //                 .status(400)
+        //                 .send({status:false, message:"มีหมายเลขบัญชีนี้ในระบบแล้ว"})
+        //     }
         
         const fixBookbank = await dropOffs.findOneAndUpdate(
             {

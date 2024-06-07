@@ -47,6 +47,7 @@ router.route('/orderhub/member/get/:id').get( auth.checkToken, member_shop.getBy
 router.route('/orderhub/member/approve/:id').put( auth.checkToken, partner.approveMemberShop )
 router.route('/orderhub/member/cancel/:id').put( auth.checkToken, partner.cancelMemberShop )
 router.route('/orderhub/member/getPNM').get( auth.checkToken, member_shop.getMemberPartner )
+router.route('/orderhub/member/get/shop/member').post( auth.checkToken, member_shop.getMemberAndPartner )
 
 //Flash Admin
 router.route('/orderhub/flash/getAll').get( authAdmin.checkToken, flash.getAll )
@@ -128,7 +129,7 @@ const historyShop = require('../Controllers/shop_partner/shop.history')
 router.route('/orderhub/historyShop/getAll').get( historyShop.getAll )
 router.route('/orderhub/historyShop/getOne/:shop_id').get( historyShop.getOne )
 router.route('/orderhub/historyShop/getId/:id').get( auth.checkToken, historyShop.getById )
-router.route('/orderhub/historyShop/get/credit/dis').post( auth.checkToken, historyShop.getCreditDis )
+router.route('/orderhub/historyShop/get/shop/history').post( auth.checkToken, historyShop.getShopHistory )
 
 //J&T
 const genKey = require('../Controllers/deliveryController/J&T/generate.signJ&T')

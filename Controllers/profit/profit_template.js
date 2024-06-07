@@ -93,7 +93,7 @@ sendEmail = async (req, res)=>{
                 subject: `COD REMITTANCE | Order Hub ${date}`,
                 html: `<img src="cid:imageCid" alt="รูปภาพ" width="300" height="200">
                 <p>สรุปยอดพัสดุ COD ของท่าน ที่นำจ่ายพัสดุเรียบร้อยแล้ว ในวันที่ ${date}</p>
-                <p>รวมเป็นยอดเงินจำนวน ${totalAmount}.- บาท</p>
+                <p>รวมเป็นยอดเงินจำนวน ${totalAmount.toLocaleString()}.- บาท</p>
                 <p>ทางบริษัทฯ จะโอนเงินเข้าบัญชีของท่านภายในวันทำการถัดไป</p>
                 <p>ตรวจสอบรายละเอียดเพิ่มเติม หรือศูนย์บริการลูกค้า Call Center โทร. 098-162-6161</p>
                 <p>ขอบพระคุณที่ใช้บริการ</p>
@@ -199,6 +199,13 @@ getProfitPartner = async (req, res)=>{
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
                         }
+                }else if(express && shop_number){
+                    findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express, shop_number:shop_number})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
+                        }
                 }else if(express){
                     findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express})
                         if(findMe.length == 0){
@@ -213,13 +220,6 @@ getProfitPartner = async (req, res)=>{
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
                         }
-                }else if(express && shop_number){
-                    findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express, shop_number:shop_number})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
-                        }
                 }
             }else if(orderer){
                 if(!express && !shop_number){
@@ -228,6 +228,13 @@ getProfitPartner = async (req, res)=>{
                             return res
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
+                        }
+                }else if(express && shop_number){
+                    findMe = await profitPartner.find({Orderer:orderer, express:express, shop_number:shop_number})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
                         }
                 }else if(express){
                     findMe = await profitPartner.find({Orderer:orderer, express:express})
@@ -242,13 +249,6 @@ getProfitPartner = async (req, res)=>{
                             return res
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
-                        }
-                }else if(express && shop_number){
-                    findMe = await profitPartner.find({Orderer:orderer, express:express, shop_number:shop_number})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
                         }
                 }
             }else if(shop_number){
@@ -289,6 +289,20 @@ getProfitPartner = async (req, res)=>{
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
                         }
+                }else if(express && shop_number){
+                    findMe = await profitPartner.find({
+                        wallet_owner:wallet_owner, 
+                        express:express, 
+                        shop_number:shop_number, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
+                        }
                 }else if(express){
                     findMe = await profitPartner.find({
                         wallet_owner:wallet_owner, 
@@ -315,20 +329,6 @@ getProfitPartner = async (req, res)=>{
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
                         }
-                }else if(express && shop_number){
-                    findMe = await profitPartner.find({
-                        wallet_owner:wallet_owner, 
-                        express:express, 
-                        shop_number:shop_number, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
-                        }
                 }
             }else if(orderer){
                 if(!express && !shop_number){
@@ -342,6 +342,20 @@ getProfitPartner = async (req, res)=>{
                             return res
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(16)"})
+                        }
+                }else if(express && shop_number){
+                    findMe = await profitPartner.find({
+                        Orderer:orderer, 
+                        express:express, 
+                        shop_number:shop_number, 
+                        day:{
+                            $gte:day_start, 
+                            $lte:day_end
+                        }})
+                        if(findMe.length == 0){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(19)"})
                         }
                 }else if(express){
                     findMe = await profitPartner.find({
@@ -368,20 +382,6 @@ getProfitPartner = async (req, res)=>{
                             return res
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(18)"})
-                        }
-                }else if(express && shop_number){
-                    findMe = await profitPartner.find({
-                        Orderer:orderer, 
-                        express:express, 
-                        shop_number:shop_number, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(19)"})
                         }
                 }
             }else if(shop_number){

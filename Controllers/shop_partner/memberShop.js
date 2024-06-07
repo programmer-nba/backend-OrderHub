@@ -6,32 +6,26 @@ var bcrypt = require("bcrypt");
 
 create = async (req, res)=>{
     try{
-        const user = req.body.username
-        const id = req.params.id
-        const findPartner = await Partner.findOne({username:user})
-        if(findPartner){
+        const user = req.body.username;
+        const idenNumber = req.body.iden_number;
+        
+        const findUser = await Promise.all([
+            Partner.findOne({username: user}),
+            Admin.findOne({username: user}),
+            memberShop.findOne({
+                $or: [
+                    {username: user},
+                    {iden_number: idenNumber}
+                ]
+            })
+        ]);
+
+        if (findUser.some(user => user)) {
             return res
-                    .status(400)
-                    .send({status:false, message:"มีผู้ใช้ User ID นี้แล้ว"})
+                .status(400)
+                .send({status: false, message: "มีผู้ใช้ User ID นี้แล้ว หรือมีผู้ใช้บัตรประชาชนนี้แล้ว"});
         }
-        const findAdmin = await Admin.findOne({username:user})
-        if(findAdmin){
-            return res
-                    .status(400)
-                    .send({status:false, message:"มีผู้ใช้ User ID นี้แล้ว"})
-        }
-        const findMemberShop = await memberShop.findOne({username:user})
-        if(findMemberShop){
-            return res
-                    .status(400)
-                    .send({status:false, message:"มีผู้ใช้ User ID นี้แล้ว"})
-        }
-        const findIden = await memberShop.findOne({iden_number:req.body.iden_number})
-        if(findIden){
-            return res
-                    .status(400)
-                    .send({status:false, message:"มีผู้ใช้บัตรประชาชนนี้แล้ว"})
-        }
+
         const findShop = await shopPartner.findById(id)
         if(findShop){
             const data = {
@@ -187,7 +181,7 @@ getByID = async (req,res)=>{
         console.log(err);
         return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
     }
-  }
+}
 
 getMemberPartner = async (req, res)=>{
     try{
@@ -205,4 +199,55 @@ getMemberPartner = async (req, res)=>{
         return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
     }
 }
-module.exports = { create, getAll, update, getMe, delend, getByID, getMemberPartner }
+
+getMemberAndPartner = async (req, res)=>{
+    try{
+        const shop_id = req.body.shop_id
+        let result = []
+        const getAllResult = await memberShop.find({shop_id:shop_id},{_id:1,firstname:1,lastname:1,role:1}).exec()
+            if(getAllResult.length == 0){
+                const getShop = await shopPartner.findById(shop_id,{partnerID:1,firstname:1,lastname:1}).exec()
+                    if(!getShop){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่พบร้านค้าที่ต้องการ"})
+                    }
+                const partnerData = [{
+                        _id: getShop.partnerID,
+                        firstname: getShop.firstname,
+                        lastname: getShop.lastname,
+                        role: "partner"
+                }];
+                return res
+                        .status(200)
+                        .send({status:true, data:partnerData})
+            }
+        const getPartnerResult = await shopPartner.findById(shop_id,{partnerID:1,firstname:1,lastname:1}).exec()
+            if(!getPartnerResult){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูลพาร์ทเนอร์"})
+            }
+        
+        // แปลง partnerID เป็น _id
+        const partnerData = {
+            _id: getPartnerResult.partnerID,
+            firstname: getPartnerResult.firstname,
+            lastname: getPartnerResult.lastname,
+            role: "partner"
+        };
+        // รวมผลลัพธ์จาก getAllResult และ getPartnerResult
+        result = result.concat(partnerData, getAllResult);
+
+        return res
+            .status(200)
+            .send({ status: true, data: result });// รวมผลลัพธ์จาก getAllResult และ getPartnerResult
+  
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+module.exports = { create, getAll, update, getMe, delend, getByID, getMemberPartner,getMemberAndPartner }
