@@ -34,29 +34,29 @@ getSumAdmin = async (req, res)=>{
                     findMe = await profitIce.find({Orderer:orderer})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
                         }
                 }else if(express && shop_number){
                     findMe = await profitIce.find({Orderer:orderer, express:express, shop_number:shop_number})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
                         }
                 }else if(express){
                     findMe = await profitIce.find({Orderer:orderer, express:express})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
                         }
                 }else if(shop_number){
                     findMe = await profitIce.find({Orderer:orderer, shop_number:shop_number})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
                         }
                 }
             }else if(shop_number){
@@ -64,23 +64,23 @@ getSumAdmin = async (req, res)=>{
                     findMe = await profitIce.find({shop_number:shop_number})
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
                     }
                 }else if(express){
                     findMe = await profitIce.find({shop_number:shop_number, express:express})
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(6)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(6)"})
                     }
                 }
             }else if(express){
                 findMe = await profitIce.find({express:express})
                 if(findMe.length == 0){
                     return res
-                            .status(404)
-                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
+                            .status(200)
+                            .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
                 }
             }
         }else if(day_start && day_end){
@@ -95,8 +95,8 @@ getSumAdmin = async (req, res)=>{
                         })
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
                         }
                 }else if(express && shop_number){
                     findMe = await profitIce.find({
@@ -110,8 +110,8 @@ getSumAdmin = async (req, res)=>{
                         })
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
                         }
                 }else if(express){
                     findMe = await profitIce.find({
@@ -124,8 +124,8 @@ getSumAdmin = async (req, res)=>{
                         })
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
                         }
                 }else if(shop_number){
                     findMe = await profitIce.find({
@@ -138,8 +138,8 @@ getSumAdmin = async (req, res)=>{
                         })
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
                         }
                 }
             }else if(shop_number){
@@ -153,8 +153,8 @@ getSumAdmin = async (req, res)=>{
                         })
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
                     }
                 }else if(express){
                     findMe = await profitIce.find({
@@ -167,8 +167,8 @@ getSumAdmin = async (req, res)=>{
                         })
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
                     }
                 }
             }else if(express){
@@ -181,8 +181,8 @@ getSumAdmin = async (req, res)=>{
                     })
                 if(findMe.length == 0){
                     return res
-                            .status(404)
-                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
+                            .status(200)
+                            .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
                 }
             }else{
                 findMe = await profitIce.find({
@@ -193,8 +193,8 @@ getSumAdmin = async (req, res)=>{
                     })
                 if(findMe.length == 0){
                     return res
-                            .status(404)
-                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
+                            .status(200)
+                            .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
                 }
             }
         }else{

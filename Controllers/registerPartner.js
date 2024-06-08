@@ -464,6 +464,8 @@ check = async (req, res) => {
     const otp = req.body.otp
     const phone = req.body.phone
     const ip_address = req.body.ip_address
+    const type = req.body.type
+    const discription = req.body.discription
 
     let data = JSON.stringify({
       'ref_no': ref_no,
@@ -493,8 +495,8 @@ check = async (req, res) => {
           ref_no: ref_no,
           otp: otp,
           phone: phone,
-          type:"CHANG PASSWORD",
-          description: "เปลี่ยนรหัสผ่าน"
+          type: type,
+          description: discription
       }
       const create = await logSystem.create(formData)
         if(!create){
