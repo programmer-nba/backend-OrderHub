@@ -14,6 +14,7 @@ const { PercentCourier } = require("../Models/Delivery/ship_pop/percent");
 const mongoose = require('mongoose');
 const FormData = require('form-data');
 const axios = require('axios');
+const { logSystem } = require("../Models/logs");
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-");
@@ -431,11 +432,19 @@ sendotp = async (req, res) => {
     };
     // ให้ใช้ await เพื่อรอให้ axios ทำงานเสร็จก่อนที่จะดำเนินการต่อ
     const result = await axios(config);
-    // console.log(result.data);
-    if (result.data.code === "200") {
-      return res.status(200).send({ status: true, result: result.data });
+    let resultData = {
+      code: result.data.code,
+      data: {
+          ref_no: result.data.data.ref_no,
+          phone: partner.tel
+      },
+      message: result.data.message
+    }
+    console.log(result.data);
+    if (result.code === "200") {
+      return res.status(200).send({ status: true, result: resultData });
     } else {
-      return res.status(200).send({ status: false, result: result.data});
+      return res.status(200).send({ status: false, result: resultData});
     }
   } catch (error) {
     console.log(error);
@@ -445,62 +454,104 @@ sendotp = async (req, res) => {
 
 check = async (req, res) => {
   try {
+    const role = req.decoded.role
     const id = req.params.id;
     const partner = await Partner.findById(id);
     if (!partner) {
       return res.status(404).send({ status: false, message: "ไม่มีข้อมูล" });
     }
+    const ref_no = req.body.ref_no
+    const otp = req.body.otp
+    const phone = req.body.phone
+    const ip_address = req.body.ip_address
+
+    let data = JSON.stringify({
+      'ref_no': ref_no,
+      'otp': otp,
+      'phone': phone 
+    })
 
     const config = {
       method: "post",
       maxBodyLength: Infinity,
-      url: "https://portal-otp.smsmkt.com/api/otp-validate",
+      url: `${process.env.SMS_URL}/api/otp/verify`,
       headers: {
         "Content-Type": "application/json",
-        api_key: `${process.env.SMS_API_KEY}`,
-        secret_key: `${process.env.SMS_SECRET_KEY}`,
       },
-      data: JSON.stringify({
-        token: `${req.body.token}`,
-        otp_code: `${req.body.otp_code}`,
-      }),
+      data: data
     };
-    await axios(config)
-      .then(async (response) => {
-        console.log(response.data);
-        //หมดอายุ
-        if (response.data.code === "5000") {
-          return res.status(400).send({
-            status: false,
-            message: "OTP นี้หมดอายุแล้ว กรุณาทำรายการใหม่",
-          });
+    await axios(config).then(async (response) => {
+      if(response.data.data.validate == false){
+        return res
+                .status(400)
+                .send({status:false, message:"รหัส OTP ไม่ถูกต้อง/หมดอายุ"})
+      }
+      let formData = {
+          ip_address: ip_address,
+          id: id,
+          role: role,
+          ref_no: ref_no,
+          otp: otp,
+          phone: phone,
+          type:"CHANG PASSWORD",
+          description: "เปลี่ยนรหัสผ่าน"
+      }
+      const create = await logSystem.create(formData)
+        if(!create){
+          return res
+                  .status(400)
+                  .send({status:false, message:"ไม่สามารถสร้าง logs ได้"})
         }
-
-        if (response.data.code === "000") {
-          //ตรวจสอบ OTP
-          if (response.data.result.status) {
-            return res
+      return res  
               .status(200)
-              .send({ status: true, message: "ยืนยัน OTP สำเร็จ" });
-          } else {
-            return res.status(400).send({
-              status: false,
-              message: "รหัส OTP ไม่ถูกต้องกรุณาตรวจสอบอีกครั้ง",
-            });
-          }
-        } else {
-          return res.status(400).send({ status: false, ...response.data });
-        }
-      })
-      .catch(function (error) {
-        console.log(error);
-        return res.status(400).send({ status: false, ...error });
-      });
+              .send({status:true, data:response.data, create:create})
+    })
+    .catch((error) => {
+      return res  
+              .status(200)
+              .send({status:false, message:error.message})
+    });
   } catch (error) {
     return res.status(500).send({ status: false, error: error.message });
   }
 };
 
+changePassword = async(req, res)=>{
+  try{
+    const id = req.params.id
+    const old_password = req.body.old_password
+    const new_password = req.body.new_password
+    const new_password_confirm = req.body.new_password_confirm
+
+    const checkOldPassword = await Partner.findById(id)
+    let cmp = await bcrypt.compare(old_password, checkOldPassword.password)
+      if(!cmp){
+        return res
+                .status(400)
+                .send({status:false, message:"รหัสผ่านเดิมของท่านไม่ถูกต้อง"})
+      }
+
+      // ตรวจสอบว่ารหัสผ่านใหม่มีแค่ตัวอักษรภาษาอังกฤษและตัวเลข
+      const regex = /^[A-Za-z0-9]+$/;
+      if (!regex.test(new_password)) {
+          return res.status(400).send({ status: false, message: "รหัสผ่านใหม่ต้องมีแค่ตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น" });
+      }
+
+      if (new_password !== new_password_confirm){
+        return res
+                .status(400)
+                .send({status:false, message:"รหัสผ่านใหม่ไม่ตรงกัน"})
+      }
+
+    return res
+            .status(200)
+            .send({status:true, new_password:new_password_confirm})
+  }catch(err){
+    return res
+            .status(500)
+            .send({status:false, message:err})
+  }
+}
 // addSubRole = async(req, res)=>{
 //   try{
 //       const role = req.body.role
@@ -566,4 +617,5 @@ module.exports = { createPartner,
 getAllPartner, getPartnerByID, 
 upPartnerByID, deleteById,
 uploadPicture, approveMemberShop,
-cancelMemberShop, getByID, sendotp, check};
+cancelMemberShop, getByID, sendotp, check,
+changePassword };

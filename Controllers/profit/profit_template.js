@@ -196,29 +196,29 @@ getProfitPartner = async (req, res)=>{
                     findMe = await profitPartner.find({wallet_owner:wallet_owner})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
                         }
                 }else if(express && shop_number){
                     findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express, shop_number:shop_number})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
                         }
                 }else if(express){
                     findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
                         }
                 }else if(shop_number){
                     findMe = await profitPartner.find({wallet_owner:wallet_owner, shop_number:shop_number})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
                         }
                 }
             }else if(orderer){
@@ -226,29 +226,29 @@ getProfitPartner = async (req, res)=>{
                     findMe = await profitPartner.find({Orderer:orderer})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
                         }
                 }else if(express && shop_number){
                     findMe = await profitPartner.find({Orderer:orderer, express:express, shop_number:shop_number})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(6)"})
                         }
                 }else if(express){
                     findMe = await profitPartner.find({Orderer:orderer, express:express})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(6)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
                         }
                 }else if(shop_number){
                     findMe = await profitPartner.find({Orderer:orderer, shop_number:shop_number})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
                         }
                 }
             }else if(shop_number){
@@ -256,23 +256,23 @@ getProfitPartner = async (req, res)=>{
                     findMe = await profitPartner.find({shop_number:shop_number})
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
                     }
                 }else if(express){
                     findMe = await profitPartner.find({shop_number:shop_number, express:express})
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
                     }
                 }
             }else if(express){
                 findMe = await profitPartner.find({express:express})
                 if(findMe.length == 0){
                     return res
-                            .status(404)
-                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
+                            .status(200)
+                            .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
                 }
             }
         }else if(day_start && day_end){
@@ -286,8 +286,8 @@ getProfitPartner = async (req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
                         }
                 }else if(express && shop_number){
                     findMe = await profitPartner.find({
@@ -300,8 +300,8 @@ getProfitPartner = async (req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
                         }
                 }else if(express){
                     findMe = await profitPartner.find({
@@ -313,8 +313,8 @@ getProfitPartner = async (req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
                         }
                 }else if(shop_number){
                     findMe = await profitPartner.find({
@@ -326,8 +326,8 @@ getProfitPartner = async (req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
                         }
                 }
             }else if(orderer){
@@ -340,8 +340,8 @@ getProfitPartner = async (req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(16)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(16)"})
                         }
                 }else if(express && shop_number){
                     findMe = await profitPartner.find({
@@ -354,8 +354,8 @@ getProfitPartner = async (req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(19)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(17)"})
                         }
                 }else if(express){
                     findMe = await profitPartner.find({
@@ -367,8 +367,8 @@ getProfitPartner = async (req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(17)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(18)"})
                         }
                 }else if(shop_number){
                     findMe = await profitPartner.find({
@@ -380,8 +380,8 @@ getProfitPartner = async (req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(18)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(19)"})
                         }
                 }
             }else if(shop_number){
@@ -395,8 +395,8 @@ getProfitPartner = async (req, res)=>{
                     })
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(20)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(20)"})
                     }
                 }else if(express){
                     findMe = await profitPartner.find({
@@ -409,8 +409,8 @@ getProfitPartner = async (req, res)=>{
                     })
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(21)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(21)"})
                     }
                 }
                 
@@ -423,8 +423,8 @@ getProfitPartner = async (req, res)=>{
                     }})
                 if(findMe.length == 0){
                     return res
-                            .status(404)
-                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(22)"})
+                            .status(200)
+                            .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(22)"})
                 }
             }else{
                 findMe = await profitPartner.find({
@@ -435,8 +435,8 @@ getProfitPartner = async (req, res)=>{
                 })
                 if(findMe.length == 0){
                     return res
-                            .status(404)
-                            .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(23)"})
+                            .status(200)
+                            .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(23)"})
                 }
             }
         }else{

@@ -296,8 +296,9 @@ router.route('/orderhub/weight/all/edit/weightMax/:id').put( auth.checkToken, we
 const postal = require('../functions/add.postal.thailand')
 router.route('/orderhub/postcal/create').post( auth.checkToken, postal.createPostal )
 
-const smsTossagun = require('../Controllers/registerPartner')
-router.route('/orderhub/smsTos/post/otp/:id').post( auth.checkToken, smsTossagun.sendotp )
-router.route('/orderhub/smsTos/check/otp/:id').post( auth.checkToken, smsTossagun.check )
+const smsKub = require('../Controllers/registerPartner')
+router.route('/orderhub/smsKub/post/otp/:id').post( auth.checkToken, smsKub.sendotp )
+router.route('/orderhub/smsKub/check/otp/:id').post( auth.checkToken, smsKub.check )
+router.route('/orderhub/smsKub/change/password/:id').post( auth.checkToken, smsKub.changePassword )
 
 module.exports = router;
