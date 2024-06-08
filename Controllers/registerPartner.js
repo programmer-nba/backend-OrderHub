@@ -419,6 +419,7 @@ sendotp = async (req, res) => {
     data.append('phone', partner?.tel);
     data.append('digit', '6');
     data.append('message', 'รหัส otp ของคุณ คือ {otp} (ref {ref_no}) กรุณากรอกรหัสภายใน 5 นาที');
+    data.append('from', 'ORDERHUB');
 
     let config = {
       method: 'post',
@@ -543,6 +544,14 @@ changePassword = async(req, res)=>{
         return res
                 .status(400)
                 .send({status:false, message:"รหัสผ่านใหม่ไม่ตรงกัน"})
+      }
+
+    // ตรวจสอบว่ารหัสผ่านใหม่ไม่ตรงกับรหัสผ่านเดิม
+    let cmp_new_password = await bcrypt.compare(new_password, checkOldPassword.password)
+      if(cmp_new_password){
+        return res
+                .status(400)
+                .send({status:false, data:"รหัสผ่านใหม่ต้องไม่เหมือนกับรหัสผ่านเดิม"})
       }
 
     return res
