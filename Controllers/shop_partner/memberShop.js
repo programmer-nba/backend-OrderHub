@@ -202,11 +202,11 @@ getMemberPartner = async (req, res)=>{
 
 getMemberAndPartner = async (req, res)=>{
     try{
-        const shop_id = req.body.shop_id
+        const shop_number = req.body.shop_number
         let result = []
-        const getAllResult = await memberShop.find({shop_id:shop_id},{_id:1,firstname:1,lastname:1,role:1}).exec()
+        const getAllResult = await memberShop.find({shop_number:shop_number},{_id:1,firstname:1,lastname:1,role:1}).exec()
             if(getAllResult.length == 0){
-                const getShop = await shopPartner.findById(shop_id,{partnerID:1,firstname:1,lastname:1}).exec()
+                const getShop = await shopPartner.findOne({shop_number:shop_number},{partnerID:1,firstname:1,lastname:1}).exec()
                     if(!getShop){
                         return res
                                 .status(404)
@@ -222,7 +222,7 @@ getMemberAndPartner = async (req, res)=>{
                         .status(200)
                         .send({status:true, data:partnerData})
             }
-        const getPartnerResult = await shopPartner.findById(shop_id,{partnerID:1,firstname:1,lastname:1}).exec()
+        const getPartnerResult = await shopPartner.findOne({shop_number:shop_number},{partnerID:1,firstname:1,lastname:1}).exec()
             if(!getPartnerResult){
                 return res
                         .status(404)

@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
 const multer = require("multer");
 const fs = require("fs");
+const qs = require('qs');
 const { google } = require("googleapis");
 const { uploadFileCreate, deleteFile } = require("../functions/uploadfilecreate");
 const { Blacklist } = require("../Models/blacklist");
@@ -11,6 +12,8 @@ const { memberShop } = require("../Models/shop/member_shop");
 const { costPlus } = require("../Models/costPlus");
 const { PercentCourier } = require("../Models/Delivery/ship_pop/percent");
 const mongoose = require('mongoose');
+const FormData = require('form-data');
+const axios = require('axios');
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-");
@@ -403,6 +406,101 @@ getByID = async (req,res)=>{//การทำ GET ME โดยใช้การ
   }
 }
 
+// opt
+sendotp = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const partner = await Partner.findById(id);
+    if (!partner) {
+      return res.status(404).send({ status: false, message: "ไม่มีข้อมูล" });
+    }
+    const data = new FormData();
+    data.append('phone', partner?.tel);
+    data.append('digit', '6');
+    data.append('message', 'รหัส otp ของคุณ คือ {otp} (ref {ref_no}) กรุณากรอกรหัสภายใน 5 นาที');
+
+    let config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: `${process.env.SMS_URL}/api/otp/request`,
+      headers: { 
+        'token': process.env.SMS_API_TOKEN, 
+        ...data.getHeaders()
+      },
+      data : data
+    };
+    // ให้ใช้ await เพื่อรอให้ axios ทำงานเสร็จก่อนที่จะดำเนินการต่อ
+    const result = await axios(config);
+    // console.log(result.data);
+    if (result.data.code === "200") {
+      return res.status(200).send({ status: true, result: result.data });
+    } else {
+      return res.status(200).send({ status: false, result: result.data});
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ status: false, error: error.message });
+  }
+};
+
+check = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const partner = await Partner.findById(id);
+    if (!partner) {
+      return res.status(404).send({ status: false, message: "ไม่มีข้อมูล" });
+    }
+
+    const config = {
+      method: "post",
+      maxBodyLength: Infinity,
+      url: "https://portal-otp.smsmkt.com/api/otp-validate",
+      headers: {
+        "Content-Type": "application/json",
+        api_key: `${process.env.SMS_API_KEY}`,
+        secret_key: `${process.env.SMS_SECRET_KEY}`,
+      },
+      data: JSON.stringify({
+        token: `${req.body.token}`,
+        otp_code: `${req.body.otp_code}`,
+      }),
+    };
+    await axios(config)
+      .then(async (response) => {
+        console.log(response.data);
+        //หมดอายุ
+        if (response.data.code === "5000") {
+          return res.status(400).send({
+            status: false,
+            message: "OTP นี้หมดอายุแล้ว กรุณาทำรายการใหม่",
+          });
+        }
+
+        if (response.data.code === "000") {
+          //ตรวจสอบ OTP
+          if (response.data.result.status) {
+            return res
+              .status(200)
+              .send({ status: true, message: "ยืนยัน OTP สำเร็จ" });
+          } else {
+            return res.status(400).send({
+              status: false,
+              message: "รหัส OTP ไม่ถูกต้องกรุณาตรวจสอบอีกครั้ง",
+            });
+          }
+        } else {
+          return res.status(400).send({ status: false, ...response.data });
+        }
+      })
+      .catch(function (error) {
+        console.log(error);
+        return res.status(400).send({ status: false, ...error });
+      });
+  } catch (error) {
+    return res.status(500).send({ status: false, error: error.message });
+  }
+};
+
 // addSubRole = async(req, res)=>{
 //   try{
 //       const role = req.body.role
@@ -468,4 +566,4 @@ module.exports = { createPartner,
 getAllPartner, getPartnerByID, 
 upPartnerByID, deleteById,
 uploadPicture, approveMemberShop,
-cancelMemberShop, getByID};
+cancelMemberShop, getByID, sendotp, check};
