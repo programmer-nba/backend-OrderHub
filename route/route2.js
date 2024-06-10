@@ -306,6 +306,7 @@ const logs = require('../Controllers/logs')
 router.route('/orderhub/logs/create').post( auth.checkToken, logs.create )
 router.route('/orderhub/logs/get/all').get( auth.checkToken, logs.getAll )
 router.route('/orderhub/logs/get/:id').get( auth.checkToken, logs.getById )
+router.route('/orderhub/logs/get/partner/:id').get( auth.checkToken, logs.getByIdPartner )
 router.route('/orderhub/logs/update/:id').put( auth.checkToken, logs.update )
 router.route('/orderhub/logs/del/:id').delete( auth.checkToken, logs.delend )
 

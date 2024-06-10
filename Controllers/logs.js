@@ -1,4 +1,5 @@
 const { logSystem } = require("../Models/logs");
+const { Partner } = require("../Models/partner");
 
 create = async(req, res) => {
     try{
@@ -74,6 +75,25 @@ getById = async(req, res)=>{
     }
 }
 
+getByIdPartner = async(req, res)=>{
+    try{
+        const id = req.params.id
+        const getById = await logSystem.find({id:id})
+            if(getById.length == 0){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถดึงข้อมูลเอกสารได้"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:getById})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 delend = async(req, res)=>{
     try{
         const id = req.params.id
@@ -93,4 +113,4 @@ delend = async(req, res)=>{
     }
 }
 
-module.exports = {create, update, getAll, getById, delend}
+module.exports = {create, update, getAll, getById, getByIdPartner, delend}
