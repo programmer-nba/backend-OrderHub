@@ -301,4 +301,12 @@ router.route('/orderhub/smsKub/post/otp/:id').post( auth.checkToken, smsKub.send
 router.route('/orderhub/smsKub/check/otp/:id').post( auth.checkToken, smsKub.check )
 router.route('/orderhub/smsKub/change/password/:id').post( auth.checkToken, smsKub.changePassword )
 
+//logs
+const logs = require('../Controllers/logs')
+router.route('/orderhub/logs/create').post( auth.checkToken, logs.create )
+router.route('/orderhub/logs/get/all').get( auth.checkToken, logs.getAll )
+router.route('/orderhub/logs/get/:id').get( auth.checkToken, logs.getById )
+router.route('/orderhub/logs/update/:id').put( auth.checkToken, logs.update )
+router.route('/orderhub/logs/del/:id').delete( auth.checkToken, logs.delend )
+
 module.exports = router;
