@@ -141,7 +141,7 @@ router.route('/orderhub/JT/label').post( auth.checkToken, JT.label )
 router.route('/orderhub/JT/price').post( auth.checkToken, JT.priceList )
 router.route('/orderhub/JT/getme').get( auth.checkToken, JT.getMeBooking )
 router.route('/orderhub/JT/getById/:txlogisticid').get( auth.checkToken, JT.getById )
-// router.route('/orderhub/JT/tracking/test').post( auth.checkToken,JT.trackingOrderTest )
+router.route('/orderhub/JT/tracking/test').post( auth.checkToken,JT.trackingOrderTest )
 
 
 //J&T Admin

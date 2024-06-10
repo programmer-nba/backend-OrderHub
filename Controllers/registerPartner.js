@@ -419,7 +419,7 @@ sendotp = async (req, res) => {
     data.append('phone', partner?.tel);
     data.append('digit', '6');
     data.append('message', 'รหัส otp ของคุณ คือ {otp} (ref {ref_no}) กรุณากรอกรหัสภายใน 5 นาที');
-    // data.append('from', 'Order Hub');
+    data.append('from', 'Order  Hub');
 
     let config = {
       method: 'post',

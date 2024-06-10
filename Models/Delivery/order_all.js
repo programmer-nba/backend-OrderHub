@@ -63,6 +63,7 @@ const orderAllSchema = new Schema({
                 }
         },
         day_sign: {type : String, default: "", required : false},
+        day_pick : {type : String, default: "", required : false},
         profitAll: {type: Array, required: false}
 },{timestamps:true})
 

@@ -430,7 +430,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -455,13 +455,19 @@ trackingOrder = async (req, res)=>{
                 if(item == null){
                     return
                 }
+
             const latestDetails = item.details[item.details.length - 1];
             const findReturn = item.details.find(item => item.scantype == 'Return')
-            
-            // console.log(latestDetails)
+        
             let scantype
             let day_pay = ""
             let day_sign = ""
+            let day_pick = ""
+
+            const findPickup = item.details.find(item => item.scantype == 'Picked Up')
+                if(findPickup){
+                    day_pick = findPickup.scantime
+                }
             if(findReturn){
                 if(latestDetails.scantype == 'Signature'){
 
@@ -471,9 +477,12 @@ trackingOrder = async (req, res)=>{
                     let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
                     day_sign = datePart
                     day_pay = newDate
-
+                    
                 }else if(latestDetails.scantype == 'Return Signature'){
                     scantype = 'เซ็นรับพัสดุตีกลับ'
+
+                    let datePart = latestDetails.scantime.substring(0, 10);
+                    day_sign = datePart
                 }else{
                     scantype = 'พัสดุตีกลับ'
                 }
@@ -507,22 +516,40 @@ trackingOrder = async (req, res)=>{
                         $set: {
                             order_status:scantype,
                             day_sign: day_sign,
+                            day_pick: day_pick
                         }
                     }
                 }
             }
-            let changStatusCod = {
-                updateOne: {
-                    filter: { 'template.partner_number': item.billcode },
-                    update: {
-                        $set: {
-                            status:scantype,
-                            day_sign: day_sign,
-                            day_pay: day_pay
+            let changStatusCod 
+            if(scantype == 'เซ็นรับพัสดุตีกลับ'){
+                changStatusCod = {
+                    updateOne: {
+                        filter: { 'template.partner_number': item.billcode },
+                        update: {
+                            $set: {
+                                status:scantype,
+                                day_pick:day_pick
+                            }
+                        }
+                    }
+                }
+            }else{
+                changStatusCod = {
+                    updateOne: {
+                        filter: { 'template.partner_number': item.billcode },
+                        update: {
+                            $set: {
+                                status:scantype,
+                                day_sign: day_sign,
+                                day_pay: day_pay,
+                                day_pick: day_pick
+                            }
                         }
                     }
                 }
             }
+            
             detailBulk.push(changStatus)
             codBulk.push(changStatusCod)
         })
@@ -545,13 +572,13 @@ trackingOrder = async (req, res)=>{
 
 trackingOrderTest = async (req, res)=>{
     try{
-        const findTxids = await profitTemplate.find({ status:"เซ็นรับแล้ว" })
+        const findTxids = await orderAll.find({ order_status:"เซ็นรับแล้ว",day:{ $regex:"2024-05" }},{mailno:1}).exec()
             if(findTxids.length == 0){
                 return res
                         .status(404)
                         .send({status:false, message:"ไม่พบข้อมูลในระบบ"})
             }
-        let txlogisticids = findTxids.map(item => item.orderid )
+        let txlogisticids = findTxids.map(item => item.mailno )
         console.log(txlogisticids.length)
 
         let detailBulk = []
@@ -598,25 +625,49 @@ trackingOrderTest = async (req, res)=>{
                     if(item == null){
                         return
                     }
-                const latestDetails = item.details[item.details.length - 1];
     
-                // console.log(latestDetails)
+                const latestDetails = item.details[item.details.length - 1];
+                const findReturn = item.details.find(item => item.scantype == 'Return')
+            
+                let scantype
                 let day_pay = ""
                 let day_sign = ""
-                let scantype
-                    if(latestDetails.scantype == 'Picked Up'){
-                        scantype = 'รับพัสดุแล้ว'
-                    }else if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
-                        scantype = 'ระหว่างการจัดส่ง'
-                    }else if(latestDetails.scantype == 'Signature'){
-
+                let day_pick = ""
+    
+                const findPickup = item.details.find(item => item.scantype == 'Picked Up')
+                    if(findPickup){
+                        day_pick = findPickup.scantime
+                    }
+                if(findReturn){
+                    if(latestDetails.scantype == 'Signature'){
+    
                         scantype = 'เซ็นรับแล้ว'
-
+    
                         let datePart = latestDetails.scantime.substring(0, 10);
                         let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
                         day_sign = datePart
                         day_pay = newDate
                         
+                    }else if(latestDetails.scantype == 'Return Signature'){
+                        scantype = 'เซ็นรับพัสดุตีกลับ'
+    
+                        let datePart = latestDetails.scantime.substring(0, 10);
+                        day_sign = datePart
+                    }else{
+                        scantype = 'พัสดุตีกลับ'
+                    }
+                }else{
+                    if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
+                        scantype = 'ระหว่างการจัดส่ง'
+                    }else if(latestDetails.scantype == 'Signature'){
+    
+                        scantype = 'เซ็นรับแล้ว'
+    
+                        let datePart = latestDetails.scantime.substring(0, 10);
+                        let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                        day_sign = datePart
+                        day_pay = newDate
+    
                     }else if(latestDetails.scantype == 'Return'){
                         scantype = 'พัสดุตีกลับ'
                     }else if(latestDetails.scantype == 'Problematic'){
@@ -624,43 +675,84 @@ trackingOrderTest = async (req, res)=>{
                     }else{
                         return;
                     }
+                }
+                // console.log("scan:",scantype,"day_sign:",day_sign,"day_pay:",day_pay)
                 let changStatus = {
                     updateOne: {
                         filter: { mailno: item.billcode },
                         update: { 
                             $set: {
-                                order_status:scantype,
+                                // order_status:scantype,
                                 day_sign: day_sign,
+                                day_pick: day_pick
                             }
                         }
                     }
                 }
-                let changStatusCod = {
-                    updateOne: {
-                        filter: { 'template.partner_number': item.billcode },
-                        update: { 
-                            $set: {
-                                status:scantype,
-                                day_sign: day_sign,
-                                day_pay: day_pay
+                let changStatusCod 
+                if(scantype == 'เซ็นรับพัสดุตีกลับ'){
+                    changStatusCod = {
+                        updateOne: {
+                            filter: { 'template.partner_number': item.billcode },
+                            update: {
+                                $set: {
+                                    // status:scantype,
+                                    day_pick:day_pick
+                                }
+                            }
+                        }
+                    }
+                }else{
+                    changStatusCod = {
+                        updateOne: {
+                            filter: { 'template.partner_number': item.billcode },
+                            update: {
+                                $set: {
+                                    // status:scantype,
+                                    day_sign: day_sign,
+                                    day_pay: day_pay,
+                                    day_pick: day_pick
+                                }
                             }
                         }
                     }
                 }
+                
                 detailBulk.push(changStatus)
                 codBulk.push(changStatusCod)
+                console.log("detail",detailBulk.length)
+                // console.log("cod",codBulk.length)
             })
         }
-
-        let bulkDetail = await orderAll.bulkWrite(detailBulk)
-        let bulkCod = await profitTemplate.bulkWrite(codBulk)
+        // console.log(detailBulk[0])
+        // let bulkDetail = await orderAll.bulkWrite(detailBulk)
+        // let bulkCod = await profitTemplate.bulkWrite(codBulk)
         // console.log(day_sign.length)
-        return res
-                .status(200)
-                .send({status:true, 
-                    detailBulk: bulkDetail,
-                    codBulk:bulkCod
-                })
+        // const batchSize = 1000;
+        // const totalBatches = Math.ceil(txlogisticids.length / batchSize);
+        // for (let i = 0; i < totalBatches; i++) {
+        //     const startIndex = i * batchSize;
+        //     const endIndex = Math.min(startIndex + batchSize, detailBulk.length);
+            
+        //     const batch = detailBulk.slice(startIndex, endIndex); 
+            
+        //     const endIndexCod = Math.min(startIndex + batchSize, codBulk.length)
+        //     const batchCOD = codBulk.slice(startIndex, endIndexCod); 
+
+        //     // ส่ง batch ไปทำ bulkWrite
+        //     try {
+        //         const result = await orderAll.bulkWrite(batch);
+        //         const resultCOD = await profitTemplate.bulkWrite(batchCOD)
+        //         console.log(`Batch ${i + 1} bulkWrite result:`, result,resultCOD);
+        //     } catch (error) {
+        //         console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
+        //     }
+        // }
+        // // ส่ง response เมื่อการลบเสร็จสิ้น
+        // return res
+        //         .status(200)
+        //         .json({ message: 'Documents fixed successfully' });
+
     }catch(err){
         console.log(err)
         return res
