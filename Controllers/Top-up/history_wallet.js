@@ -226,26 +226,26 @@ findShopAmountAll = async(req, res)=>{
             }
         })));
         console.log(findMap.length)
-        const batchSize = 1000;
-        const totalBatches = Math.ceil(findMap.length / batchSize);
-        for (let i = 0; i < totalBatches; i++) {
-            const startIndex = i * batchSize;
-            const endIndex = Math.min(startIndex + batchSize, findMap.length);
+        // const batchSize = 1000;
+        // const totalBatches = Math.ceil(findMap.length / batchSize);
+        // for (let i = 0; i < totalBatches; i++) {
+        //     const startIndex = i * batchSize;
+        //     const endIndex = Math.min(startIndex + batchSize, findMap.length);
             
-            const batch = findMap.slice(startIndex, endIndex); 
+        //     const batch = findMap.slice(startIndex, endIndex); 
         
-            // ส่ง batch ไปทำ bulkWrite
-            try {
-                const result = await profitTemplate.bulkWrite(batch);
-                console.log(`Batch ${i + 1} bulkWrite result:`, result);
-            } catch (error) {
-                console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
-            }
-        }
-        // ส่ง response เมื่อการลบเสร็จสิ้น
-        return res
-                .status(200)
-                .json({ message: 'Documents fixed successfully' });
+        //     // ส่ง batch ไปทำ bulkWrite
+        //     try {
+        //         const result = await profitTemplate.bulkWrite(batch);
+        //         console.log(`Batch ${i + 1} bulkWrite result:`, result);
+        //     } catch (error) {
+        //         console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
+        //     }
+        // }
+        // // ส่ง response เมื่อการลบเสร็จสิ้น
+        // return res
+        //         .status(200)
+        //         .json({ message: 'Documents fixed successfully' });
 
         // const id = req.params.id
         // const day_start = req.body.day_start
