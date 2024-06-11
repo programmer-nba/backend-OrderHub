@@ -586,32 +586,32 @@ trackingOrderTest = async (req, res)=>{
         let previousDetailLength = 0;
         let previousCodLength = 0;
         const apiBatchSize = 19;
-        const bulkBatchSize = 1000;
+        const bulkBatchSize = 19;
         
-        // ฟังก์ชันสำหรับการตรวจสอบและแสดงความยาว
-        function checkAndLogLength(array, previousLength, label) {
-            if (array.length >= previousLength + 1000) {
-                console.log(`${label}`, array.length);
-                return array.length; // อัปเดตความยาวก่อนหน้า
-            }
-            return previousLength; // คืนค่าความยาวก่อนหน้าถ้าไม่เปลี่ยนแปลง
-        }
+        // // ฟังก์ชันสำหรับการตรวจสอบและแสดงความยาว
+        // function checkAndLogLength(array, previousLength, label) {
+        //     if (array.length >= previousLength + 1000) {
+        //         console.log(`${label}`, array.length);
+        //         return array.length; // อัปเดตความยาวก่อนหน้า
+        //     }
+        //     return previousLength; // คืนค่าความยาวก่อนหน้าถ้าไม่เปลี่ยนแปลง
+        // }
         
-        // เพิ่มรายการและตรวจสอบความยาว
-        function addToBulk(changStatus, changStatusCod) {
-            detailBulk.push(changStatus);
-            codBulk.push(changStatusCod);
+        // // เพิ่มรายการและตรวจสอบความยาว
+        // function addToBulk(changStatus, changStatusCod) {
+        //     detailBulk.push(changStatus);
+        //     codBulk.push(changStatusCod);
         
-            // ตรวจสอบและแสดงความยาวของ detailBulk
-            previousDetailLength = checkAndLogLength(detailBulk, previousDetailLength, 'detail');
+        //     // ตรวจสอบและแสดงความยาวของ detailBulk
+        //     previousDetailLength = checkAndLogLength(detailBulk, previousDetailLength, 'detail');
         
-            // ตรวจสอบและแสดงความยาวของ codBulk
-            previousCodLength = checkAndLogLength(codBulk, previousCodLength, 'cod');
-        }
+        //     // ตรวจสอบและแสดงความยาวของ codBulk
+        //     previousCodLength = checkAndLogLength(codBulk, previousCodLength, 'cod');
+        // }
         
         while (txlogisticids.length > 0) {
                 const currentBatch = txlogisticids.splice(0, apiBatchSize);
-                // console.log(`Processing currentBatch of size: ${currentBatch.length}`);
+                // console.log(currentBatch);
 
                 const formData = {
                     "logistics_interface": {
@@ -738,7 +738,8 @@ trackingOrderTest = async (req, res)=>{
                         };
                     }
         
-                    addToBulk(changStatus, changStatusCod);
+                    detailBulk.push(changStatus)
+                    codBulk.push(changStatusCod)
         
                     // ทำ bulkWrite เมื่อครบ 1000 รายการ
                     if (detailBulk.length >= bulkBatchSize) {

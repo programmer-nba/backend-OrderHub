@@ -107,7 +107,7 @@ getCreditDis = async(req, res)=>{
 
 getShopHistory = async(req, res)=>{
     try{
-        const shop_id = req.body.shop_id
+        const shop_number = req.body.shop_number
         const orderer = req.body.orderer
         const type = req.body.type
         const day_start = req.body.day_start
@@ -115,30 +115,30 @@ getShopHistory = async(req, res)=>{
         let findMe = []
 
         if(!day_start && !day_end){
-            if(shop_id){    
+            if(shop_number){    
                 if(!orderer && !type){
-                    findMe = await historyWalletShop.find({shop_id:shop_id})
+                    findMe = await historyWalletShop.find({shop_number:shop_number})
                         if(findMe.length == 0){
                             return res
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
                         }
                 }else if(orderer && type){
-                    findMe = await historyWalletShop.find({shop_id:shop_id, ID:orderer, type:type})
+                    findMe = await historyWalletShop.find({shop_number:shop_number, ID:orderer, type:type})
                         if(findMe.length == 0){
                             return res
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
                         }
                 }else if(orderer){
-                    findMe = await historyWalletShop.find({shop_id:shop_id, ID:orderer})
+                    findMe = await historyWalletShop.find({shop_number:shop_number, ID:orderer})
                         if(findMe.length == 0){
                             return res
                                     .status(404)
                                     .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
                         }
                 }else if(type){
-                    findMe = await historyWalletShop.find({shop_id:shop_id, type:type})
+                    findMe = await historyWalletShop.find({shop_number:shop_number, type:type})
                         if(findMe.length == 0){
                             return res
                                     .status(404)
@@ -170,10 +170,10 @@ getShopHistory = async(req, res)=>{
                     }
             }
         }else if(day_start && day_end){
-            if(shop_id){
+            if(shop_number){
                 if(!orderer && !type){
                     findMe = await historyWalletShop.find({
-                        shop_id:shop_id, 
+                        shop_number:shop_number, 
                         day:{
                             $gte:day_start, 
                             $lte:day_end
@@ -186,7 +186,7 @@ getShopHistory = async(req, res)=>{
                 }else if(orderer && type){
                     console.log("11")
                     findMe = await historyWalletShop.find({
-                        shop_id:shop_id, 
+                        shop_number:shop_number, 
                         ID:orderer, 
                         type:type, 
                         day:{
@@ -201,7 +201,7 @@ getShopHistory = async(req, res)=>{
                 }else if(orderer){
                     console.log("9")
                     findMe = await historyWalletShop.find({
-                        shop_id:shop_id, 
+                        shop_number:shop_number, 
                         ID:orderer, 
                         day:{
                             $gte:day_start, 
@@ -214,7 +214,7 @@ getShopHistory = async(req, res)=>{
                         }
                 }else if(type){
                     findMe = await historyWalletShop.find({
-                        shop_id:shop_id, 
+                        shop_number:shop_number, 
                         type:type, 
                         day:{
                             $gte:day_start, 

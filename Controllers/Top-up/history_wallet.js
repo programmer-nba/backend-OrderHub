@@ -210,7 +210,7 @@ findShopAmountAll = async(req, res)=>{
                         .send({status:false, data:[]})
             }
         
-        console.log("findHistory:",findHistory.length)
+        console.log("findHistory:",findHistory[0])
         // const orderIdsToUpdate = findHistory.map(doc => doc.orderid);
         // console.log("orderIdsToUpdate:",orderIdsToUpdate.length)
         // const orderAllDocs = await orderAll.find({ tracking_code: { $in: orderIdsToUpdate } },{tracking_code:1, mailno:1}).exec()
@@ -220,32 +220,32 @@ findShopAmountAll = async(req, res)=>{
                 filter: { orderid: item.tracking_code },
                 update:{
                     $set:{
-                        type: "ยกเลิกออเดอร์"
+                        status: "ยกเลิกออเดอร์"
                     }
                 }
             }
         })));
         console.log(findMap.length)
-        // const batchSize = 1000;
-        // const totalBatches = Math.ceil(findMap.length / batchSize);
-        // for (let i = 0; i < totalBatches; i++) {
-        //     const startIndex = i * batchSize;
-        //     const endIndex = Math.min(startIndex + batchSize, findMap.length);
+        const batchSize = 1000;
+        const totalBatches = Math.ceil(findMap.length / batchSize);
+        for (let i = 0; i < totalBatches; i++) {
+            const startIndex = i * batchSize;
+            const endIndex = Math.min(startIndex + batchSize, findMap.length);
             
-        //     const batch = findMap.slice(startIndex, endIndex); 
+            const batch = findMap.slice(startIndex, endIndex); 
         
-        //     // ส่ง batch ไปทำ bulkWrite
-        //     try {
-        //         const result = await profitTemplate.bulkWrite(batch);
-        //         console.log(`Batch ${i + 1} bulkWrite result:`, result);
-        //     } catch (error) {
-        //         console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
-        //     }
-        // }
-        // // ส่ง response เมื่อการลบเสร็จสิ้น
-        // return res
-        //         .status(200)
-        //         .json({ message: 'Documents fixed successfully' });
+            // ส่ง batch ไปทำ bulkWrite
+            try {
+                const result = await profitTemplate.bulkWrite(batch);
+                console.log(`Batch ${i + 1} bulkWrite result:`, result);
+            } catch (error) {
+                console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
+            }
+        }
+        // ส่ง response เมื่อการลบเสร็จสิ้น
+        return res
+                .status(200)
+                .json({ message: 'Documents fixed successfully' });
 
         // const id = req.params.id
         // const day_start = req.body.day_start
