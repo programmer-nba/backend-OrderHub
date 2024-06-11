@@ -467,7 +467,9 @@ check = async (req, res) => {
     const ip_address = req.body.ip_address
     const type = req.body.type
     const discription = req.body.discription
-
+    const latitude = req.body.latitude
+    const longtitude = req.body.longtitude
+    
     let data = JSON.stringify({
       'ref_no': ref_no,
       'otp': otp,
@@ -497,7 +499,9 @@ check = async (req, res) => {
           otp: otp,
           phone: phone,
           type: type,
-          description: discription
+          description: discription,
+          latitude: latitude,
+          longtitude: longtitude
       }
       const create = await logSystem.create(formData)
         if(!create){

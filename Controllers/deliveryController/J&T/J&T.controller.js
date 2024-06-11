@@ -430,7 +430,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -572,7 +572,7 @@ trackingOrder = async (req, res)=>{
 
 trackingOrderTest = async (req, res)=>{
     try{
-        const findTxids = await orderAll.find({ order_status:"เซ็นรับแล้ว",day:"2024-05-07" },{mailno:1}).exec()
+        const findTxids = await orderAll.find({day:{$lte:"2024-05-31"},order_status:{$ne:"cancel"},day_pick:""},{mailno:1}).exec()
             if(findTxids.length == 0){
                 return res
                         .status(404)
@@ -587,7 +587,6 @@ trackingOrderTest = async (req, res)=>{
         let previousCodLength = 0;
         const apiBatchSize = 19;
         const bulkBatchSize = 1000;
-        const totalBulkBatchSize = 10000;
         
         // ฟังก์ชันสำหรับการตรวจสอบและแสดงความยาว
         function checkAndLogLength(array, previousLength, label) {
@@ -610,14 +609,10 @@ trackingOrderTest = async (req, res)=>{
             previousCodLength = checkAndLogLength(codBulk, previousCodLength, 'cod');
         }
         
-        // ดึงข้อมูลทีละ 10000
         while (txlogisticids.length > 0) {
-            const batchLimit = Math.min(txlogisticids.length, totalBulkBatchSize);
-            const currentBulk = txlogisticids.splice(0, batchLimit);
-        
-            while (currentBulk.length > 0) {
-                const currentBatch = currentBulk.splice(0, apiBatchSize);
-        
+                const currentBatch = txlogisticids.splice(0, apiBatchSize);
+                // console.log(`Processing currentBatch of size: ${currentBatch.length}`);
+
                 const formData = {
                     "logistics_interface": {
                         "billcode": currentBatch.join(","),
@@ -682,7 +677,9 @@ trackingOrderTest = async (req, res)=>{
                             scantype = 'พัสดุตีกลับ';
                         }
                     } else {
-                        if (latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival') {
+                        if(latestDetails.scantype == 'Picked Up'){
+                            scantype = 'รับพัสดุแล้ว';
+                        }else if (latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival') {
                             scantype = 'ระหว่างการจัดส่ง';
                         } else if (latestDetails.scantype == 'Signature') {
                             scantype = 'เซ็นรับแล้ว';
@@ -757,20 +754,6 @@ trackingOrderTest = async (req, res)=>{
                     }
                 });
             }
-        
-            // ทำ bulkWrite สำหรับข้อมูลที่เหลือใน currentBulk เมื่อประมวลผลเสร็จ
-            if (detailBulk.length > 0) {
-                try {
-                    const result = await orderAll.bulkWrite(detailBulk);
-                    const resultCOD = await profitTemplate.bulkWrite(codBulk);
-                    console.log(`Final batch bulkWrite result for currentBulk:`, result, resultCOD);
-                } catch (error) {
-                    console.error(`Error performing bulkWrite for final batch of currentBulk:`, error);
-                }
-                detailBulk = []; // ล้าง array หลังจากทำ bulkWrite
-                codBulk = [];
-            }
-        }
         // console.log(detailBulk[0])
         // let bulkDetail = await orderAll.bulkWrite(detailBulk)
         // let bulkCod = await profitTemplate.bulkWrite(codBulk)
@@ -927,7 +910,7 @@ cancelOrder = async (req, res)=>{
                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
                     }
                 // console.log(findTracking)
-                    if(findTracking.profitCOD != 0){
+                    if(findPno.cod_amount != 0){
                        let findTemplate = await profitTemplate.findOneAndUpdate(
                             { orderid : txlogisticid},
                             {
@@ -1110,7 +1093,7 @@ cancelOrderAll = async (txlogisticid)=>{
                     }
 
                 // console.log(findTracking)
-                    if(findTracking.profitCOD != 0){
+                    if(findPno.cod_amount != 0){
                         let findTemplate = await profitTemplate.findOneAndUpdate(
                             { orderid : txlogisticid},
                             {
