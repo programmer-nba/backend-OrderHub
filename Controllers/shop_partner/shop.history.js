@@ -120,29 +120,29 @@ getShopHistory = async(req, res)=>{
                     findMe = await historyWalletShop.find({shop_number:shop_number})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
                         }
                 }else if(orderer && type){
                     findMe = await historyWalletShop.find({shop_number:shop_number, ID:orderer, type:type})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
                         }
                 }else if(orderer){
                     findMe = await historyWalletShop.find({shop_number:shop_number, ID:orderer})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
                         }
                 }else if(type){
                     findMe = await historyWalletShop.find({shop_number:shop_number, type:type})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
                         }
                 }
             }else if(orderer){
@@ -150,23 +150,23 @@ getShopHistory = async(req, res)=>{
                     findMe = await historyWalletShop.find({ID:orderer, type:type})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(5)"})
                         }
                 }else {
                     findMe = await historyWalletShop.find({ID:orderer})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(6)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(6)"})
                         }
                 }
             }else if(type){
                 findMe = await historyWalletShop.find({type:type})
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(7)"})
                     }
             }
         }else if(day_start && day_end){
@@ -180,8 +180,8 @@ getShopHistory = async(req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
                         }
                 }else if(orderer && type){
                     console.log("11")
@@ -195,8 +195,8 @@ getShopHistory = async(req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
                         }
                 }else if(orderer){
                     console.log("9")
@@ -209,8 +209,8 @@ getShopHistory = async(req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
                         }
                 }else if(type){
                     findMe = await historyWalletShop.find({
@@ -222,8 +222,8 @@ getShopHistory = async(req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
                         }
                 }
             }else if(orderer){
@@ -237,8 +237,8 @@ getShopHistory = async(req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
                         }
                 }else {
                     findMe = await historyWalletShop.find({
@@ -249,8 +249,8 @@ getShopHistory = async(req, res)=>{
                         }})
                         if(findMe.length == 0){
                             return res
-                                    .status(404)
-                                    .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
                         }
                 }
             }else if(type){
@@ -262,8 +262,8 @@ getShopHistory = async(req, res)=>{
                     }})
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
                     }
             }else{
                 findMe = await historyWalletShop.find({
@@ -273,8 +273,8 @@ getShopHistory = async(req, res)=>{
                     }})
                     if(findMe.length == 0){
                         return res
-                                .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
                     }
             }
         }
