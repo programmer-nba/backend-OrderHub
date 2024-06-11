@@ -192,34 +192,94 @@ getProfitPartner = async (req, res)=>{
         let findMe = []
         if(!day_start && !day_end){
             if(wallet_owner){
-                if(!express && !shop_number){
-                    findMe = await profitPartner.find({wallet_owner:wallet_owner})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(200)
-                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(1)"})
-                        }
-                }else if(express && shop_number){
-                    findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express, shop_number:shop_number})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(200)
-                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(2)"})
-                        }
-                }else if(express){
-                    findMe = await profitPartner.find({wallet_owner:wallet_owner, express:express})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(200)
-                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(3)"})
-                        }
-                }else if(shop_number){
-                    findMe = await profitPartner.find({wallet_owner:wallet_owner, shop_number:shop_number})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(200)
-                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(4)"})
-                        }
+                if(!orderer){
+                    if(!express && !shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner
+                        })
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(1.1)"})
+                            }
+                    }else if(express && shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            express:express, 
+                            shop_number:shop_number
+                        })
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(1.2)"})
+                            }
+                    }else if(express){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            express:express
+                        })
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(1.3)"})
+                            }
+                    }else if(shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            shop_number:shop_number
+                        })
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(1.4)"})
+                            }
+                    }
+                }else if(orderer){
+                    if(!express && !shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            Orderer:orderer
+                        })
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(2.1)"})
+                            }
+                    }else if(express && shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            express:express, 
+                            shop_number:shop_number, 
+                            Orderer:orderer
+                        })
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(2.2)"})
+                            }
+                    }else if(express){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            express:express, 
+                            Orderer:orderer
+                        })
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(2.3)"})
+                            }
+                    }else if(shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            shop_number:shop_number, 
+                            Orderer:orderer
+                            })
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(2.4)"})
+                            }
+                    }
                 }
             }else if(orderer){
                 if(!express && !shop_number){
@@ -277,58 +337,118 @@ getProfitPartner = async (req, res)=>{
             }
         }else if(day_start && day_end){
             if(wallet_owner){
-                if(!express && !shop_number){
-                    findMe = await profitPartner.find({
-                        wallet_owner:wallet_owner, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(200)
-                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
-                        }
-                }else if(express && shop_number){
-                    findMe = await profitPartner.find({
-                        wallet_owner:wallet_owner, 
-                        express:express, 
-                        shop_number:shop_number, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(200)
-                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
-                        }
-                }else if(express){
-                    findMe = await profitPartner.find({
-                        wallet_owner:wallet_owner, 
-                        express:express, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(200)
-                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
-                        }
-                }else if(shop_number){
-                    findMe = await profitPartner.find({
-                        wallet_owner:wallet_owner, 
-                        shop_number:shop_number, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
-                        if(findMe.length == 0){
-                            return res
-                                    .status(200)
-                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
-                        }
+                if(!orderer){
+                    if(!express && !shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }})
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12.1)"})
+                            }
+                    }else if(express && shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            express:express, 
+                            shop_number:shop_number, 
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }})
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12.2)"})
+                            }
+                    }else if(express){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            express:express, 
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }})
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12.3)"})
+                            }
+                    }else if(shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            shop_number:shop_number, 
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }})
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12.4)"})
+                            }
+                    }
+                }else if(orderer){
+                    if(!express && !shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            Orderer:orderer,
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }})
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13.1)"})
+                            }
+                    }else if(express && shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            express:express, 
+                            shop_number:shop_number, 
+                            Orderer:orderer,
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }})
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13.2)"})
+                            }
+                    }else if(express){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            express:express, 
+                            Orderer:orderer,
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }})
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13.3)"})
+                            }
+                    }else if(shop_number){
+                        findMe = await profitPartner.find({
+                            wallet_owner:wallet_owner, 
+                            shop_number:shop_number, 
+                            Orderer:orderer,
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }})
+                            if(findMe.length == 0){
+                                return res
+                                        .status(200)
+                                        .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13.4)"})
+                            }
+                    }
                 }
             }else if(orderer){
                 if(!express && !shop_number){
