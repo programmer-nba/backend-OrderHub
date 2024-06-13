@@ -7,7 +7,7 @@ const secretKey = Buffer.from(process.env.SECRET_KEY_CRYPTO, 'hex');
 const iv = Buffer.from(process.env.IV, 'hex');
 
 // ฟังก์ชันสำหรับการเข้ารหัส
-function encrypt(text) {
+async function encrypt(text) {
   const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -15,7 +15,7 @@ function encrypt(text) {
 }
 
 // ฟังก์ชันสำหรับการถอดรหัส
-function decrypt(encryptedText) {
+async function decrypt(encryptedText) {
   const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
   let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
