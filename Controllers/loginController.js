@@ -13,9 +13,9 @@ loginController = async(req,res) =>{
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
-        // const IP = await encrypt(ip_address)
-        // const LT = await encrypt(latitude)
-        // const LG = await encrypt(longtitude)
+        const IP = await encrypt(ip_address)
+        const LT = await encrypt(latitude)
+        const LG = await encrypt(longtitude)
         Partner.findOne({username:UserID}).then(async (Partner)=>{
             if(Partner){
                 if(Partner.status_partner == "blacklist"){
@@ -48,9 +48,9 @@ loginController = async(req,res) =>{
                             email: Partner.email,
                             role: Partner.role,
                             status: Partner.status_partner,
-                            // ip_address: IP,
-                            // latitude: LT,
-                            // longtitude: LG
+                            ip_address: IP,
+                            latitude: LT,
+                            longtitude: LG
                         }
                         const token = jwt.sign(payload, secretKey, { expiresIn: '10h'})
                         return res
@@ -88,9 +88,9 @@ async function checkAdmin(req, res){
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
-        // const IP = await encrypt(ip_address)
-        // const LT = await encrypt(latitude)
-        // const LG = await encrypt(longtitude)
+        const IP = await encrypt(ip_address)
+        const LT = await encrypt(latitude)
+        const LG = await encrypt(longtitude)
         Admin.findOne({username:UserID}).then(async (Admin)=>{
             if(Admin){
                 let cmp = await bcrypt.compare(Password, Admin.password).then(async (match)=>{
@@ -118,9 +118,9 @@ async function checkAdmin(req, res){
                             firstname: Admin.firstname,
                             lastname: Admin.lastname,
                             role: Admin.role,
-                            // ip_address: IP,
-                            // latitude: LT,
-                            // longtitude: LG
+                            ip_address: IP,
+                            latitude: LT,
+                            longtitude: LG
                         }
                         const token = jwt.sign(payload, secretKey, { expiresIn: '10h' })
                         return res
