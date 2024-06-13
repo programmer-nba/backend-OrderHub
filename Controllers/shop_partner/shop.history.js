@@ -270,7 +270,8 @@ getShopHistory = async(req, res)=>{
                     day:{
                         $gte:day_start, 
                         $lte:day_end
-                    }})
+                    },ID: { $exists: true }
+                })
                     if(findMe.length == 0){
                         return res
                                 .status(200)

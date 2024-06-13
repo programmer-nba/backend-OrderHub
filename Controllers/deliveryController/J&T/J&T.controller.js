@@ -24,6 +24,8 @@ const { bangkokMetropolitan } = require("../../../Models/postcal_bangkok/postcal
 const { Admin } = require("../../../Models/admin");
 const { codPercent } = require("../../../Models/COD/cod.shop.model");
 const { postalThailand } = require("../../../Models/postal.thailand/postal.thai.model");
+const { decrypt } = require("../../../functions/encodeCrypto");
+const { logSystem } = require("../../../Models/logs");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -430,7 +432,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -445,7 +447,7 @@ trackingOrder = async (req, res)=>{
                             data: response.data
                         })
             }
-
+        
         let detailBulk = []
         let codBulk = []
         const detail = response.data.responseitems[0].tracesList
@@ -489,7 +491,7 @@ trackingOrder = async (req, res)=>{
             }else{
                 if(latestDetails.scantype == 'Picked Up'){
                     scantype = 'รับพัสดุแล้ว'
-                }else if(latestDetails.scantype == 'On Delivery' || latestDetails.scantype == 'Departure' || latestDetails.scantype == 'Arrival'){
+                }else if(['On Delivery', 'Departure', 'Arrival'].includes(latestDetails.scantype)){
                     scantype = 'ระหว่างการจัดส่ง'
                 }else if(latestDetails.scantype == 'Signature'){
 
@@ -502,7 +504,7 @@ trackingOrder = async (req, res)=>{
 
                 }else if(latestDetails.scantype == 'Return'){
                     scantype = 'พัสดุตีกลับ'
-                }else if(latestDetails.scantype == 'Problematic'){
+                }else if(['Problematic', 'Storage'].includes(latestDetails.scantype)){
                     scantype = 'พัสดุมีปัญหา'
                 }else{
                     return;
@@ -527,7 +529,7 @@ trackingOrder = async (req, res)=>{
                     updateOne: {
                         filter: { 'template.partner_number': item.billcode },
                         update: {
-                            $set: {
+                            $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
                                 status:scantype,
                                 day_pick:day_pick
                             }
@@ -572,13 +574,13 @@ trackingOrder = async (req, res)=>{
 
 trackingOrderTest = async (req, res)=>{
     try{
-        const findTxids = await orderAll.find({day:{$lte:"2024-05-31"},order_status:{$ne:"cancel"},day_pick:""},{mailno:1}).exec()
+        const findTxids = await profitTemplate.find({day:{$gte:"2024-05-31"},status:{$ne:"ยกเลิกออเดอร์"},day_pick:""},{"template.partner_number":1}).exec()
             if(findTxids.length == 0){
                 return res
                         .status(404)
                         .send({status:false, message:"ไม่พบข้อมูลในระบบ"})
             }
-        let txlogisticids = findTxids.map(item => item.mailno )
+        let txlogisticids = findTxids.map(item => item.template.partner_number)
         console.log(txlogisticids.length)
 
         let detailBulk = []
@@ -622,7 +624,7 @@ trackingOrderTest = async (req, res)=>{
             };
             let apiUrlQuery = process.env.JT_URL_QUERY;
             const newData = await generateJT(formData);
-            const response = await axios.post(`${apiUrlQuery}/track/trackForJson`, newData, {
+            const response = await axios.post(`${apiUrl}/track/trackForJson`, newData, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'Accept': 'application/json',
@@ -687,7 +689,7 @@ trackingOrderTest = async (req, res)=>{
                         day_pay = newDate;
                     } else if (latestDetails.scantype == 'Return') {
                         scantype = 'พัสดุตีกลับ';
-                    } else if (latestDetails.scantype == 'Problematic') {
+                    } else if (['Problematic', 'Storage'].includes(latestDetails.scantype)) {
                         scantype = 'พัสดุมีปัญหา';
                     } else {
                         continue;
@@ -712,7 +714,7 @@ trackingOrderTest = async (req, res)=>{
                         updateOne: {
                             filter: { 'template.partner_number': item.billcode },
                             update: {
-                                $set: {
+                                $set: { //ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
                                     day_pick: day_pick
                                 }
                             }
@@ -809,6 +811,13 @@ cancelOrder = async (req, res)=>{
         const id = req.decoded.userid
         const role = req.decoded.role
         const txlogisticid = req.body.txlogisticid
+        const ip_address = req.decoded.ip_address
+        const latitude = req.decoded.latitude
+        const longtitude = req.decoded.longtitude
+        const IP = await decrypt(ip_address)
+        const LT = await decrypt(latitude)
+        const LG = await decrypt(longtitude)
+
         const formData = {
             "logistics_interface":{
                 "actiontype":"cancel",
@@ -991,6 +1000,16 @@ cancelOrder = async (req, res)=>{
                             refundAll.push(findTracking)
                         }
                     }
+                        let formData = {
+                            ip_address: IP,
+                            id: id,
+                            role: role,
+                            type: 'CANCEL ORDER BY USER',
+                            description: "ยูสเซอร์ยกเลิกสินค้า",
+                            order:[],
+                            latitude: LT,
+                            longtitude: LG
+                        }
                     
                 return res
                         .status(200)

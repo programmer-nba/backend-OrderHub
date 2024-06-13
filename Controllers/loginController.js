@@ -4,6 +4,7 @@ const { Partner } = require("../Models/partner");
 const { Admin } = require('../Models/admin');
 const { memberShop } = require('../Models/shop/member_shop');
 const { logSystem } = require('../Models/logs');
+const { encrypt, decrypt } = require('../functions/encodeCrypto')
 
 loginController = async(req,res) =>{
     try{
@@ -12,6 +13,9 @@ loginController = async(req,res) =>{
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
+        const IP = await encrypt(ip_address)
+        const LT = await encrypt(latitude)
+        const LG = await encrypt(longtitude)
         Partner.findOne({username:UserID}).then(async (Partner)=>{
             if(Partner){
                 if(Partner.status_partner == "blacklist"){
@@ -43,7 +47,10 @@ loginController = async(req,res) =>{
                             number: Partner.partnerNumber,
                             email: Partner.email,
                             role: Partner.role,
-                            status: Partner.status_partner
+                            status: Partner.status_partner,
+                            ip_address: IP,
+                            latitude: LT,
+                            longtitude: LG
                         }
                         const token = jwt.sign(payload, secretKey, { expiresIn: '10h'})
                         return res
@@ -81,6 +88,9 @@ async function checkAdmin(req, res){
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
+        const IP = await encrypt(ip_address)
+        const LT = await encrypt(latitude)
+        const LG = await encrypt(longtitude)
         Admin.findOne({username:UserID}).then(async (Admin)=>{
             if(Admin){
                 let cmp = await bcrypt.compare(Password, Admin.password).then(async (match)=>{
@@ -107,7 +117,10 @@ async function checkAdmin(req, res){
                             username: Admin.username,
                             firstname: Admin.firstname,
                             lastname: Admin.lastname,
-                            role: Admin.role
+                            role: Admin.role,
+                            ip_address: IP,
+                            latitude: LT,
+                            longtitude: LG
                         }
                         const token = jwt.sign(payload, secretKey, { expiresIn: '10h' })
                         return res
@@ -146,6 +159,9 @@ async function checkShopMember(req, res){
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
+        const IP = await encrypt(ip_address)
+        const LT = await encrypt(latitude)
+        const LG = await encrypt(longtitude)
         memberShop.findOne({username:UserID}).then(async (memberShop)=>{
             if(memberShop){
                 let cmp = await bcrypt.compare(Password, memberShop.password).then(async(match)=>{
@@ -173,7 +189,10 @@ async function checkShopMember(req, res){
                             number: memberShop.member_number,
                             username: memberShop.username,
                             shop_number: memberShop.shop_number,
-                            role: memberShop.role
+                            role: memberShop.role,
+                            ip_address: IP,
+                            latitude: LT,
+                            longtitude: LG
                         }
                         const token = jwt.sign(payload, secretKey, { expiresIn: '10h'})
                         return res

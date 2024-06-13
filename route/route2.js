@@ -310,4 +310,7 @@ router.route('/orderhub/logs/get/partner/:id').get( auth.checkToken, logs.getByI
 router.route('/orderhub/logs/update/:id').put( auth.checkToken, logs.update )
 router.route('/orderhub/logs/del/:id').delete( auth.checkToken, logs.delend )
 
+const encode = require('../functions/encodeCrypto')
+router.route('/orderhub/encode').get( encode.encrypt )
+
 module.exports = router;
