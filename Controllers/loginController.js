@@ -159,9 +159,9 @@ async function checkShopMember(req, res){
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
-        // const IP = await encrypt(ip_address)
-        // const LT = await encrypt(latitude)
-        // const LG = await encrypt(longtitude)
+        const IP = await encrypt(ip_address)
+        const LT = await encrypt(latitude)
+        const LG = await encrypt(longtitude)
         memberShop.findOne({username:UserID}).then(async (memberShop)=>{
             if(memberShop){
                 let cmp = await bcrypt.compare(Password, memberShop.password).then(async(match)=>{
@@ -190,9 +190,9 @@ async function checkShopMember(req, res){
                             username: memberShop.username,
                             shop_number: memberShop.shop_number,
                             role: memberShop.role,
-                            // ip_address: IP,
-                            // latitude: LT,
-                            // longtitude: LG
+                            ip_address: IP,
+                            latitude: LT,
+                            longtitude: LG
                         }
                         const token = jwt.sign(payload, secretKey, { expiresIn: '10h'})
                         return res
