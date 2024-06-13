@@ -587,8 +587,121 @@ pickOrder = async(req, res)=>{
     try{
         let day_start = req.body.day_start
         let day_end = req.body.day_end
-        let status = req.body.status 
+        let partner_id = req.body.partner_id
+        let status = req.body.status
         let findPartner
+        if(partner_id){
+            if(status == 'day_create_order'){
+                findPartner = await orderAll.find({
+                    owner_id: partner_id,
+                    day: { 
+                        $gte: day_start, 
+                        $lte: day_end 
+                    } 
+                },{
+                    owner_id:1,
+                    orderer_id:1,
+                    role:1,
+                    mailno:1,
+                    to:1,
+                    price:1,
+                    cost_hub:1,
+                    cod_amount:1,
+                    order_status:1,
+                    day:1,
+                    day_pick:1,
+                    day_sign:1
+                }).exec()
+                    if(findPartner.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[], message:"ไม่พบข้อมูล(1)"})
+                    }
+            }else if(status == 'day_pick_order'){
+                day_start = dayjs(day_start).startOf('day').format('YYYY-MM-DD HH:mm:ss'); // "2024-06-11 00:00:00"
+                day_end = dayjs(day_end).endOf('day').format('YYYY-MM-DD HH:mm:ss'); // "2024-06-11 23:59:59"
+
+                findPartner = await orderAll.find({
+                    owner_id: partner_id,
+                    day_pick: { 
+                        $gte: day_start, 
+                        $lte: day_end 
+                    }
+                },{
+                    owner_id:1,
+                    orderer_id:1,
+                    role:1,
+                    mailno:1,
+                    to:1,
+                    price:1,
+                    cost_hub:1,
+                    cod_amount:1,
+                    order_status:1,
+                    day:1,
+                    day_pick:1,
+                    day_sign:1
+                }).exec()
+                    if(findPartner.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[], message:"ไม่พบข้อมูล(2)"})
+                    }
+            }else if(status == 'order_booking'){
+                findPartner = await orderAll.find({
+                    owner_id: partner_id,
+                    day: { 
+                        $gte: day_start, 
+                        $lte: day_end 
+                    },
+                    order_status:"booking"
+                },{
+                    owner_id:1,
+                    orderer_id:1,
+                    role:1,
+                    mailno:1,
+                    to:1,
+                    price:1,
+                    cost_hub:1,
+                    cod_amount:1,
+                    order_status:1,
+                    day:1,
+                    day_pick:1,
+                    day_sign:1
+                }).exec()
+                    if(findPartner.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[], message:"ไม่พบข้อมูล(3)"})
+                    }
+            }else if(status == 'day_sign_back'){
+                findPartner = await orderAll.find({
+                    owner_id: partner_id,
+                    order_status:"เซ็นรับพัสดุตีกลับ",
+                    day_sign: { 
+                        $gte: day_start, 
+                        $lte: day_end 
+                    }
+                },{
+                    owner_id:1,
+                    orderer_id:1,
+                    role:1,
+                    mailno:1,
+                    to:1,
+                    price:1,
+                    cost_hub:1,
+                    cod_amount:1,
+                    order_status:1,
+                    day:1,
+                    day_pick:1,
+                    day_sign:1
+                }).exec()
+                    if(findPartner.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[], message:"ไม่พบข้อมูล(4)"})
+                    }
+            }
+        }else{
             if(status == 'day_create_order'){
                 findPartner = await orderAll.find({
                     day: { 
@@ -596,6 +709,7 @@ pickOrder = async(req, res)=>{
                         $lte: day_end 
                     } 
                 },{
+                    owner_id:1,
                     orderer_id:1,
                     role:1,
                     mailno:1,
@@ -623,6 +737,7 @@ pickOrder = async(req, res)=>{
                         $lte: day_end 
                     }
                 },{
+                    owner_id:1,
                     orderer_id:1,
                     role:1,
                     mailno:1,
@@ -642,12 +757,13 @@ pickOrder = async(req, res)=>{
                     }
             }else if(status == 'order_booking'){
                 findPartner = await orderAll.find({
+                    order_status:"booking",
                     day: { 
                         $gte: day_start, 
                         $lte: day_end 
-                    },
-                    order_status:"booking"
+                    }
                 },{
+                    owner_id:1,
                     orderer_id:1,
                     role:1,
                     mailno:1,
@@ -673,6 +789,7 @@ pickOrder = async(req, res)=>{
                         $lte: day_end 
                     }
                 },{
+                    owner_id:1,
                     orderer_id:1,
                     role:1,
                     mailno:1,
@@ -691,6 +808,7 @@ pickOrder = async(req, res)=>{
                                 .send({status:true, data:[], message:"ไม่พบข้อมูล(4)"})
                     }
             }
+        }
         return res
                 .status(200)
                 .send({status:true, data:findPartner})
