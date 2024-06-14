@@ -189,8 +189,9 @@ getMemberPartner = async (req, res)=>{
         const getPartnerResult = await Partner.find().lean();
 
         if (getAllResult && getPartnerResult) {
-            const combinedResults = { ...getAllResult, ...getPartnerResult };
-            return res.status(200).send({ status: true, data: combinedResults });
+            let data = []
+            data = data.concat(getPartnerResult, getAllResult)
+            return res.status(200).send({ status: true, data: data });
         } else {
             return res.status(404).send({ status: false, message: "ไม่มีข้อมูลในระบบ" });
         }

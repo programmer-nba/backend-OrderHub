@@ -1,6 +1,10 @@
-const fs = require("fs");
-
 const { google } = require("googleapis");
+const fs = require("fs");
+const express = require('express');
+require('dotenv').config(); // Ensure you load your environment variables
+
+const app = express();
+
 const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
 const REDIRECT_URI = process.env.GOOGLE_DRIVE_REDIRECT_URI;
@@ -28,6 +32,9 @@ async function uploadFileCreate(file, res, { i, reqFiles }) {
     body: fs.createReadStream(filePath),
   };
   try {
+    // Ensure token is refreshed if necessary
+    await ensureAuthenticated();
+
     const response = await drive.files.create({
       resource: fileMetaData,
       media: media,
@@ -64,6 +71,42 @@ async function generatePublicUrl(res) {
   }
 }
 
+async function ensureAuthenticated() {
+  try {
+    const tokenInfo = await oauth2Client.getAccessToken();
+    // Check if the token is expired
+    if (!tokenInfo.token) {
+      // If expired, refresh the token
+      const newTokens = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials(newTokens.credentials);
+    }
+  } catch (error) {
+    console.error('Error refreshing access token:', error);
+  }
+}
+
+app.get('/orderhub/refresh/auth/token', (req, res) => {
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['https://www.googleapis.com/auth/drive.file'],
+  });
+  res.redirect(url);
+});
+
+// Callback route to exchange authorization code for tokens
+app.get('/orderhub/oauth2callback', async (req, res) => {
+  const { code } = req.query;
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials({ refresh_token: tokens.refresh_token });
+    // Save the refresh token securely
+    console.log('Refresh Token:', tokens.refresh_token);
+    res.send('Authentication successful! You can close this window.');
+  } catch (error) {
+    console.error('Error exchanging authorization code for tokens:', error);
+    res.send('Authentication failed.');
+  }
+});
 /**
  * Permanently delete a file, skipping the trash.
  *

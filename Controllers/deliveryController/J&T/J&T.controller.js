@@ -1001,14 +1001,14 @@ cancelOrder = async (req, res)=>{
                         }
                     }
                         let formData = {
-                            ip_address: IP,
-                            id: id,
-                            role: role,
-                            type: 'CANCEL ORDER BY USER',
-                            description: "ยูสเซอร์ยกเลิกสินค้า",
-                            order:[],
-                            latitude: LT,
-                            longtitude: LG
+                                ip_address: IP,
+                                id: id,
+                                role: role,
+                                type: 'CANCEL ORDER BY USER',
+                                description: "ยูสเซอร์ยกเลิกสินค้า",
+                                order:[],
+                                latitude: LT,
+                                longtitude: LG
                         }
                     
                 return res
