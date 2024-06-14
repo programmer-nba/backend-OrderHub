@@ -30,6 +30,7 @@ router.route('/orderhub/getid/:id').get(auth.checkToken,main.getPartnerByID)
 router.route('/orderhub/update/:id').put(auth.checkToken,main.upPartnerByID)
 router.route('/orderhub/del/:id').delete(auth.checkToken,main.deleteById)
 router.route('/orderhub/getById/:id').get(auth.checkToken, main.getByID)
+router.route('/orderhub/check/level').post(auth.checkToken, main.checkLevel)
 // router.route('/orderhub/add/sub_role/:id').put(authAdmin.checkToken, main.addSubRole)
 // router.route('/orderhub/del/sub_role/:id').delete(authAdmin.checkToken, main.delSubRole)
 

@@ -1000,16 +1000,16 @@ cancelOrder = async (req, res)=>{
                             refundAll.push(findTracking)
                         }
                     }
-                        let formData = {
-                                ip_address: IP,
-                                id: id,
-                                role: role,
-                                type: 'CANCEL ORDER BY USER',
-                                description: "ยูสเซอร์ยกเลิกสินค้า",
-                                order:[],
-                                latitude: LT,
-                                longtitude: LG
-                        }
+                        // let formData = {
+                        //         ip_address: IP,
+                        //         id: id,
+                        //         role: role,
+                        //         type: 'CANCEL ORDER BY USER',
+                        //         description: "ยูสเซอร์ยกเลิกสินค้า",
+                        //         order:[],
+                        //         latitude: LT,
+                        //         longtitude: LG
+                        // }
                     
                 return res
                         .status(200)

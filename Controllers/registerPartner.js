@@ -567,70 +567,60 @@ changePassword = async(req, res)=>{
             .send({status:false, message:err})
   }
 }
-// addSubRole = async(req, res)=>{
-//   try{
-//       const role = req.body.role
-//       const id = req.params.id
-//       const findPartner = await Partner.findOneAndUpdate(
-//         {
-//           _id:id
-//         },
-//         {
-//           $addToSet:{
-//             sub_role:{ role : role}
-//           }
-//         },
-//         {
-//           new:true
-//         })
-//         if(!findPartner){
-//           return res
-//                   .status(404)
-//                   .send({status:false, message:"ไม่พบพาร์ทเนอร์ที่คุณต้องการ"})
-//         }
-//       return res
-//               .status(200)
-//               .send({status:false, data:findPartner})
-//   }catch(err){
-//       return res
-//               .status(500)
-//               .send({status:false, message:err})
-//   }
-// }
 
-// delSubRole = async(req, res)=>{
-//   try{
-//       const id = req.params.id
-//       const id_role = req.body.id_role
-//       let id_role_object = new mongoose.Types.ObjectId(id_role)
-//       console.log(id_role_object)
-//       const findPartner = await Partner.findOneAndUpdate(
-//         {
-//           _id:id
-//         },
-//         { 
-//           $pull: { 
-//             sub_role: { _id: id_role_object }
-//           } 
-//         },{new:true})
-//         if(!findPartner){
-//           return res
-//                   .status(400)
-//                   .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์ได้"})
-//         }
-//       return res
-//               .status(200)
-//               .send({status:true, data:findPartner})
-//   }catch(err){
-//       return res  
-//               .status(500)
-//               .send({status:false, message:err})
-//   }
-// }
+checkLevel = async(req, res)=>{
+  try{
+    const partner_id = req.body.partner_id
+    const partner = await Partner.findById(partner_id,{shop_me:1, shop_partner:1}).exec()
+      if(!partner){
+        return res
+                .status(404)
+                .send({status:false, message:"ไม่มีพาร์ทเนอร์ในระบบ"})
+      }
+    console.log(partner.shop_me)
+    let data = []
+    for( const level of partner.shop_me ){
+        let sheet = {
+            level_1:{
+              ...level._doc,
+            },
+        }
+        const findLevelTwo = partner.shop_partner.filter(item => item.shop_line == level._id.toString())
+          if(findLevelTwo.length != 0){
+            let dataTwo = []
+            for( const dataLevelTwo of findLevelTwo){
+                const findThree = partner.shop_partner.filter(item => item.shop_line == dataLevelTwo._id.toString())
+                  if(findThree.length == 0){
+                      let twoObject = {
+                          ...dataLevelTwo._doc,
+                          level_3:[]
+                      }
+                      dataTwo.push(twoObject)
+                      continue;
+                  }
+                let twoObject = {
+                    ...dataLevelTwo._doc,
+                    level_3:findThree
+                }
+                dataTwo.push(twoObject)
+            }
+            sheet.level_1.level_2 = dataTwo
+          }
+        data.push(sheet)
+    }
+    return res
+            .status(200)
+            .send({status:true, data:data})
+  }catch(err){
+    return res  
+            .status(500)
+            .send({status:false, message:err.message})
+  }
+}
 
 module.exports = { createPartner, 
 getAllPartner, getPartnerByID, 
 upPartnerByID, deleteById,
 uploadPicture, approveMemberShop,
 cancelMemberShop, getByID, sendotp, check,
-changePassword };
+changePassword, checkLevel };
