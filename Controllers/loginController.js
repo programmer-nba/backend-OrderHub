@@ -44,6 +44,8 @@ loginController = async(req,res) =>{
                         const secretKey = process.env.JWTPRIVATEKEY
                         const payload = {
                             userid: Partner._id,
+                            firstname: Partner.firstname,
+                            lastname: Partner.lastname,
                             number: Partner.partnerNumber,
                             email: Partner.email,
                             role: Partner.role,
@@ -186,8 +188,10 @@ async function checkShopMember(req, res){
                         const payload = {
                             userid: memberShop._id,
                             id_ownerShop: memberShop.id_ownerShop,
-                            number: memberShop.member_number,
                             username: memberShop.username,
+                            number: memberShop.member_number,
+                            firstname: memberShop.firstname,
+                            lastname: memberShop.lastname,
                             shop_number: memberShop.shop_number,
                             role: memberShop.role,
                             ip_address: IP,

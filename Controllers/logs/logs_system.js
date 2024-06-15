@@ -1,5 +1,5 @@
-const { logSystem } = require("../Models/logs");
-const { Partner } = require("../Models/partner");
+const { logSystem } = require("../../Models/logs");
+const { Partner } = require("../../Models/partner");
 
 create = async(req, res) => {
     try{

@@ -8,7 +8,6 @@ const { PercentCourier } = require('../../../Models/Delivery/ship_pop/percent');
 const { codExpress } = require('../../../Models/COD/cod.model');
 const { shopPartner } = require('../../../Models/shop/shop_partner');
 const { Partner } = require('../../../Models/partner');
-const { costPlus } = require('../../../Models/costPlus');
 const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { profitIce } = require('../../../Models/profit/profit.ice');
 const { profitPartner } = require('../../../Models/profit/profit.partner');

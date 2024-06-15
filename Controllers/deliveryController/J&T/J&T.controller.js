@@ -26,6 +26,7 @@ const { codPercent } = require("../../../Models/COD/cod.shop.model");
 const { postalThailand } = require("../../../Models/postal.thailand/postal.thai.model");
 const { decrypt } = require("../../../functions/encodeCrypto");
 const { logSystem } = require("../../../Models/logs");
+const { logOrder } = require("../../../Models/logs_order");
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
@@ -810,6 +811,8 @@ cancelOrder = async (req, res)=>{
     try{
         const id = req.decoded.userid
         const role = req.decoded.role
+        const firstname = req.decoded.firstname
+        const lastname = req.decoded.lastname
         const txlogisticid = req.body.txlogisticid
         const ip_address = req.decoded.ip_address
         const latitude = req.decoded.latitude
@@ -858,9 +861,33 @@ cancelOrder = async (req, res)=>{
                         .send({status:false, data:response.data, message:`ไม่สามารถทำการยกเลิกออเดอร์นี้ได้ (${response.data.responseitems[0].reason})`})
         }else{
                 let refundAll = []
+                let formData = {
+                            ip_address: IP,
+                            id: id,
+                            role: role,
+                            type: 'CANCEL ORDER',
+                            orderer:`${firstname} ${lastname}`,
+                            description: "ยูสเซอร์ยกเลิกสินค้า",
+                            order:[{
+                                orderid:findCancel.mailno,
+                                express:"J&T"
+                            }],
+                            latitude: LT,
+                            longtitude: LG
+                    }
+                const createLog = await logOrder.create(formData)
+                    if(!createLog){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถสร้าง Logs ได้"})
+                    }
                 const findPno = await orderAll.findOneAndUpdate(
                     {tracking_code:txlogisticid},
-                    {order_status:"cancel"},
+                    {
+                        order_status:"cancel",
+                        day_cancel: createLog.day,
+                        user_cancel:`${firstname} ${lastname}`
+                    },
                     {new:true})
                     if(!findPno){
                         return res
@@ -886,7 +913,9 @@ cancelOrder = async (req, res)=>{
                                 before: before,
                                 after: after,
                                 type: 'J&T',
-                                remark: "ยกเลิกขนส่งสินค้า"
+                                remark: "ยกเลิกขนส่งสินค้า",
+                                day_cancel: createLog.day,
+                                user_cancel: `${firstname} ${lastname}`
                         }
                 const historyShop = await historyWalletShop.findOneAndUpdate(
                     {
@@ -1000,16 +1029,6 @@ cancelOrder = async (req, res)=>{
                             refundAll.push(findTracking)
                         }
                     }
-                        // let formData = {
-                        //         ip_address: IP,
-                        //         id: id,
-                        //         role: role,
-                        //         type: 'CANCEL ORDER BY USER',
-                        //         description: "ยูสเซอร์ยกเลิกสินค้า",
-                        //         order:[],
-                        //         latitude: LT,
-                        //         longtitude: LG
-                        // }
                     
                 return res
                         .status(200)
@@ -1060,9 +1079,34 @@ cancelOrderAll = async (txlogisticid)=>{
                 return `${txlogisticid} ไม่สามารถทำการยกเลิกออเดอร์ได้ (${response.data.responseitems[0].reason})`
         }else{
                 let refundAll = []
+                let formData = {
+                            ip_address: "",
+                            id: "ORDERHUB",
+                            role: "system",
+                            type: 'CANCEL ORDER',
+                            orderer:`ORDERHUB SYSTEM`,
+                            description: "ระบบยกเลิกสินค้าเพราะหมดอายุ",
+                            order:[{
+                                orderid:findCancel.mailno,
+                                express:"J&T"
+                            }],
+                            latitude: "",
+                            longtitude: ""
+                    }
+                const createLog = await logOrder.create(formData)
+                    if(!createLog){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถสร้าง Logs ได้"})
+                    }
+
                 const findPno = await orderAll.findOneAndUpdate(
                     {tracking_code:txlogisticid},
-                    {order_status:"cancel"},
+                    {
+                        order_status:"cancel",
+                        day_cancel: createLog.day,
+                        user_cancel: 'ORDERHUB SYSTEM'
+                    },
                     {new:true})
                     if(!findPno){
                         return `${txlogisticid} ไม่สามารถค้นหาหมายเลขหรืออัพเดทข้อมูลได้`
@@ -1084,7 +1128,9 @@ cancelOrderAll = async (txlogisticid)=>{
                                 before: before,
                                 after: after,
                                 type: 'J&T',
-                                remark: "ยกเลิกขนส่งสินค้า"
+                                remark: "ยกเลิกขนส่งสินค้า",
+                                day_cancel: createLog.day,
+                                user_cancel: 'ORDERHUB SYSTEM'
                         }
                 const historyShop = await historyWalletShop.findOneAndUpdate(
                     {

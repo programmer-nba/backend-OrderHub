@@ -6,7 +6,6 @@ const { shopPartner } = require('../../../Models/shop/shop_partner');
 const { BookingParcel } = require('../../../Models/Delivery/ship_pop/purchase_id');
 const { historyWalletShop } = require('../../../Models/shop/shop_history');
 const { historyWallet } = require('../../../Models/topUp/history_topup');
-const { costPlus } = require('../../../Models/costPlus');
 const { codExpress } = require('../../../Models/COD/cod.model');
 const { profitPartner } = require('../../../Models/profit/profit.partner');
 const { profitIce } = require('../../../Models/profit/profit.ice');

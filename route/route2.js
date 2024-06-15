@@ -7,7 +7,6 @@ const admin = require('../Controllers/adminController')
 const dfd = require ('../Controllers/deliveryController/FLASH_EXPRESS/generate.sign')
 const flash = require ('../Controllers/deliveryController/FLASH_EXPRESS/Order')
 const partner = require('../Controllers/registerPartner');
-const cost = require('../Controllers/cost_level/costPlus')
 const ship = require('../Controllers/deliveryController/Shippop/ship.controller')
 const percent = require('../Controllers/deliveryController/Shippop/percent.controller')
 const FPSign = require('../Controllers/flashPay/generate.signFP')
@@ -82,11 +81,6 @@ router.route('/orderhub/flash/typeExpress/post').post( typeExpress.createType )
 router.route('/orderhub/flash/typeExpress/get').get( typeExpress.getAll )
 router.route('/orderhub/flash/typeExpress/edit/:code').put( typeExpress.edit )
 router.route('/orderhub/flash/typeExpress/del/:code').delete( typeExpress.delend )
-
-//cost level
-router.route('/orderhub/cost/create').post( auth.checkToken, cost.create )
-router.route('/orderhub/cost/edit').put( auth.checkToken, cost.editCostPlus )
-router.route('/orderhub/cost/upline/:id').get( auth.checkToken, cost.getUplineById )
 
 //shippop admin
 router.route('/orderhub/shippop/getAll').get( authAdmin.checkToken, ship.getAllBooking )
@@ -302,13 +296,21 @@ router.route('/orderhub/smsKub/check/otp/:id').post( auth.checkToken, smsKub.che
 router.route('/orderhub/smsKub/change/password/:id').post( auth.checkToken, smsKub.changePassword )
 
 //logs
-const logs = require('../Controllers/logs')
+const logs = require('../Controllers/logs/logs_system')
 router.route('/orderhub/logs/create').post( auth.checkToken, logs.create )
 router.route('/orderhub/logs/get/all').get( auth.checkToken, logs.getAll )
 router.route('/orderhub/logs/get/:id').get( auth.checkToken, logs.getById )
 router.route('/orderhub/logs/get/partner/:id').get( auth.checkToken, logs.getByIdPartner )
 router.route('/orderhub/logs/update/:id').put( auth.checkToken, logs.update )
 router.route('/orderhub/logs/del/:id').delete( auth.checkToken, logs.delend )
+
+//logsOrder
+const logsOrder = require('../Controllers/logs/logs_order')
+router.route('/orderhub/logsOrder/create').post( auth.checkToken, logsOrder.create )
+router.route('/orderhub/logsOrder/get/all').get( authAdmin.checkToken, logsOrder.getAll )
+router.route('/orderhub/logsOrder/get/:id').get( authAdmin.checkToken, logsOrder.getById )
+router.route('/orderhub/logsOrder/del/:id').delete( authAdmin.checkToken, logsOrder.delend )
+router.route('/orderhub/logsOrder/update/:id').put( authAdmin.checkToken, logsOrder.updateLogOrder )
 
 const encode = require('../functions/encodeCrypto')
 router.route('/orderhub/encode').get( encode.encrypt )

@@ -3,7 +3,7 @@ const { generateSign } = require('./generate.sign')
 const querystring = require('querystring');
 const dayjs = require('dayjs')
 const fs = require('fs');
-const { costPlus } = require('../../../Models/costPlus');
+
 const { Partner } = require('../../../Models/partner');
 const { shopPartner } = require('../../../Models/shop/shop_partner');
 const { PercentCourier } = require('../../../Models/Delivery/ship_pop/percent');

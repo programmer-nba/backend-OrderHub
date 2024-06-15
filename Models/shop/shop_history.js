@@ -28,6 +28,8 @@ const historySchema = new Schema({
     after:{type:String, require: false, default: ""},
     type:{type:String, require: false, default: "none"},
     remark:{type:String, require:false},
+    day_cancel:{type:String, require:false, default: ""},
+    user_cancel:{type:String, require:false, default: ""},
     day: {
         type: String,
         required: false,
