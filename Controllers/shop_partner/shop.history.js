@@ -270,7 +270,7 @@ getShopHistory = async(req, res)=>{
                     day:{
                         $gte:day_start, 
                         $lte:day_end
-                    },ID: { $exists: true }
+                    },type: { $ne: "เงินเข้า" }
                 })
                     if(findMe.length == 0){
                         return res
