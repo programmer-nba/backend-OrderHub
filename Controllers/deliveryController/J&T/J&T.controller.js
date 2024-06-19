@@ -573,6 +573,52 @@ trackingOrder = async (req, res)=>{
     }
 }
 
+trackingOrderOne = async (req, res)=>{
+    try{
+        const txlogisticid = req.body.txlogisticid
+        const formData = {
+            "logistics_interface":{
+                "billcode": txlogisticid,
+                "querytype":"2",
+                "lang":"en",
+                "customerid":customer_id
+            },
+            "msg_type": "TRACKQUERY",
+            "eccompanyid": ecom_id,
+        }
+        let apiUrlQuery = process.env.JT_URL_QUERY
+        // console.log(apiUrlQuery)
+        const newData = await generateJT(formData)
+            // console.log(newData)
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+            }})
+        // console.log(response)
+            if(response.data.responseitems == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
+                return res
+                        .status(404)
+                        .send({
+                            status:false, 
+                            message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T",
+                            data: response.data
+                        })
+            }
+        
+        return res
+                .status(200)
+                .send({status:true, 
+                    data: response.data
+                })
+    }catch(err){
+        console.log(err)
+        return res
+                .status(200)
+                .send({status:true, data:[]})
+    }
+}
+
 trackingOrderTest = async (req, res)=>{
     try{
         const findTxids = await profitTemplate.find({day:{$gte:"2024-05-31"},status:{$ne:"ยกเลิกออเดอร์"},day_pick:""},{"template.partner_number":1}).exec()
@@ -2591,4 +2637,5 @@ async function invoiceJNT(day) {
     return combinedData;
 }
 
-module.exports = {createOrder, trackingOrder, cancelOrder, cancelOrderAll, label, priceList, getAll, getById, delend, getMeBooking, getPartnerBooking, getPartnerBooking, trackingOrderTest}
+module.exports = {createOrder, trackingOrder, cancelOrder, cancelOrderAll, label, priceList, getAll, 
+    getById, delend, getMeBooking, getPartnerBooking, getPartnerBooking, trackingOrderTest, trackingOrderOne}
