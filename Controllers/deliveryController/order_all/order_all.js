@@ -822,7 +822,13 @@ pickOrder = async(req, res)=>{
 selectOrder = async(req, res)=>{
     try{
         const orderid = req.body.orderid
-        const findMe = await orderAll.find({ tracking_code: { $in: orderid }})
+        const findMe = await orderAll.find(
+            {
+                 tracking_code: { $in: orderid }
+            },{
+                user_cancel:0, day_cancel:0, owner_id:0, orderer_id:0, role:0, bill_status:0,
+                profitAll:0, day_end:0, day_pick:0, day_sign:0
+            })
             if(findMe.length == 0){
                 return res
                         .status(404)
