@@ -819,6 +819,25 @@ pickOrder = async(req, res)=>{
     }
 }
 
+selectOrder = async(req, res)=>{
+    try{
+        const orderid = req.body.orderid
+        const findMe = await orderAll.find({ tracking_code: { $in: orderid }})
+            if(findMe.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่มีรายการสินค้าของท่าน"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findMe})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 async function invoiceNumber() {
     try{
         let random = Math.floor(Math.random() * 1000000)
@@ -841,4 +860,4 @@ async function invoiceNumber() {
 }
 
 module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, 
-    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch, pickOrder }
+    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch, pickOrder, selectOrder }
