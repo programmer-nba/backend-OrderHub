@@ -14,6 +14,23 @@ const { weightAll } = require("../Models/Delivery/weight/weight.all.express");
 const { priceWeight } = require("../Models/Delivery/weight/priceWeight");
 const { codExpress } = require("../Models/COD/cod.model");
 const { codPercent } = require("../Models/COD/cod.shop.model");
+const dayjs = require('dayjs')
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
+// เพิ่มปลั๊กอินสำหรับ UTC และ timezone ใน dayjs
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+let dayjsTimestamp
+let dayTime
+function updateRealTime() {
+    dayjsTimestamp = dayjs().tz('Asia/Bangkok');
+    dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
+    // console.log(dayTime)
+}
+// เรียกใช้ฟังก์ชัน updateRealTime() ทุก 1 วินาที
+setInterval(updateRealTime, 5000);
 
 createAdmin = async (req, res) => {
   try {
@@ -606,7 +623,306 @@ async function credit(data, creditPartner){
   let Number = data + creditPartner;
   return Number
 }
+
+tranferCreditToPartner = async (req, res)=>{
+   try {
+       const id = req.params.id
+       const { credit } = req.body
+         if (!credit || isNaN(credit) || credit < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
+             return res
+                     .status(400)
+                     .send({ status: false, message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
+         }else if (!/^(\d+(\.\d{1,2})?)$/.test(credit.toString())){ //เช็คทศนิยมไม่เกิน 2 ตำแหน่ง
+             return res
+                     .status(400)
+                     .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
+         }
+       const findPartner = await Partner.findOne(
+           {
+               _id:id,
+           },{ 
+             credits: 1, firstname:1, lastname:1
+           })
+           if(!findPartner){
+               return res
+                       .status(404)
+                       .send({status:false, message:"กรุณาระบุร้านค้าที่ท่านเป็นเจ้าของ"})
+           }
+       const creditToPartner = await invoiceCredit(dayTime)
+       //เพิ่มเงิน Partner
+       const tranferToPartner = await Partner.findOneAndUpdate(
+           {_id:id},
+           {
+               $inc: { credits: +credit }
+           },
+           {new:true,  projection: { credits: 1, firstname:1, lastname:1 }})
+           if(!tranferToPartner){
+               return res
+                       .status(400)
+                       .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
+           }
+        const dataHistoryPartner = {
+                     partnerID: tranferToPartner._id,
+                     shop_number: "-",
+                     orderid: creditToPartner,
+                     firstname: tranferToPartner.firstname,
+                     lastname: tranferToPartner.lastname,
+                     amount: credit,
+                     before: parseFloat(findPartner.credits.toFixed(2)),
+                     after: "ADMIN SENT CREDIT",
+                     money_now: parseFloat(tranferToPartner.credits.toFixed(2)),
+                     type: "เงินเข้า",
+                 }
+       const historyPartner = await historyWallet.create(dataHistoryPartner)
+             if(!historyPartner){
+                 return res
+                         .status(400)
+                         .send({status:false, message:"ไม่สามารถสร้างประวัติการเงินพาร์ทเนอร์ได้"})
+             }
+       
+       return res  
+               .status(200)  
+               .send({status:true, data:tranferToPartner, history:historyPartner})
+   } catch (err) {
+       return res
+               .status(500)
+               .send({status:false, message:err.message})
+   }
+}
+
+getPartnerCutCredit = async(req, res)=>{
+  try{
+    const id = req.params.id
+    const findPartner = await Partner.findOne({_id:id})
+      if(!findPartner){
+        return res
+                .status(404)
+                .send({status:false, message:"ไม่สามารถค้นหาข้อมูลของ Partner ได้"})
+      }
+    let shop_id = findPartner.shop_me.map(doc => doc._id);
+    console.log(shop_id)
+    let data = []
+    let v = {
+        _id:findPartner._id,
+        firstname: findPartner.firstname,
+        lastname: findPartner.lastname,
+        credits:findPartner.credits,
+        role: "partner"
+    }
+    data.push(v)
+    if(shop_id){
+        const findShop = await shopPartner.find({_id:{$in:shop_id}})
+        if(findShop.length > 0){
+            for (const item of findShop) {
+              v = {
+                _id:item._id,
+                credits:item.credit,
+                shop_number:item.shop_number,
+                shop_name: item.shop_name,
+                role: "shop"
+              }
+              data.push(v)
+            }
+        }
+    }
+    return res
+            .status(200)
+            .send({status:true, data:data})
+  }catch(err){
+    console.log("มีบางอย่างผิดพลาด")
+    return res
+            .status(400)
+            .send({status:false, message:err.message})
+  }
+}
+
+cutCreditPartner = async(req, res)=>{
+  try{
+    const id_admin = req.decoded.userid
+    const { _id, credit, role } = req.body
+      if (!credit || isNaN(credit) || credit < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
+        return res
+                .status(400)
+                .send({ status: false, message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
+      }else if (!/^(\d+(\.\d{1,2})?)$/.test(credit.toString())){ //เช็คทศนิยมไม่เกิน 2 ตำแหน่ง
+          return res
+                  .status(400)
+                  .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
+      }
+
+    const creditToPartner = await invoiceCreditToAdmin(dayTime)
+    let tranfer
+    if(role == "partner"){
+        tranfer = await Partner.findById(_id)
+          if(!tranfer){
+              return res
+                      .status(404)
+                      .send({status:false, data:"ไม่สามารถค้นหาข้อมูลของ Partner ได้"})
+          }else if(tranfer.credits <= 0){
+            return res
+                      .status(400)
+                      .send({status:false, message:"พาร์ทเนอร์ไม่มีเงินในระบบ"})
+          }else if(tranfer.credits < credit){
+              return res
+                      .status(400)
+                      .send({status:false, message:"กรุณาระบุจำนวนเงินไม่เกิน credits ที่พาร์ทเนอร์มี"})
+          }
+
+        const tranferToPartner = await Partner.findOneAndUpdate(
+            {_id:_id},
+            {
+                $inc: { credits: -credit }
+            },
+            {new:true,  projection: { credits: 1, firstname: 1, lastname: 1 } })
+            if(!tranferToPartner){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
+            }
+        const dataHistoryPartner = {
+                      partnerID: tranferToPartner._id,
+                      shop_number: "-",
+                      orderid: creditToPartner,
+                      firstname: tranferToPartner.firstname,
+                      lastname: tranferToPartner.lastname,
+                      amount: credit,
+                      before: parseFloat(tranfer.credits.toFixed(2)),
+                      after: "ADMIN CUT CREDIT",
+                      money_now: parseFloat(tranferToPartner.credits.toFixed(2)),
+                      type: "เงินออก",
+                  }
+        const historyPartner = await historyWallet.create(dataHistoryPartner)
+                if(!historyPartner){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถสร้างประวัติการเงินพาร์ทเนอร์ได้"})
+                }
+
+        const tranferToAdmin = await Admin.findOneAndUpdate(
+            {_id:id_admin},
+            {
+                $inc: { wallet: +credit }
+            },
+            {new:true,  projection: { wallet: 1 }})
+            if(!tranferToAdmin){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
+            }
+      return res
+              .status(200)
+              .send({status:false, credit:tranferToPartner, admin:tranferToAdmin, history:historyPartner})
+    }else if(role == "shop"){
+      tranfer = await shopPartner.findById(_id)
+        if(!tranfer){
+          return res
+                  .status(404)
+                  .send({status:false, data:"ไม่สามารถค้นหาข้อมูลของ Shop ได้"})
+        }else if(tranfer.credit <= 0){
+          return res
+                    .status(400)
+                    .send({status:false, message:"ร้านค้าไม่มีเงินในระบบ"})
+        }else if(tranfer.credit < credit){
+            return res
+                    .status(400)
+                    .send({status:false, message:"กรุณาระบุจำนวนเงินไม่เกิน credits ที่ร้านค้ามี"})
+        }
+
+      const tranferToPartner = await shopPartner.findOneAndUpdate(
+          {_id:_id},
+          {
+              $inc: { credit: -credit }
+          },
+          {new:true,  projection: { credit: 1, firstname: 1, lastname: 1, shop_number: 1, shop_name: 1 } })
+          if(!tranferToPartner){
+              return res
+                      .status(400)
+                      .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
+          }
+
+      const dataHistoryPartner = {
+                    partnerID: tranferToPartner._id,
+                    shop_number: tranferToPartner.shop_number,
+                    orderid: creditToPartner,
+                    firstname: tranferToPartner.firstname,
+                    lastname: tranferToPartner.lastname,
+                    amount: credit,
+                    before: parseFloat(tranfer.credit.toFixed(2)),
+                    after: "ADMIN CUT CREDIT SHOP",
+                    money_now: parseFloat(tranferToPartner.credit.toFixed(2)),
+                    type: "เงินออก",
+                }
+      const historyPartner = await historyWallet.create(dataHistoryPartner)
+              if(!historyPartner){
+                  return res
+                          .status(400)
+                          .send({status:false, message:"ไม่สามารถสร้างประวัติการเงินพาร์ทเนอร์ได้"})
+              }
+
+      const tranferToAdmin = await Admin.findOneAndUpdate(
+          {_id:id_admin},
+          {
+              $inc: { wallet: +credit }
+          },
+          {new:true,  projection: { wallet: 1 }})
+          if(!tranferToAdmin){
+              return res
+                      .status(400)
+                      .send({status:false, message:"ไม่สามารถเพิ่มเงิน partner ได้"})
+          }
+    return res
+            .status(200)
+            .send({status:false, credit:tranferToPartner, admin:tranferToAdmin, history:historyPartner})
+    }
+  }catch(err){
+    return res
+            .status(500)
+            .send({status:false, data:err.message})
+  }
+}
+
+async function invoiceCredit(date) {
+  let data = `ATP`
+  date = `${dayjs(date).format("YYYYMMDD")}`
+  let random = Math.floor(Math.random() * 10000000000)
+  const combinedData = data + date + random;
+  const findInvoice = await historyWallet.find({orderid:combinedData})
+
+  while (findInvoice && findInvoice.length > 0) {
+      // สุ่ม random ใหม่
+      random = Math.floor(Math.random() * 10000000000);
+      combinedData = data + date + random;
+
+      // เช็คใหม่
+      findInvoice = await historyWallet.find({orderid: combinedData});
+  }
+
+  console.log(combinedData);
+  return combinedData;
+}
+
+async function invoiceCreditToAdmin(date) {
+  let data = `PTA`
+  date = `${dayjs(date).format("YYYYMMDD")}`
+  let random = Math.floor(Math.random() * 10000000000)
+  const combinedData = data + date + random;
+  const findInvoice = await historyWallet.find({orderid:combinedData})
+
+  while (findInvoice && findInvoice.length > 0) {
+      // สุ่ม random ใหม่
+      random = Math.floor(Math.random() * 10000000000);
+      combinedData = data + date + random;
+
+      // เช็คใหม่
+      findInvoice = await historyWallet.find({orderid: combinedData});
+  }
+
+  console.log(combinedData);
+  return combinedData;
+}
+
 module.exports = { createAdmin, confirmContract, 
   cancelContract, confirmTopup, confirmShop,
   cancelShop, cancelTopup, findAllAdmin,
-  updateAdmin, delAdmin, getMe };
+  updateAdmin, delAdmin, getMe, tranferCreditToPartner, 
+  getPartnerCutCredit, cutCreditPartner }

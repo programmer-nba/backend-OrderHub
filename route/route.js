@@ -49,6 +49,9 @@ router.route('/orderhub/confirm/:id').put( authAdmin.checkToken, admin.confirmCo
 router.route('/orderhub/confirm/topup/:id').put( authAdmin.checkToken, admin.confirmTopup ) //Admin Confirm topup
 router.route('/orderhub/cancel/topup/:id').put( authAdmin.checkToken, admin.cancelTopup ) //Admin Cancel topup
 router.route('/orderhub/cancel/:id').put( authAdmin.checkToken, admin.cancelContract ) //Admin Cancel(blacklist)
+router.route('/orderhub/admin/tranfer/credit/:id').post( authAdmin.checkToken, admin.tranferCreditToPartner )
+router.route('/orderhub/admin/cut/credit').post( authAdmin.checkToken, admin.cutCreditPartner )
+router.route('/orderhub/admin/get/partner/:id').get( authAdmin.checkToken, admin.getPartnerCutCredit )
 
 //slip
 router.route('/orderhub/topup').post( auth.checkToken, slip.create )

@@ -30,6 +30,7 @@ const historySchema = new Schema({
     money_now:{type:String, require: false, default: ""},
     type:{type:String, require: false, default: "none"},
     image:{type:String, require: false, default: "none"},
+    remark:{type:String, require: false, default: ""},
     day: {
         type: String,
         required: false,
