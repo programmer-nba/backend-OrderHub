@@ -17,6 +17,7 @@ const dayjs = require('dayjs')
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
 const { profitIce } = require("../../Models/profit/profit.ice");
+const { cutCredits } = require('../pay-differrence/pay.diff.controller');
 
 // เพิ่มปลั๊กอินสำหรับ UTC และ timezone ใน dayjs
 dayjs.extend(utc);
@@ -752,6 +753,7 @@ tranfersShopToPartner = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:"ไม่สามารถสร้างประวัติการเงินพาร์ทเนอร์ได้"})
                 }
+            const pay = await cutCredits(partner_id)
         return res
                 .status(200)
                 .send({
@@ -759,7 +761,8 @@ tranfersShopToPartner = async (req, res)=>{
                     parner: cutCredtisShop, 
                     shop: tranferToPartner,
                     historyShop: historyShop,
-                    historyPartner: historyPartner
+                    historyPartner: historyPartner,
+                    pay: pay
                  })
     }catch(err){
         console.log("มีบางอย่างผิดพลาด")

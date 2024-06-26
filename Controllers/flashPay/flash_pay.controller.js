@@ -9,6 +9,7 @@ const timezone = require('dayjs/plugin/timezone');
 const { Partner } = require('../../Models/partner');
 const { historyWallet } = require('../../Models/topUp/history_topup');
 const { shopPartner } = require("../../Models/shop/shop_partner");
+const { cutCredits } = require('../pay-differrence/pay.diff.controller');
 const qrcode = require('qrcode');
 
 // เพิ่มปลั๊กอินสำหรับ UTC และ timezone ใน dayjs
@@ -248,6 +249,7 @@ paymentResults = async (req, res)=>{
         const tradeNo = receivedData.data.tradeNo
         const tradeStatus = receivedData.data.tradeStatus
         const amount = receivedData.data.paymentAmount / 100
+        let pay
             let findTradeNo
                 if(tradeStatus == 3){
                     const currentWallet = await historyWallet.findOne({ orderid: tradeNo });
@@ -279,6 +281,8 @@ paymentResults = async (req, res)=>{
                                         .status(400)
                                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้"})
                         }
+                        pay = await cutCredits(partner_id)
+                        
                 }else if(tradeStatus == 2){
                     findTradeNo = await historyWallet.findOneAndUpdate(
                         {orderid:tradeNo},
@@ -321,7 +325,8 @@ paymentResults = async (req, res)=>{
                 .send({
                     status:true, 
                     data: response.data, 
-                    history: findTradeNo
+                    history: findTradeNo,
+                    pay: pay
                 })
     }catch(err){
         console.log(err)

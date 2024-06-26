@@ -317,4 +317,15 @@ router.route('/orderhub/logsOrder/update/:id').put( authAdmin.checkToken, logsOr
 const encode = require('../functions/encodeCrypto')
 router.route('/orderhub/encode').get( encode.encrypt )
 
+const payDiff = require('../Controllers/pay-differrence/pay.diff.controller')
+router.route('/orderhub/pay_diff/create').post( authAdmin.checkToken, payDiff.create )
+router.route('/orderhub/pay_diff/get/all').get( authAdmin.checkToken, payDiff.getAll )
+router.route('/orderhub/pay_diff/get/:id').get( auth.checkToken, payDiff.getById )
+router.route('/orderhub/pay_diff/del/:id').delete( auth.checkToken, payDiff.delend )
+router.route('/orderhub/pay_diff/update/:id').put( auth.checkToken, payDiff.update )
+router.route('/orderhub/pay_diff/get/order').post( authAdmin.checkToken, payDiff.getOrder )
+router.route('/orderhub/pay_diff/get/report').post( auth.checkToken, payDiff.getReport )
+router.route('/orderhub/pay_diff/upload/:id').put( auth.checkToken, payDiff.upload )
+router.route('/orderhub/pay_diff/approve/:id').put( authAdmin.checkToken, payDiff.approve )
+
 module.exports = router;

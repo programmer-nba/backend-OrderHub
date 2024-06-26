@@ -21,12 +21,12 @@ const drive = google.drive({
   auth: oauth2Client,
 });
 
-async function uploadFileCreate(file, res, { i, reqFiles }) {
+async function uploadFileCreate(file, res, { i, reqFiles }, location) {
   const filePath = file.path;
 
   let fileMetaData = {
     name: file.originalname,
-    parents: [process.env.GOOGLE_DRIVE_PAY_DIFF],
+    parents: [location],
   };
   let media = {
     body: fs.createReadStream(filePath),
