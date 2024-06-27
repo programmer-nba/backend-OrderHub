@@ -1822,7 +1822,7 @@ priceList = async (req, res)=>{
                                 .status(404)
                                 .send({status:false, message:"ไม่มีข้อมูลของท่านในระบบ"})
                     }
-                let findRole = findPartner.sub_role.find(item => item.role == 'ONLINE SELLER')
+                let findRole = findPartner.sub_role.find(item => item.role == 'ONLINE-SELLER')
                     if(!findRole){
                         // console.log("GGEZ")
                         if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค

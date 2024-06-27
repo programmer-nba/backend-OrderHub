@@ -88,4 +88,12 @@ router.route('/orderhub/dropSender/all').post( auth.checkToken, drop.getSenderAl
 let srcLocation = require('../src location/index')
 router.route('/orderhub/spread/address').post( auth.checkToken, srcLocation.split )
 
+let subRole = require('../Controllers/sub-roles/sub.role.controller')
+router.route('/orderhub/subrole/create').post( authAdmin.checkToken, subRole.create )
+router.route('/orderhub/subrole/get/all').get( authAdmin.checkToken, subRole.getAll )
+router.route('/orderhub/subrole/get/:id').get( authAdmin.checkToken, subRole.getById )
+router.route('/orderhub/subrole/update/:id').put( authAdmin.checkToken, subRole.update )
+router.route('/orderhub/subrole/delete/:id').delete( authAdmin.checkToken, subRole.delend )
+router.route('/orderhub/subrole/get/role/partner').post( auth.checkToken, subRole.getByRole )
+
 module.exports = router;
