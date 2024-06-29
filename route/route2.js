@@ -194,7 +194,6 @@ router.route('/orderhub/profitPartner/get/cod').post( authAdmin.checkToken, prof
 router.route('/orderhub/profitPartner/get/sign/day').post( auth.checkToken, profitPN.getSignDay )
 router.route('/orderhub/profitPartner/get/day/pay').post( auth.checkToken, profitPN.getDayPay )
 router.route('/orderhub/profitPartner/get/profit/partner').post( auth.checkToken, profitPN.getProfitPartner )
-router.route('/orderhub/profitPartner/upload/excel').post( auth.checkToken, profitPN.uploadExcel )
 router.route('/orderhub/profitPartner/send/email').post( auth.checkToken, profitPN.uploadFileExcel, profitPN.sendEmail )
 
 //profit admin(ICE)
@@ -327,5 +326,12 @@ router.route('/orderhub/pay_diff/get/order').post( authAdmin.checkToken, payDiff
 router.route('/orderhub/pay_diff/get/report').post( auth.checkToken, payDiff.getReport )
 router.route('/orderhub/pay_diff/upload/:id').put( auth.checkToken, payDiff.upload )
 router.route('/orderhub/pay_diff/approve/:id').put( authAdmin.checkToken, payDiff.approve )
+
+const claimOrder = require('../Controllers/claim_order/claim.controller')
+router.route('/orderhub/claim/create').post( auth.checkToken, claimOrder.create )
+router.route('/orderhub/claim/get/all').get( auth.checkToken, claimOrder.getAll )
+router.route('/orderhub/claim/get/:id').get( auth.checkToken, claimOrder.getById )
+router.route('/orderhub/claim/del/:id').delete( auth.checkToken, claimOrder.delete )
+router.route('/orderhub/claim/update/:id').put( auth.checkToken, claimOrder.update )
 
 module.exports = router;

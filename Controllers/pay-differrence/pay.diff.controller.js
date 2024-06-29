@@ -444,7 +444,7 @@ exports.upload = async (req, res) => {
         let location = process.env.GOOGLE_DRIVE_PAY_DIFF
         let upload = multer({ storage: storage })
         const fields = [
-          {name: 'pictureSize', maxCount: 1},
+          {name: 'pictureSize', maxCount: 5},
           {name: 'pictureWeight', maxCount: 1}
         ]
         const uploadMiddleware = upload.fields(fields);

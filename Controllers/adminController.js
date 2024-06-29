@@ -672,7 +672,7 @@ tranferCreditToPartner = async (req, res)=>{
                      after: "ADMIN SENT CREDIT",
                      money_now: parseFloat(tranferToPartner.credits.toFixed(2)),
                      type: "เงินเข้า",
-                 }
+                }
        const historyPartner = await historyWallet.create(dataHistoryPartner)
              if(!historyPartner){
                  return res
@@ -881,6 +881,113 @@ cutCreditPartner = async(req, res)=>{
   }
 }
 
+getHistoryRentCredits = async(req, res)=>{
+  try{
+      const partner_id = req.body.partner_id
+      const day_start = req.body.day_start
+      const day_end = req.body.day_end
+      const status = req.body.status
+      let find
+      if(!day_start && !day_end){
+        if(partner_id){
+          if(status){
+            find = await historyWallet.find({partnerID:partner_id, after:status})
+              if(find.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูล(0)"})
+              }
+          }else{
+            find = await historyWallet.find({
+              partnerID:partner_id,
+              after:{$regex:"ADMIN"}
+            })
+              if(find.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูล(1)"})
+              }
+          }
+        }else if(status){ 
+            find = await historyWallet.find({after:status})
+              if(find.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูล(2)"})
+              }
+        }
+      }else if(day_start && day_end){
+        if(partner_id){
+          if(status){
+            find = await historyWallet.find({
+              partnerID:partner_id, 
+              after:status, 
+              day:{
+                $gte:day_start, 
+                $lte:day_end
+              }
+            })
+              if(find.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูล(3)"})
+              }
+          }else{
+            find = await historyWallet.find({
+              partnerID:partner_id,
+              after:{$regex:"ADMIN"},
+              day:{
+                $gte:day_start, 
+                $lte:day_end
+              }
+            })
+              if(find.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูล(4)"})
+              }
+          }
+        }else if(status){
+            find = await historyWallet.find({
+              after:status, 
+              day:{
+                $gte:day_start, 
+                $lte:day_end
+              }
+            })
+              if(find.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูล(5)"})
+              }
+        }else{
+          find = await historyWallet.find({
+            after:{
+              $regex:"ADMIN"
+            },
+            day:{
+              $gte:day_start, 
+              $lte:day_end
+            }
+          })
+            if(find.length == 0){
+              return res
+                      .status(404)
+                      .send({status:false, message:"ไม่พบข้อมูล(6)"})
+            }
+        }
+      }
+    return res
+            .status(200)
+            .send({status:true, data:find})
+  }catch(err){
+    console.log(err)
+    return res
+            .status(500)
+            .send({status:false, message:err.message})
+  }
+}
+
 async function invoiceCredit(date) {
   let data = `ATP`
   date = `${dayjs(date).format("YYYYMMDD")}`
@@ -925,4 +1032,4 @@ module.exports = { createAdmin, confirmContract,
   cancelContract, confirmTopup, confirmShop,
   cancelShop, cancelTopup, findAllAdmin,
   updateAdmin, delAdmin, getMe, tranferCreditToPartner, 
-  getPartnerCutCredit, cutCreditPartner }
+  getPartnerCutCredit, cutCreditPartner, getHistoryRentCredits }

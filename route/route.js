@@ -52,6 +52,7 @@ router.route('/orderhub/cancel/:id').put( authAdmin.checkToken, admin.cancelCont
 router.route('/orderhub/admin/tranfer/credit/:id').post( authAdmin.checkToken, admin.tranferCreditToPartner )
 router.route('/orderhub/admin/cut/credit').post( authAdmin.checkToken, admin.cutCreditPartner )
 router.route('/orderhub/admin/get/partner/:id').get( authAdmin.checkToken, admin.getPartnerCutCredit )
+router.route('/orderhub/admin/credits/search').post( authAdmin.checkToken, admin.getHistoryRentCredits )
 
 //slip
 router.route('/orderhub/topup').post( auth.checkToken, slip.create )
