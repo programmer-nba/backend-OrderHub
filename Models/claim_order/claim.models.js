@@ -51,6 +51,7 @@ const claimSchema = new Schema({
     picture_label:{type:Array, require:false},
     picture_broken:{type:Array, require:false},
     picture_value:{type:Array, require:false},
+    video:{type:Array, require:false},
 },{timestamps: true});
 
 claimSchema.pre('save', async function (next) {
@@ -69,7 +70,7 @@ claimSchema.pre('save', async function (next) {
         findInvoice = await claimOrder.find({invoice: combinedData});
     }
 
-    this.orderid = combinedData;
+    this.invoice = combinedData;
     next();
 })
 
