@@ -112,24 +112,18 @@ app.get('/orderhub/oauth2callback', async (req, res) => {
  *
  * @param {String} fileId ID of the file to delete.
  */
-async function deleteFile(fileId) {
-  const res = await drive.files
-    .delete({
-      // Deprecated. If an item is not in a shared drive and its last parent is deleted but the item itself is not, the item will be placed under its owner's root.
-      enforceSingleParent: true,
-      // The ID of the file.
+async function deleteFile(fileId) { 
+  try {
+    const res = await drive.files.delete({
       fileId: fileId,
-      // Whether the requesting application supports both My Drives and shared drives.
-      supportsAllDrives: false,
-      // Deprecated use supportsAllDrives instead.
-      supportsTeamDrives: false,
-    })
-    .catch((error) => {
-      return false;
+      supportsAllDrives: true, // สนับสนุนทั้ง My Drives และ shared drives
     });
 
-  // console.log(res);
-  return res.data;
+    return res.data;
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    return false;
+  }
 }
 
 module.exports = { uploadFileCreate, deleteFile };

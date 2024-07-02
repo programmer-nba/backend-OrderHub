@@ -515,7 +515,7 @@ trackingOrder = async (req, res)=>{
             let changStatus = {
                 updateOne: {
                     filter: { mailno: item.billcode },
-                    update: { 
+                    update: {
                         $set: {
                             order_status:scantype,
                             day_sign: day_sign,

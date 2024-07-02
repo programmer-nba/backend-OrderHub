@@ -42,12 +42,21 @@ exports.create = async (req, res) => {
             status:'false',
             ...req.body
         }
-        const checkOrderid = await payDifference.findOne({orderid: req.body.orderid})
-            if(checkOrderid){
-                return res
-                        .status(400)
-                        .send({ status: false, message: `มีหมายเลขออเดอร์ ${req.body.mailno} แล้วในระบบชำระค่าส่วนต่าง` });
-            }
+        if (!price_difference || isNaN(price_difference) || price_difference < 0) { //เช็คว่าค่า amount ที่ user กรอกเข้ามา มีค่า ลบ หรือไม่ เช่น -200
+            return res
+                    .status(400)
+                    .send({ status: false, message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
+        }else if (!/^(\d+(\.\d{1,2})?)$/.test(price_difference.toString())){ //เช็คทศนิยมไม่เกิน 2 ตำแหน่ง
+            return res
+                    .status(400)
+                    .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
+        }
+        // const checkOrderid = await payDifference.findOne({orderid: req.body.orderid})
+        //     if(checkOrderid){
+        //         return res
+        //                 .status(400)
+        //                 .send({ status: false, message: `มีหมายเลขออเดอร์ ${req.body.mailno} แล้วในระบบชำระค่าส่วนต่าง` });
+        //     }
         let historyPartner
         const invoice = await invoiceCredit(dayTime)
         const findPartner = await Partner.findById(partner_id)
