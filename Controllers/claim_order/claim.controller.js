@@ -181,7 +181,7 @@ exports.uploadPicture = async (req,res)=>{
             }else if(type == "value"){
                 const update = await claimOrder.findByIdAndUpdate(id, {
                     picture_value: resultLink,
-                }, {new:true})
+                }, {new:true}) 
                 if(!update){
                     return res
                             .status(400)
@@ -206,6 +206,18 @@ exports.uploadPicture = async (req,res)=>{
             }else if(type == "video"){
                 const update = await claimOrder.findByIdAndUpdate(id, {
                     video: resultLink,
+                }, {new:true})
+                if(!update){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, message:"อัพเดทข้อมูลสําเร็จ", data:update})
+            }else if(type == "weight"){
+                const update = await claimOrder.findByIdAndUpdate(id, {
+                    picture_weight: resultLink,
                 }, {new:true})
                 if(!update){
                     return res

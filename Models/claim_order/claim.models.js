@@ -50,6 +50,7 @@ const claimSchema = new Schema({
     picture_product:{type:Array, require:false},
     picture_label:{type:Array, require:false},
     picture_broken:{type:Array, require:false},
+    picture_weight:{type:Array, require:false},
     picture_value:{type:Array, require:false},
     video:{type:Array, require:false},
 },{timestamps: true});

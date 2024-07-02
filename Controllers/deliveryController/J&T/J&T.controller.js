@@ -1141,9 +1141,7 @@ cancelOrderAll = async (txlogisticid)=>{
                     }
                 const createLog = await logOrder.create(formData)
                     if(!createLog){
-                        return res
-                                .status(400)
-                                .send({status:false, message:"ไม่สามารถสร้าง Logs ได้"})
+                        return `${txlogisticid} ไม่สามารถสร้าง Logs ได้`
                     }
 
                 const findPno = await orderAll.findOneAndUpdate(
@@ -1982,7 +1980,6 @@ priceList = async (req, res)=>{
                         cost_base: cost_base,
                         fee_cod: 0,
                         price: Number(price.toFixed()),
-                        // profitSaleMartket: profitSaleMartket,
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,
                         packing_price: packing_price,

@@ -15,12 +15,12 @@ create = async (req, res)=>{
             const data = {...req.body,
             partnerID:idPartner,
             drop_off: {
-                address: req.body.address,
-                street: req.body.street,
-                sub_district: req.body.sub_district,
-                district: req.body.district,
-                province: req.body.province,
-                postcode: req.body.postcode
+                    address: req.body.address,
+                    street: req.body.street,
+                    sub_district: req.body.sub_district,
+                    district: req.body.district,
+                    province: req.body.province,
+                    postcode: req.body.postcode
                 }
             }
             const dropCreate = await dropOffs.create(data)
