@@ -32,8 +32,8 @@ const claimSchema = new Schema({
         type_account: {type:String, required: false},
         bank:{type:String, required: false},
         account_number: {type:String, required: false},
-        picture_iden:{type:String, required: false},
-        picture_bookbank:{type:String, required: false},
+        picture_iden:{type:String, default: "", required: false},
+        picture_bookbank:{type:String, default: "", required: false},
     },
     status_order:{type:String, default: "รอการตรวจสอบ", require: false},
     status_user:{type:String, default: "false", require: false},
@@ -45,6 +45,14 @@ const claimSchema = new Schema({
         default: function () {
             // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
             return currentTime;
+        }
+    },
+    dayEnd: {
+        type: String,
+        required: false,
+        default: function () {
+            // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
+            return dayjs().tz('Asia/Bangkok').add(7, 'day').format('YYYY-MM-DD');
         }
     },
     picture_product:{type:Array, require:false},

@@ -1,6 +1,14 @@
 const { claimOrder } = require("../../Models/claim_order/claim.models");
-const { uploadFileCreate } = require("../../functions/uploadfileTest");
+const { uploadFileCreate, deleteFile } = require("../../functions/uploadfileTest");
 const multer = require("multer");
+const cron = require('node-cron');
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+const { ObjectId } = require('mongodb');
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const storage = multer.diskStorage({
     filename: function (req, file, cb) {
@@ -429,3 +437,85 @@ exports.getDate = async(req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
+
+exports.delPicture = async(req, res)=>{
+    try{
+        const dayEnd = req.body.dayEnd
+        const findDay = await claimOrder.find({dayEnd:dayEnd}).sort({createAt:-1})
+            if(findDay.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, message:"ไม่พบข้อมูล"})
+            }
+        let arrayPicture = []
+        let bulk = []
+        for(const item of findDay){
+            let data = [
+                    item.sender.picture_iden || "",
+                    item.sender.picture_bookbank || "",
+                    item.picture_product,
+                    item.picture_label,
+                    item.picture_broken,
+                    item.picture_weight,
+                    item.picture_value,
+                    item.video
+            ].flat(Infinity)
+            .filter(value => value !== "" && value.length > 0); // กรองค่าว่างออก
+            arrayPicture.push(data)
+
+            let bulkWrite = {
+                updateOne:{
+                    filter:{_id:item._id},
+                    update:{
+                        $set:{
+                            "sender.picture_iden": "",
+                            "sender.picture_bookbank": "",
+                            "picture_product": [],
+                            "picture_label": [],
+                            "picture_broken": [],
+                            "picture_weight": [],
+                            "picture_value": [],
+                            "video": []
+                        }
+                    }
+                }
+            }
+            bulk.push(bulkWrite)
+        }
+
+        let newArray = arrayPicture.filter(subArray => subArray.length > 0);
+        let combinedArray = newArray.reduce((acc, curr) => acc.concat(curr), []);
+        console.log(combinedArray)
+        let data = []
+        // for(const file of fileId){
+        //     let result = await deleteFile(file)
+        //     data.push(result)
+        // }
+        return res
+                .status(200)
+                .send({status:true, data:bulk})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+// ตั้งเวลาให้รันฟังก์ชันทุกวันเวลา 10:00 (เวลาประเทศไทย)
+cron.schedule('0 10 * * *', async () => {
+    const now = dayjs().tz("Asia/Bangkok");
+    const dayEnd = now.subtract(1, 'day').format('YYYY-MM-DD');
+    console.log(dayEnd)
+    const req = { body: { dayEnd: dayEnd } }; // สร้าง request mock object
+    const res = {
+        status: (code) => ({
+            send: (response) => console.log('Response:', response)
+        })
+    }; // สร้าง response mock object
+
+    await cancelAll(req, res);
+    console.log('cancelAll function executed at 10:00 AM Bangkok time');
+}, {
+    scheduled: true,
+    timezone: "Asia/Bangkok"
+});

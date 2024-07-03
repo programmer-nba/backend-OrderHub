@@ -251,21 +251,23 @@ exports.getReport = async(req, res)=>{
         const partner_id = req.body.partner_id
         const day_start = req.body.day_start
         const day_end = req.body.day_end
+        const express = req.body.express
         const status_order = req.body.status_order
         let data
             if(!day_start && !day_end){
                 if(partner_id){
-                    if(status_order){
+                    if(status_order && express){
                         data = await payDifference.find({
                             partner_id: partner_id,
-                            status_order: status_order
+                            status_order: status_order,
+                            express: express
                         })
                         if(data.length == 0){    
                             return res
                                     .status(200)
                                     .send({status:true, message:"ไม่พบข้อมูล(1)",data:[]})
                         }
-                    }else{
+                    }else if(!status_order && !express){
                         data = await payDifference.find({
                             partner_id: partner_id
                         })
@@ -274,6 +276,43 @@ exports.getReport = async(req, res)=>{
                                     .status(200)
                                     .send({status:true, message:"ไม่พบข้อมูล(2)",data:[]})
                         }
+                    }else if(status_order){
+                        data = await payDifference.find({
+                            partner_id: partner_id,
+                            status_order: status_order
+                        })
+                        if(data.length == 0){    
+                            return res
+                                    .status(200)
+                                    .send({status:true, message:"ไม่พบข้อมูล(3)",data:[]})
+                        }
+                    }else if(express){
+                        data = await payDifference.find({
+                            partner_id: partner_id,
+                            express: express
+                        })
+                        if(data.length == 0){    
+                            return res
+                                    .status(200)
+                                    .send({status:true, message:"ไม่พบข้อมูล(4)",data:[]})
+                        }
+                    }
+                }else if(status_order && express){
+                    data = await payDifference.find({
+                        status_order: status_order,
+                        express: express
+                    })
+                    if(data.length == 0){    
+                        return res
+                                .status(200)
+                                .send({status:true, message:"ไม่พบข้อมูล(5)",data:[]})
+                    }
+                }else if(!status_order && !express){
+                    data = await payDifference.find()
+                    if(data.length == 0){    
+                        return res
+                                .status(200)
+                                .send({status:true, message:"ไม่พบข้อมูล(6)",data:[]})
                     }
                 }else if(status_order){
                     data = await payDifference.find({
@@ -282,12 +321,49 @@ exports.getReport = async(req, res)=>{
                     if(data.length == 0){    
                         return res
                                 .status(200)
-                                .send({status:true, message:"ไม่พบข้อมูล(3)",data:[]})
+                                .send({status:true, message:"ไม่พบข้อมูล(7)",data:[]})
+                    }
+                }else if(express){
+                    data = await payDifference.find({
+                        express: express
+                    })
+                    if(data.length == 0){    
+                        return res
+                                .status(200)
+                                .send({status:true, message:"ไม่พบข้อมูล(8)",data:[]})
                     }
                 }
             }else if(day_start && day_end){
                 if(partner_id){
-                    if(status_order){
+                    if(status_order && express){
+                        data = await payDifference.find({
+                            partner_id: partner_id,
+                            status_order: status_order,
+                            express: express,
+                            day: {
+                                $gte: day_start,
+                                $lte: day_end
+                            }
+                        })
+                        if(data.length == 0){    
+                            return res
+                                    .status(200)
+                                    .send({status:true, message:"ไม่พบข้อมูล(9)",data:[]})
+                        }
+                    }else if(!status_order && !express){
+                        data = await payDifference.find({
+                            partner_id: partner_id,
+                            day: {
+                                $gte: day_start,
+                                $lte: day_end
+                            }
+                        })
+                        if(data.length == 0){    
+                            return res
+                                    .status(200)
+                                    .send({status:true, message:"ไม่พบข้อมูล(10)",data:[]})
+                        }
+                    }else if(status_order){
                         data = await payDifference.find({
                             partner_id: partner_id,
                             status_order: status_order,
@@ -299,11 +375,12 @@ exports.getReport = async(req, res)=>{
                         if(data.length == 0){    
                             return res
                                     .status(200)
-                                    .send({status:true, message:"ไม่พบข้อมูล(4)",data:[]})
+                                    .send({status:true, message:"ไม่พบข้อมูล(11)",data:[]})
                         }
-                    }else{
+                    }else if(express){
                         data = await payDifference.find({
                             partner_id: partner_id,
+                            express: express,
                             day: {
                                 $gte: day_start,
                                 $lte: day_end
@@ -312,8 +389,34 @@ exports.getReport = async(req, res)=>{
                         if(data.length == 0){    
                             return res
                                     .status(200)
-                                    .send({status:true, message:"ไม่พบข้อมูล(5)",data:[]})
+                                    .send({status:true, message:"ไม่พบข้อมูล(12)",data:[]})
                         }
+                    }
+                }else if(status_order && express){
+                    data = await payDifference.find({
+                        status_order: status_order,
+                        express: express,
+                        day: {
+                            $gte: day_start,
+                            $lte: day_end
+                        }
+                    })
+                    if(data.length == 0){    
+                        return res
+                                .status(200)
+                                .send({status:true, message:"ไม่พบข้อมูล(13)",data:[]})
+                    }
+                }else if(!status_order && !express){
+                    data = await payDifference.find({
+                        day: {
+                            $gte: day_start,
+                            $lte: day_end
+                        }
+                    })
+                    if(data.length == 0){    
+                        return res
+                                .status(200)
+                                .send({status:true, message:"ไม่พบข้อมูล(14)",data:[]})
                     }
                 }else if(status_order){
                     data = await payDifference.find({
@@ -326,10 +429,11 @@ exports.getReport = async(req, res)=>{
                     if(data.length == 0){    
                         return res
                                 .status(200)
-                                .send({status:true, message:"ไม่พบข้อมูล(6)",data:[]})
+                                .send({status:true, message:"ไม่พบข้อมูล(15)",data:[]})
                     }
-                }else{
+                }else if (express){
                     data = await payDifference.find({
+                        express: express,
                         day: {
                             $gte: day_start,
                             $lte: day_end
@@ -338,7 +442,7 @@ exports.getReport = async(req, res)=>{
                     if(data.length == 0){    
                         return res
                                 .status(200)
-                                .send({status:true, message:"ไม่พบข้อมูล(7)",data:[]})
+                                .send({status:true, message:"ไม่พบข้อมูล(16)",data:[]})
                     }
                 }
             }

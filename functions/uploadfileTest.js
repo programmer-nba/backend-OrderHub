@@ -118,11 +118,16 @@ async function deleteFile(fileId) {
       fileId: fileId,
       supportsAllDrives: true, // สนับสนุนทั้ง My Drives และ shared drives
     });
-
-    return res.data;
+    // console.log(res)
+    return `delete '${fileId}' successfully`;
   } catch (error) {
-    console.error('Error deleting file:', error);
-    return false;
+    if (error.response && error.response.status === 404) {
+      console.warn(`File not found: ${fileId}, considering as deleted.`);
+      return { message: `File not found: ${fileId}, considering as deleted.` };
+    } else {
+      console.error('Error deleting file:', error);
+      return false;
+    }
   }
 }
 
