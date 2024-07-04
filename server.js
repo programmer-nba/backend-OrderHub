@@ -18,7 +18,7 @@ app.use(cors({
   origin: '*', // หรือ '*' ถ้าต้องการอนุญาตทุก origin
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'auth-token']
 }));
 
 const port = process.env.PORT || 9019;
