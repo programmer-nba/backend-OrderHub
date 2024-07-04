@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
+const helmet = require('helmet');
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 var router = require('./route/route')
@@ -19,6 +20,12 @@ app.use(cors({
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'auth-token']
+}));
+
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    frameAncestors: ["'self'", "https://drive.google.com"]
+  }
 }));
 
 const port = process.env.PORT || 9019;
