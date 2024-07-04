@@ -485,15 +485,23 @@ exports.delPicture = async(req, res)=>{
 
         let newArray = arrayPicture.filter(subArray => subArray.length > 0);
         let combinedArray = newArray.reduce((acc, curr) => acc.concat(curr), []);
-        console.log(combinedArray)
+        // console.log(combinedArray)
         let data = []
-        // for(const file of fileId){
-        //     let result = await deleteFile(file)
-        //     data.push(result)
-        // }
+        for(const file of combinedArray){
+            let result = await deleteFile(file)
+            data.push(result)
+        }
+        let bulkWrite
+        if(data.length != 0){
+            bulkWrite = await claimOrder.bulkWrite(bulk)
+        }
+        
         return res
                 .status(200)
-                .send({status:true, data:bulk})
+                .send({status:true, 
+                    data:data,
+                    bulk:bulkWrite
+                })
     }catch(err){
         return res
                 .status(500)
@@ -513,8 +521,8 @@ cron.schedule('0 10 * * *', async () => {
         })
     }; // สร้าง response mock object
 
-    await cancelAll(req, res);
-    console.log('cancelAll function executed at 10:00 AM Bangkok time');
+    await exports.delPicture(req, res);
+    console.log('delPicture function executed at 10:00 AM Bangkok time');
 }, {
     scheduled: true,
     timezone: "Asia/Bangkok"
