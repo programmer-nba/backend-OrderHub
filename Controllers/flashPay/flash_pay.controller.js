@@ -258,30 +258,34 @@ paymentResults = async (req, res)=>{
                                     .status(404)
                                     .send({status:false, message:"ไม่สามารถค้นหาหมายเลข tradeNo ได้"})
                         }
-                    const findBefore = await Partner.findOneAndUpdate(
-                        {_id:currentWallet.partnerID},
-                        { $inc: { credits: +amount }},
-                        {new:true})
-                        if(!findBefore){
-                            return res 
-                                    .status(404)
-                                    .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์เจอ"})
+                        if (currentWallet.after != 'เติมเงินสำเร็จ') {
+                            const findBefore = await Partner.findOneAndUpdate(
+                                {_id:currentWallet.partnerID},
+                                { $inc: { credits: +amount }},
+                                {new:true})
+                                if(!findBefore){
+                                    return res 
+                                            .status(404)
+                                            .send({status:false, message:"ไม่สามารถค้นหาพาร์ทเนอร์เจอ"})
+                                }
+                            let walletBefore = Number(findBefore.credits) - amount
+                            findTradeNo = await historyWallet.findOneAndUpdate(
+                                {orderid:tradeNo},
+                                {
+                                    before: walletBefore,
+                                    after: 'เติมเงินสำเร็จ',
+                                    money_now: findBefore.credits
+                                },
+                                {new:true})
+                                if(!findTradeNo){
+                                        return res
+                                                .status(400)
+                                                .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้"})
+                                }
+                                pay = await cutCredits(partner_id)
+                        }else{
+                            findTradeNo = "เติมเงินสำเร็จไปแล้ว"
                         }
-                    let walletBefore = Number(findBefore.credits) - amount
-                    findTradeNo = await historyWallet.findOneAndUpdate(
-                        {orderid:tradeNo},
-                        {
-                            before: walletBefore,
-                            after: 'เติมเงินสำเร็จ',
-                            money_now: findBefore.credits
-                        },
-                        {new:true})
-                        if(!findTradeNo){
-                                return res
-                                        .status(400)
-                                        .send({status:false, message:"ไม่สามารถค้นหาหมายเลขรายการได้"})
-                        }
-                        pay = await cutCredits(partner_id)
                         
                 }else if(tradeStatus == 2){
                     findTradeNo = await historyWallet.findOneAndUpdate(
