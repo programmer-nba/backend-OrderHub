@@ -892,7 +892,7 @@ cancelOrderAll = async (txLogisticId)=>{
                     description: "ระบบยกเลิกสินค้าเพราะหมดอายุ",
                     order:[{
                         orderid:findCancel.mailno,
-                        express:"J&T"
+                        express:"BEST"
                     }],
                     latitude: "",
                     longtitude: ""
@@ -1401,7 +1401,7 @@ priceList = async (req, res)=>{
                             fee_cod = ((reqCod * pFirst.percent)/100)
                             fee_cod_total = fee_cod
                         }
- 
+
                     // console.log(shop_line)
                     if(findShopCod.shop_line != 'ICE'){
                         let shop_line = findShopCod.shop_line

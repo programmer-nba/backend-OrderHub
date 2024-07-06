@@ -496,7 +496,7 @@ exports.cutCredits = async(partner_id_string)=>{
             for (const item of data) {
                 let pay = {
                     updateOne: {
-                        filter: { orderid: item.orderid },
+                        filter: { mailno: item.orderid },
                         update: {
                         $set: {
                             status_order: "ชำระแล้ว",
