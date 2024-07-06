@@ -582,7 +582,7 @@ exports.upload = async (req, res) => {
         //   console.log(result[0])
           const id = req.params.id;
           const member = await payDifference.findByIdAndUpdate(id, {
-              remark: "รอตรวจสอบเอกสารกับทางขนส่ง",
+              status_order: "รอตรวจสอบเอกสารกับทางขนส่ง",
               "refutation.picture_size": result[0].responseDataId,
               "refutation.picture_weight": result[1].responseDataId,
               "refutation.remark_user": remark,
