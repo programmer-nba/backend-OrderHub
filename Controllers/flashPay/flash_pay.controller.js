@@ -223,6 +223,7 @@ QRCreateTest = async (req, res)=>{
 paymentResults = async (req, res)=>{
     try{
         const id = req.decoded.number
+        const partner_id = req.decoded.userid
         const KEY = process.env.FLASHPAY_KEY
         const apiUrl = process.env.FLASHPAY_URL
         const trade_No = req.body.tradeNo

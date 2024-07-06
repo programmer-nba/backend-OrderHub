@@ -471,7 +471,7 @@ exports.cutCredits = async(partner_id_string)=>{
             {
                 orderid:1, mailno:1, price_difference:1, weight:1,cost_price:1,actual_weight:1,new_price:1 
             }).sort({ price_difference: 1 });
-            console.log(orderids)
+            // console.log(orderids)
             if(orderids.length == 0){
                 return 'ไม่มีออเดอร์ที่ต้องจ่ายส่วนต่าง';
             }
@@ -492,11 +492,13 @@ exports.cutCredits = async(partner_id_string)=>{
         let history = []
         let before = partner.credits;
         let after = partner.credits
+        console.log(data)
         if(data.length != 0){
             for (const item of data) {
+                // console.log(item.orderid)
                 let pay = {
                     updateOne: {
-                        filter: { mailno: item.orderid },
+                        filter: { orderid: item.orderid },
                         update: {
                         $set: {
                             status_order: "ชำระแล้ว",
@@ -538,6 +540,7 @@ exports.cutCredits = async(partner_id_string)=>{
             }
         }
         try {
+            console.log(pay_diff[0])
             const update = await payDifference.bulkWrite(pay_diff);
             const update_partner = await Partner.bulkWrite(cut_partner);
             const history_create = await Promise.all(history.map(item => historyWallet.create(item)));
