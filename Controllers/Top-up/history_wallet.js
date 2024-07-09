@@ -195,57 +195,57 @@ findAmountAll = async(req, res)=>{
 
 findShopAmountAll = async(req, res)=>{
     try{
-        const day = req.body.day
-        const findHistory = await orderAll.find(
-            {
-                day:{
-                    $lte:"2024-06-10"
-                },
-                order_status:"cancel"
-            },{tracking_code:1}
-        ).exec();
-            if(findHistory.length == 0){
-                return res
-                        .status(404)
-                        .send({status:false, data:[]})
-            }
+        // const day = req.body.day
+        // const findHistory = await orderAll.find(
+        //     {
+        //         day:{
+        //             $lte:"2024-06-10"
+        //         },
+        //         order_status:"cancel"
+        //     },{tracking_code:1}
+        // ).exec();
+        //     if(findHistory.length == 0){
+        //         return res
+        //                 .status(404)
+        //                 .send({status:false, data:[]})
+        //     }
         
-        console.log("findHistory:",findHistory[0])
+        // console.log("findHistory:",findHistory[0])
         // const orderIdsToUpdate = findHistory.map(doc => doc.orderid);
         // console.log("orderIdsToUpdate:",orderIdsToUpdate.length)
         // const orderAllDocs = await orderAll.find({ tracking_code: { $in: orderIdsToUpdate } },{tracking_code:1, mailno:1}).exec()
         // console.log("orderAllDocs:",orderAllDocs.length)
-        const findMap = await Promise.all(findHistory.map(item => ({
-            updateOne: {
-                filter: { orderid: item.tracking_code },
-                update:{
-                    $set:{
-                        status: "ยกเลิกออเดอร์"
-                    }
-                }
-            }
-        })));
-        console.log(findMap.length)
-        const batchSize = 1000;
-        const totalBatches = Math.ceil(findMap.length / batchSize);
-        for (let i = 0; i < totalBatches; i++) {
-            const startIndex = i * batchSize;
-            const endIndex = Math.min(startIndex + batchSize, findMap.length);
+        // const findMap = await Promise.all(findHistory.map(item => ({
+        //     updateOne: {
+        //         filter: { orderid: item.tracking_code },
+        //         update:{
+        //             $set:{
+        //                 status: "ยกเลิกออเดอร์"
+        //             }
+        //         }
+        //     }
+        // })));
+        // console.log(findMap.length)
+        // const batchSize = 1000;
+        // const totalBatches = Math.ceil(findMap.length / batchSize);
+        // for (let i = 0; i < totalBatches; i++) {
+        //     const startIndex = i * batchSize;
+        //     const endIndex = Math.min(startIndex + batchSize, findMap.length);
             
-            const batch = findMap.slice(startIndex, endIndex); 
+        //     const batch = findMap.slice(startIndex, endIndex); 
         
-            // ส่ง batch ไปทำ bulkWrite
-            try {
-                const result = await profitTemplate.bulkWrite(batch);
-                console.log(`Batch ${i + 1} bulkWrite result:`, result);
-            } catch (error) {
-                console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
-            }
-        }
-        // ส่ง response เมื่อการลบเสร็จสิ้น
-        return res
-                .status(200)
-                .json({ message: 'Documents fixed successfully' });
+        //     // ส่ง batch ไปทำ bulkWrite
+        //     try {
+        //         const result = await profitTemplate.bulkWrite(batch);
+        //         console.log(`Batch ${i + 1} bulkWrite result:`, result);
+        //     } catch (error) {
+        //         console.error(`Error performing bulkWrite for batch ${i + 1}:`, error);
+        //     }
+        // }
+        // // ส่ง response เมื่อการลบเสร็จสิ้น
+        // return res
+        //         .status(200)
+        //         .json({ message: 'Documents fixed successfully' });
 
         // const id = req.params.id
         // const day_start = req.body.day_start
@@ -272,22 +272,72 @@ findShopAmountAll = async(req, res)=>{
         //             totalPROFIT:parseFloat(totalPROFIT.toFixed(2))
         //         })
         
-        //ค้นหาสินค้าจากนั้นนำ amount มาบวกกัน
-        // const shop_id = req.body.shop_id
-        // const findShop = await historyWalletShop.find({shop_id:shop_id, remark:"ขนส่งสินค้า(J&T)"})
-        //     if(findShop.length == 0){
-        //         return res
-        //                 .status(404)
-        //                 .send({status:false, data:[]})
-        //     }
-        // const totalAmount = findShop.reduce((sum, record) => sum + record.amount, 0);
-        // console.log(`Total Amount: ${totalAmount}`);
-        // return res
-        //         .status(200)
-        //         .send({
-        //             status:true,
-        //             total:totalAmount, 
-        //             data:findShop})
+        // ค้นหาสินค้าจากนั้นนำ amount มาบวกกัน
+        const findPartner = await Partner.find()
+            if(findPartner.length == 0){
+                return res
+                        .status(404)
+                        .send({status:false, data:[]})
+            }
+        let arr = []
+        for(const item of findPartner){
+            const findShop = await historyWallet.find({
+                partnerID:item._id.toString(),
+                $or:[
+                    {after:"เติมเงินสำเร็จ"},
+                    {after:"พาร์ทเนอร์นำเงินเข้าร้านค้า"},
+                    {after:"พาร์ทเนอร์นำเงินออกร้านค้า"}
+                ]
+            })
+            const shopPartner = findPartner.find(find => find._id.toString() == item._id.toString());
+            const findLength = shopPartner ? shopPartner.shop_partner.length : 0;
+            // console.log(findShop)
+            // กรองข้อมูลที่มีค่า after เป็น "เติมเงินสำเร็จ"
+            const filteredRecords = findShop.filter(record => record.after === "เติมเงินสำเร็จ");
+
+            // รวมจำนวนเงินของข้อมูลที่ถูกกรอง
+            const totalSuccess = filteredRecords.reduce((sum, record) => sum + record.amount, 0);
+
+            // กรองข้อมูลที่มีค่า after เป็น "พาร์ทเนอร์นำเงินเข้าร้านค้า"
+            const filteredShop = findShop.filter(record => record.after === "พาร์ทเนอร์นำเงินเข้าร้านค้า");
+            // รวมจำนวนเงินของข้อมูลที่ถูกกรอง
+            const totalToShop = filteredShop.reduce((sum, record) => sum + record.amount, 0);
+
+            // กรองข้อมูลที่มีค่า after เป็น "พาร์ทเนอร์นำเงินออกร้านค้า"
+            const filteredToPartner = findShop.filter(record => record.after === "พาร์ทเนอร์นำเงินออกร้านค้า");
+            const totalToPartner = filteredToPartner.reduce((sum, record) => sum + record.amount, 0)
+
+            const total = totalToShop - totalToPartner //เครดิตทั้งหมดที่พาร์ทเนอร์โอนเข้าร้านค้า - เครดิตที่พาร์ทเนอร์โอนคืนเข้ากระเป๋าพาร์ทเนอร์
+            const totalBug = total - totalSuccess //total - เครดิตที่พาร์ทเนอร์เติมเงินเข้ามาในระบบทั้งหมด เพื่อหา จำนวนเงินที่เกินจากบัค
+            // console.log(`Total Success: ${totalSuccess}`, `Total To Shop: ${totalToShop}`);
+
+            if(total > totalSuccess){
+                let findProfit = await profitPartner.find({
+                    wallet_owner:item._id.toString(),
+                    Orderer:{$ne: item._id.toString()},
+                    status:{$ne: "ยกเลิกออเดอร์"}
+                },{profit:1})
+                // console.log(findPartner.length)
+                const totalProfit = findProfit.reduce((sum, record) => sum + record.profit, 0);
+
+                let v = {
+                    partnerID: item._id,
+                    name:`${item.firstname} ${item.lastname}`,
+                    "จำนวนเงินที่เติมเข้ามาในระบบทั้งหมด":totalSuccess,
+                    "จำนวนเงินที่โอนเข้าร้านค้า":total,
+                    "จำนวนลูกข่าย(คน)":findLength,
+                    "กำไรจากลูกข่ายทั้งหมด": totalProfit,
+                    "ส่วนต่างประโยชน์จากบัค": totalBug
+                }
+                arr.push(v)
+            }
+        }
+        return res
+                .status(200)
+                .send({
+                    status:true,
+                    total:arr
+                })
     }catch(err){
         return res  
                 .status(500)

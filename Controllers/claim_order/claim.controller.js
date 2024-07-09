@@ -6,6 +6,9 @@ const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
 const { ObjectId } = require('mongodb');
+const { compressVideo, compressImage, checkAndCompressFile } = require("../../functions/compress.file");
+const path = require('path');
+const fs = require('fs');
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -15,6 +18,8 @@ const storage = multer.diskStorage({
       cb(null, Date.now() + "-");
     },
   });
+const upload = multer({ dest: 'uploads/' });
+exports.compressArray = upload.array('files')
 
 exports.create = async (req, res) => {
     try {
@@ -259,58 +264,58 @@ exports.getDate = async(req, res)=>{
                     data = await claimOrder.find({partner_id:partner_id, 'form_data.express':express, status_order:status})
                         if(data.length == 0){
                             return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่พบข้อมูล(0)"})
+                                    .status(200)
+                                    .send({status:false, message:"ไม่พบข้อมูล(0)", data:[]})
                         }
                 }else if(!express && !status){
                     data = await claimOrder.find({partner_id:partner_id})
                         if(data.length == 0){
                             return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่พบข้อมูล(1)"})
+                                    .status(200)
+                                    .send({status:false, message:"ไม่พบข้อมูล(1)", data:[]})
                         }
                 }else if(express){
                     data = await claimOrder.find({partner_id:partner_id, 'form_data.express':express})
                         if(data.length == 0){
                             return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่พบข้อมูล(2)"})
+                                    .status(200)
+                                    .send({status:false, message:"ไม่พบข้อมูล(2)", data:[]})
                         }
                 }else if(status){
                     data = await claimOrder.find({partner_id:partner_id, status_order:status})
                         if(data.length == 0){
                             return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่พบข้อมูล(3)"})
+                                    .status(200)
+                                    .send({status:false, message:"ไม่พบข้อมูล(3)", data:[]})
                         }
                 }
             }else if(express && status){
                 data = await claimOrder.find({'form_data.express':express, status_order:status})
                     if(data.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่พบข้อมูล(4)"})
+                                .status(200)
+                                .send({status:false, message:"ไม่พบข้อมูล(4)", data:[]})
                     }
             }else if(!express && !status){
                 data = await claimOrder.find()
                     if(data.length == 0){ 
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่พบข้อมูล(5)"})
+                                .status(200)
+                                .send({status:false, message:"ไม่พบข้อมูล(5)", data:[]})
                     }
             }else if(express){
                 data = await claimOrder.find({'form_data.express':express})
                     if(data.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่พบข้อมูล(6)"})
+                                .status(200)
+                                .send({status:false, message:"ไม่พบข้อมูล(6)", data:[]})
                     }
             }else if(status){
                 data = await claimOrder.find({status_order:status})
                     if(data.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่พบข้อมูล(7)"})
+                                .status(200)
+                                .send({status:false, message:"ไม่พบข้อมูล(7)", data:[]})
                     }
             }
         }else if(day_start && day_end){
@@ -327,8 +332,8 @@ exports.getDate = async(req, res)=>{
                     })
                         if(data.length == 0){
                             return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่พบข้อมูล(8)"})
+                                    .status(200)
+                                    .send({status:false, message:"ไม่พบข้อมูล(8)", data:[]})
                         }
                 }else if(!express && !status){
                     data = await claimOrder.find({
@@ -340,8 +345,8 @@ exports.getDate = async(req, res)=>{
                     })
                         if(data.length == 0){
                             return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่พบข้อมูล(9)"})
+                                    .status(200)
+                                    .send({status:false, message:"ไม่พบข้อมูล(9)", data:[]})
                         }
                 }else if(express){
                     data = await claimOrder.find({
@@ -354,8 +359,8 @@ exports.getDate = async(req, res)=>{
                     })
                         if(data.length == 0){
                             return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่พบข้อมูล(10)"})
+                                    .status(200)
+                                    .send({status:false, message:"ไม่พบข้อมูล(10)", data:[]})
                         }
                 }else if(status){
                     data = await claimOrder.find({
@@ -368,8 +373,8 @@ exports.getDate = async(req, res)=>{
                     })
                         if(data.length == 0){
                             return res
-                                    .status(400)
-                                    .send({status:false, message:"ไม่พบข้อมูล(11)"})
+                                    .status(200)
+                                    .send({status:false, message:"ไม่พบข้อมูล(11)", data:[]})
                         }
                 }
             }else if(express && status){
@@ -383,8 +388,8 @@ exports.getDate = async(req, res)=>{
                 })
                     if(data.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่พบข้อมูล(12)"})
+                                .status(200)
+                                .send({status:false, message:"ไม่พบข้อมูล(12)", data:[]})
                     }
             }else if(!express && !status){
                 data = await claimOrder.find({
@@ -395,8 +400,8 @@ exports.getDate = async(req, res)=>{
                 })
                     if(data.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่พบข้อมูล(13)"})
+                                .status(200)
+                                .send({status:false, message:"ไม่พบข้อมูล(13)", data:[]})
                     }
             }else if(express){
                 data = await claimOrder.find({
@@ -408,8 +413,8 @@ exports.getDate = async(req, res)=>{
                 })
                     if(data.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่พบข้อมูล(14)"})
+                                .status(200)
+                                .send({status:false, message:"ไม่พบข้อมูล(14)", data:[]})
                     }
             }else if(status){
                 data = await claimOrder.find({
@@ -421,8 +426,8 @@ exports.getDate = async(req, res)=>{
                 })
                     if(data.length == 0){
                         return res
-                                .status(400)
-                                .send({status:false, message:"ไม่พบข้อมูล(15)"})
+                                .status(200)
+                                .send({status:false, message:"ไม่พบข้อมูล(15)", data:[]})
                     }
                 
             }
@@ -502,6 +507,63 @@ exports.delPicture = async(req, res)=>{
                     data:data,
                     bulk:bulkWrite
                 })
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+exports.compress = async(req, res)=>{
+    try{
+        const files = req.files;
+        const type = req.body.type;
+        const compressedFiles = [];
+
+        // สร้างโฟลเดอร์สำหรับไฟล์ที่บีบอัดถ้ายังไม่มี
+        if (!fs.existsSync('compressed')) {
+            fs.mkdirSync('compressed');
+        }
+    
+        // ฟังก์ชันที่ใช้ในการบีบอัดและจัดการไฟล์แต่ละไฟล์
+        function processFile(index) {
+            if (index >= files.length) {
+                // เมื่อประมวลผลไฟล์ทั้งหมดเสร็จแล้ว ส่ง response กลับไป
+                const buffers = compressedFiles.map(filePath => fs.readFileSync(filePath));
+                const combinedBuffer = Buffer.concat(buffers);
+        
+                res.set('Content-Type', 'application/octet-stream');
+                res.set('Content-Disposition', 'attachment; filename="compressed_files.zip"');
+    
+                res.end(combinedBuffer);
+        
+                // ลบไฟล์ที่บีบอัดทั้งหมดหลังจากส่ง response
+                // compressedFiles.forEach(filePath => fs.unlinkSync(filePath));
+                return;
+            }
+    
+            const inputFilePath = files[index].path;
+            const outputFilePath = path.join('compressed', files[index].filename + (type === 'image' ? '.jpg' : '.mp4'));
+    
+            checkAndCompressFile(type, inputFilePath, outputFilePath, (err, finalPath) => {
+            if (err) {
+                res.status(500).send('Error processing file');
+                console.log("err",err)
+                return;
+            }
+            compressedFiles.push(finalPath);
+    
+            // ลบไฟล์ต้นฉบับหลังจากประมวลผลเสร็จ
+            if (finalPath !== inputFilePath) {
+                fs.unlinkSync(inputFilePath);
+            }
+    
+            // ประมวลผลไฟล์ถัดไป
+            processFile(index + 1);
+            });
+        }
+        // เริ่มประมวลผลไฟล์แรก
+        processFile(0);
     }catch(err){
         return res
                 .status(500)

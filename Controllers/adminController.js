@@ -833,7 +833,7 @@ cutCreditPartner = async(req, res)=>{
           {
               $inc: { credit: -credit }
           },
-          {new:true,  projection: { credit: 1, firstname: 1, lastname: 1, shop_number: 1, shop_name: 1 } })
+          {new:true,  projection: { _id:1, credit: 1, firstname: 1, lastname: 1, shop_number: 1, shop_name: 1 } })
           if(!tranferToPartner){
               return res
                       .status(400)
@@ -841,7 +841,7 @@ cutCreditPartner = async(req, res)=>{
           }
 
       const dataHistoryPartner = {
-                    partnerID: tranferToPartner._id,
+                    partnerID: tranferToPartner.partnerID,
                     shop_number: tranferToPartner.shop_number,
                     orderid: creditToPartner,
                     firstname: tranferToPartner.firstname,

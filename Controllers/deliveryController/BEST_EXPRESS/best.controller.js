@@ -111,7 +111,7 @@ createPDFOrder = async(req, res)=>{
                 },
                 items:{
                     item:[{
-                            "itemName": 'ORDERHUB',
+                            "itemName": data.parcel.name,
                             "itemWeight": weight,
                             "itemLength": data.parcel.width,
                             "itemWidth": data.parcel.length,
@@ -163,7 +163,7 @@ createPDFOrder = async(req, res)=>{
         const base64Data = response.data.pdfStream;
         // console.log(base64Data)
 
-        // // Decode Base64
+        // Decode Base64
         // const binaryData = Buffer.from(base64Data, 'base64');
 
         // // สร้างไฟล์ PDF
@@ -768,7 +768,7 @@ cancelOrder = async (req, res)=>{
                                 .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
                     }
                 // console.log(findTracking)
-                    if(findPno.profitCOD != 0){
+                    if(findPno.cod_amount != 0){
                        let findTemplate = await profitTemplate.findOneAndUpdate(
                             { orderid : txLogisticId},
                             {
@@ -932,7 +932,7 @@ cancelOrderAll = async (txLogisticId)=>{
                             remark: "ยกเลิกขนส่งสินค้า",
                             day_cancel: createLog.day,
                             user_cancel: `ORDERHUB SYSTEM`
-                    }    
+                    }
                 const historyShop = await historyWalletShop.findOneAndUpdate(
                     {
                         orderid:txLogisticId
@@ -973,7 +973,7 @@ cancelOrderAll = async (txLogisticId)=>{
                         return `${txLogisticId} ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ`
                     }
                 // console.log(findTracking)
-                    if(findPno.profitCOD != 0){
+                    if(findPno.cod_amount != 0){
                        let findTemplate = await profitTemplate.findOneAndUpdate(
                             { orderid : txLogisticId},
                             {
@@ -1293,26 +1293,27 @@ priceList = async (req, res)=>{
                     .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
         }
 
-        if(weight > 0 && weight <= 50){
-            const value = ((declared_value * 0.4)/100) 
-            if(value < 10){
-                insuranceFee = 10
+        if(declared_value > 0){
+            if(weight > 0 && weight <= 50){
+                const value = ((declared_value * 0.4)/100) 
+                if(value < 10){
+                    insuranceFee = 10
+                }else{
+                    insuranceFee = value
+                }
+            }else if(weight > 50 && weight <= 300){
+                const value = ((declared_value * 1)/100) 
+                if(value < 50){
+                    insuranceFee = 50
+                }else{
+                    insuranceFee = value
+                }
             }else{
-                insuranceFee = value
+                return res
+                        .status(200)
+                        .send({status:false, message:"น้ำหนักที่ท่านกรอกมากเกิน 300 KG"})
             }
-        }else if(weight > 50 && weight <= 300){
-            const value = ((declared_value * 1)/100) 
-            if(value < 50){
-                insuranceFee = 50
-            }else{
-                insuranceFee = value
-            }
-        }else{
-            return res
-                    .status(200)
-                    .send({status:false, message:"น้ำหนักที่ท่านกรอกมากเกิน 300 KG"})
         }
-
         //ผู้ส่ง
         const sender = formData.from; 
         const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า

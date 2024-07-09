@@ -579,7 +579,7 @@ exports.upload = async (req, res) => {
               result.push(src);
             }
           }
-        //   console.log(result[0])
+            // console.log(result[0])
           const id = req.params.id;
           const member = await payDifference.findByIdAndUpdate(id, {
               status_order: "รอตรวจสอบเอกสารกับทางขนส่ง",
