@@ -21,15 +21,26 @@ const drive = google.drive({
   auth: oauth2Client,
 });
 
-async function uploadFileCreate(file, res, { i, reqFiles }, location) {
-  const filePath = file.path;
-
+async function uploadFileCreate(file, res, location) {
+  const filePath = file
+  
+   // Check if filePath is valid
+  if (!filePath || typeof filePath !== 'string') {
+    throw new Error('Invalid file path');
+  }
+  // Create a readable stream from the file path
+  let fileStream;
+  try {
+    fileStream = fs.createReadStream(filePath);
+  } catch (err) {
+    throw new Error(`Failed to create read stream: ${err.message}`);
+  }
   let fileMetaData = {
     name: file.originalname,
     parents: [location],
   };
   let media = {
-    body: fs.createReadStream(filePath),
+    body: fileStream
   };
   try {
     // Ensure token is refreshed if necessary
@@ -41,7 +52,7 @@ async function uploadFileCreate(file, res, { i, reqFiles }, location) {
     });
 
     let genCode = await generatePublicUrl(response.data.id);
-    reqFiles.push(response.data.id);
+    // reqFiles.push(response.data.id);
     console.log(response.data.id);
     return { genCode, responseDataId: response.data.id };
   } catch (error) {

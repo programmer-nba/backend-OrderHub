@@ -6,9 +6,12 @@ const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
 const { ObjectId } = require('mongodb');
-const { compressVideo, compressImage, checkAndCompressFile } = require("../../functions/compress.file");
+const { checkAndCompressFile } = require("../../functions/compress.file");
 const path = require('path');
 const fs = require('fs');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -526,48 +529,225 @@ exports.compress = async(req, res)=>{
         }
     
         // ฟังก์ชันที่ใช้ในการบีบอัดและจัดการไฟล์แต่ละไฟล์
-        function processFile(index) {
+        async function processFile(index) {
             if (index >= files.length) {
-                // เมื่อประมวลผลไฟล์ทั้งหมดเสร็จแล้ว ส่ง response กลับไป
-                const buffers = compressedFiles.map(filePath => fs.readFileSync(filePath));
-                const combinedBuffer = Buffer.concat(buffers);
-        
-                res.set('Content-Type', 'application/octet-stream');
-                res.set('Content-Disposition', 'attachment; filename="compressed_files.zip"');
-    
-                res.end(combinedBuffer);
-        
+                 // เมื่อประมวลผลไฟล์ทั้งหมดเสร็จแล้ว ส่ง response กลับไป
+                const filenames = compressedFiles.map(filePath => path.basename(filePath));
+                
+                res.status(200).json({
+                     status: true,
+                     files: filenames
+                });
+ 
                 // ลบไฟล์ที่บีบอัดทั้งหมดหลังจากส่ง response
                 // compressedFiles.forEach(filePath => fs.unlinkSync(filePath));
+ 
                 return;
             }
-    
-            const inputFilePath = files[index].path;
-            const outputFilePath = path.join('compressed', files[index].filename + (type === 'image' ? '.jpg' : '.mp4'));
-    
-            checkAndCompressFile(type, inputFilePath, outputFilePath, (err, finalPath) => {
-            if (err) {
+
+            const file = files[index];
+            if (!file || !file.path) {
+                res.status(400).send(`File at index ${index} is invalid or missing 'path' property.`);
+                return;
+            }
+
+            const inputFilePath = file.path;
+            const outputFilePath = path.join('compressed', file.filename + (type === 'image' ? '.jpg' : '.mp4'));
+
+            
+            try {
+                await new Promise((resolve, reject) => {
+                    checkAndCompressFile(type, inputFilePath, outputFilePath, 0, (err, finalPath) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        // console.log('Final path:', finalPath);
+                        compressedFiles.push(finalPath);
+                        resolve();
+                    });
+                });
+
+                if (type === 'video' || type === 'image') {
+                    await deleteFileWithShell(inputFilePath);
+                }
+
+                processFile(index + 1);
+            } catch (err) {
+                console.error('Error processing file:', err);
                 res.status(500).send('Error processing file');
-                console.log("err",err)
-                return;
-            }
-            compressedFiles.push(finalPath);
-    
-            // ลบไฟล์ต้นฉบับหลังจากประมวลผลเสร็จ
-            if (finalPath !== inputFilePath) {
-                fs.unlinkSync(inputFilePath);
-            }
-    
-            // ประมวลผลไฟล์ถัดไป
-            processFile(index + 1);
-            });
+            };
         }
         // เริ่มประมวลผลไฟล์แรก
-        processFile(0);
+        await processFile(0);
     }catch(err){
         return res
                 .status(500)
                 .send({status:false, message:err.message})
+    }
+}
+
+exports.uploadPicTwo = async (req, res)=>{
+    try{
+        const compressedFolderPath = path.join(__dirname, '..', '..', 'compressed');
+        const uploadFolderPath = path.join(__dirname, '..', '..', 'uploads');
+        console.log(uploadFolderPath)
+        const filesToProcess = req.body.files;
+        const id = req.params.id
+        const type = req.body.type
+        const location = process.env.GOOGLE_DRIVE_CLAIM
+        let result = []
+        let resultLink = []
+            try {
+                for (const fileName of filesToProcess) {
+                    const filePath = path.join(compressedFolderPath, fileName);
+
+                    // ตรวจสอบว่าไฟล์ที่ต้องการดึงมีอยู่จริงหรือไม่
+                    if (fs.existsSync(filePath)) {
+                        // console.log("filePath:",filePath)
+                        const src = await uploadFileCreate(filePath, res, location);
+                            result.push(src);
+                            resultLink.push(src.responseDataId)
+                        // ลบไฟล์ที่บีบอัดทั้งหมดหลังจากส่ง response
+                        fs.unlinkSync(filePath)
+
+                    } else {
+                        console.error(`File not found: ${filePath}`);
+                    }
+                }
+            } catch (error) {
+                console.error( error);
+                return res
+                        .status(400)
+                        .send({status:false, message:error})
+            }
+            if(type == "product"){
+                const update = await claimOrder.findByIdAndUpdate(id, {
+                    picture_product: resultLink,
+                }, {new:true})
+                if(!update){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, message:"อัพเดทข้อมูลสําเร็จ", data:update})
+            }else if(type == "label"){
+                const update = await claimOrder.findByIdAndUpdate(id, {
+                    picture_label: resultLink,
+                }, {new:true})
+                if(!update){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, message:"อัพเดทข้อมูลสําเร็จ", data:update})
+            }else if(type == "broken"){
+                const update = await claimOrder.findByIdAndUpdate(id, {
+                    picture_broken: resultLink,
+                }, {new:true})
+                if(!update){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, message:"อัพเดทข้อมูลสําเร็จ", data:update})
+            }else if(type == "value"){
+                const update = await claimOrder.findByIdAndUpdate(id, {
+                    picture_value: resultLink,
+                }, {new:true}) 
+                if(!update){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, message:"อัพเดทข้อมูลสําเร็จ", data:update})
+            }else if(type == "sender"){
+                const update = await claimOrder.findByIdAndUpdate(id, {
+                    "sender.picture_iden": resultLink[0],
+                    "sender.picture_bookbank": resultLink[1],
+                }, {new:true})
+                if(!update){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, message:"อัพเดทข้อมูลสําเร็จ", data:update})
+            }else if(type == "video"){
+                console.log(resultLink)
+                const update = await claimOrder.findByIdAndUpdate(id, {
+                    video: resultLink,
+                }, {new:true})
+                if(!update){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, message:"อัพเดทข้อมูลสําเร็จ", data:update})
+            }else if(type == "weight"){
+                const update = await claimOrder.findByIdAndUpdate(id, {
+                    picture_weight: resultLink,
+                }, {new:true})
+                if(!update){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถอัพเดทได้"})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, message:"อัพเดทข้อมูลสําเร็จ", data:update})
+            }         
+        return res
+                .status(200)
+                .send({status:true,data:resultLink})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+exports.delFile = async(req, res)=>{
+    try{
+        const files = req.body.files
+            if(files.length == 0){
+                return res
+                        .status(200)
+                        .send({status:false, data:[]})
+            }
+        const compressedFolderPath = path.join(__dirname, '..', '..', 'compressed');
+        for(const file of files){
+            const filePath = path.join(compressedFolderPath, file);
+            await deleteFileWithShell(filePath);
+        }
+        return res
+                .status(200)
+                .send({status:true, message:"ลบข้อมูลสำเร็จ"})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+//ลบไฟล์ที่ต้องการ
+async function deleteFileWithShell(filePath) {
+    const command = process.platform === 'win32' ? `del /f "${filePath}"` : `rm -f "${filePath}"`;
+    try {
+        await execAsync(command);
+        console.log(`Successfully deleted file using shell command: ${filePath}`);
+    } catch (err) {
+        console.error(`Failed to delete file using shell command: ${filePath}`, err);
     }
 }
 

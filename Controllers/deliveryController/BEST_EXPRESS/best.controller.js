@@ -502,110 +502,110 @@ statusOrder = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
             }
-        //     if (Array.isArray(response.data.traceLogs) && response.data.traceLogs.length === 0) {
-        //         // Return ออกจากฟังก์ชันทันที
-        //         return;
-        //     }
-        // let detailBulk = []
-        // let codBulk = []
-        // const detail = response.data.traceLogs
-        // for(const item of detail){
-        //     // console.log(item)
-        //         if(item.traces == null){
-        //             return
-        //         }
-        //     const latestDetails = item.traces.trace[item.traces.trace.length - 1];
+            if (Array.isArray(response.data.traceLogs) && response.data.traceLogs.length === 0) {
+                // Return ออกจากฟังก์ชันทันที
+                return;
+            }
+        let detailBulk = []
+        let codBulk = []
+        const detail = response.data.traceLogs
+        for(const item of detail){
+            // console.log(item)
+                if(item.traces == null){
+                    return
+                }
+            const latestDetails = item.traces.trace[item.traces.trace.length - 1];
 
-        //     let scantype
-        //     let day_pay = ""
-        //     let day_sign = ""
-        //     let day_pick = ""
+            let scantype
+            let day_pay = ""
+            let day_sign = ""
+            let day_pick = ""
 
-        //     const formatUnixTimestamp = (timestamp) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss');
-        //     const formatDatePart = (timestamp) => dayjs(timestamp).format('YYYY-MM-DD');
+            const formatUnixTimestamp = (timestamp) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss');
+            const formatDatePart = (timestamp) => dayjs(timestamp).format('YYYY-MM-DD');
 
-        //     const findReturn = item.traces.trace.find(item => item.packageStatusCode == 'package_return')
-        //     const findPickup = item.traces.trace.find(item => item.packageStatusCode == 'pickup_success')
-        //         if(findPickup){
-        //             day_pick = formatUnixTimestamp(findPickup.operateTime)
-        //         }
-        //     if(findReturn){
-        //         if(latestDetails.packageStatusCode == 'delivered'){
+            const findReturn = item.traces.trace.find(item => item.packageStatusCode == 'package_return')
+            const findPickup = item.traces.trace.find(item => item.packageStatusCode == 'pickup_success')
+                if(findPickup){
+                    day_pick = formatUnixTimestamp(findPickup.operateTime)
+                }
+            if(findReturn){
+                if(latestDetails.packageStatusCode == 'delivered'){
 
-        //             scantype = 'เซ็นรับแล้ว'
+                    scantype = 'เซ็นรับแล้ว'
 
-        //             let datePart = formatDatePart(latestDetails.operateTime)
-        //             day_sign = datePart
+                    let datePart = formatDatePart(latestDetails.operateTime)
+                    day_sign = datePart
                     
-        //         }else if(latestDetails.packageStatusCode == 'return_success'){
-        //             scantype = 'เซ็นรับพัสดุตีกลับ'
+                }else if(latestDetails.packageStatusCode == 'return_success'){
+                    scantype = 'เซ็นรับพัสดุตีกลับ'
 
-        //             let datePart = formatDatePart(latestDetails.operateTime)
-        //             day_sign = datePart
-        //         }else{
-        //             scantype = 'พัสดุตีกลับ'
-        //         }
-        //     }else{
-        //         if(latestDetails.packageStatusCode == 'pickup_success'){
-        //             scantype = 'รับพัสดุแล้ว'
-        //         }else if(['arrive_station', 'send_from_station', 'arrive_hub', 'send_from_hub', 'out_for_delivery'].includes(latestDetails.packageStatusCode)){
-        //             scantype = 'ระหว่างการจัดส่ง'
-        //         }else if(latestDetails.packageStatusCode == 'delivered'){
+                    let datePart = formatDatePart(latestDetails.operateTime)
+                    day_sign = datePart
+                }else{
+                    scantype = 'พัสดุตีกลับ'
+                }
+            }else{
+                if(latestDetails.packageStatusCode == 'pickup_success'){
+                    scantype = 'รับพัสดุแล้ว'
+                }else if(['arrive_station', 'send_from_station', 'arrive_hub', 'send_from_hub', 'out_for_delivery'].includes(latestDetails.packageStatusCode)){
+                    scantype = 'ระหว่างการจัดส่ง'
+                }else if(latestDetails.packageStatusCode == 'delivered'){
 
-        //             scantype = 'เซ็นรับแล้ว'
+                    scantype = 'เซ็นรับแล้ว'
 
-        //             let datePart = formatDatePart(latestDetails.operateTime)
-        //             day_sign = datePart
+                    let datePart = formatDatePart(latestDetails.operateTime)
+                    day_sign = datePart
 
-        //         }else if(latestDetails.packageStatusCode == 'package_return'){
-        //             scantype = 'พัสดุตีกลับ'
-        //         }else if(['hold_in_station', 'pickup_failure'].includes(latestDetails.packageStatusCode)){
-        //             scantype = 'พัสดุมีปัญหา'
-        //         }else{
-        //             return;
-        //         }
-        //     }
-        //     let changStatus = {
-        //         updateOne: {
-        //             filter: { mailno: item.mailNo },
-        //             update: { 
-        //                 $set: {
-        //                     order_status:scantype,
-        //                     day_sign: day_sign,
-        //                     day_pick: day_pick
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     let changStatusCod 
-        //     if(scantype == 'เซ็นรับพัสดุตีกลับ'){
-        //         changStatusCod = {
-        //             updateOne: {
-        //                 filter: { 'template.partner_number': item.mailNo },
-        //                 update: {
-        //                     $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
-        //                         status:scantype,
-        //                         day_pick:day_pick
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }else{
-        //         changStatusCod = {
-        //             updateOne: {
-        //                 filter: { 'template.partner_number': item.mailNo },
-        //                 update: {
-        //                     $set: {
-        //                         status:scantype,
-        //                         day_sign: day_sign,
-        //                         day_pay: day_pay,
-        //                         day_pick: day_pick
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+                }else if(latestDetails.packageStatusCode == 'package_return'){
+                    scantype = 'พัสดุตีกลับ'
+                }else if(['hold_in_station', 'pickup_failure'].includes(latestDetails.packageStatusCode)){
+                    scantype = 'พัสดุมีปัญหา'
+                }else{
+                    return;
+                }
+            }
+            let changStatus = {
+                updateOne: {
+                    filter: { mailno: item.mailNo },
+                    update: { 
+                        $set: {
+                            order_status:scantype,
+                            day_sign: day_sign,
+                            day_pick: day_pick
+                        }
+                    }
+                }
+            }
+            let changStatusCod 
+            if(scantype == 'เซ็นรับพัสดุตีกลับ'){
+                changStatusCod = {
+                    updateOne: {
+                        filter: { 'template.partner_number': item.mailNo },
+                        update: {
+                            $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
+                                status:scantype,
+                                day_pick:day_pick
+                            }
+                        }
+                    }
+                }
+            }else{
+                changStatusCod = {
+                    updateOne: {
+                        filter: { 'template.partner_number': item.mailNo },
+                        update: {
+                            $set: {
+                                status:scantype,
+                                day_sign: day_sign,
+                                day_pay: day_pay,
+                                day_pick: day_pick
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return res
                 .status(200)
                 .send({status:true, data:response.data})
