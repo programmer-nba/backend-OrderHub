@@ -11,7 +11,9 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const { promisify } = require('util');
+const axios = require("axios");
 const execAsync = promisify(exec);
+const FormData = require('form-data');
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -22,7 +24,9 @@ const storage = multer.diskStorage({
     },
   });
 const upload = multer({ dest: 'uploads/' });
+const uploadOne = multer({ dest: 'upload/' });
 exports.compressArray = upload.array('files')
+exports.compressOne = uploadOne.array('files')
 
 exports.create = async (req, res) => {
     try {
@@ -520,6 +524,7 @@ exports.delPicture = async(req, res)=>{
 exports.compress = async(req, res)=>{
     try{
         const files = req.files;
+        // console.log(files)
         const type = req.body.type;
         const compressedFiles = [];
 
@@ -581,6 +586,7 @@ exports.compress = async(req, res)=>{
         // เริ่มประมวลผลไฟล์แรก
         await processFile(0);
     }catch(err){
+        console.log(err)
         return res
                 .status(500)
                 .send({status:false, message:err.message})
@@ -740,6 +746,43 @@ exports.delFile = async(req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
+
+exports.testCompress = async (req, res) => {
+    try {
+        const { type } = req.body;
+        const files = req.files;
+
+        // ตรวจสอบว่ามี files ที่ถูกอัพโหลดหรือไม่
+        if (!files || files.length === 0) {
+            return res.status(400).send('No files were uploaded.');
+        }
+
+        // สร้าง FormData สำหรับเก็บข้อมูลที่จะส่งไปยัง API ต่อไป
+        const formData = new FormData();
+     
+        // เพิ่ม files ลงใน formData
+        for (const file of files) {
+            formData.append('files', fs.createReadStream(file.path));
+        }
+        // เพิ่ม type ลงใน formData
+        formData.append('type', type);
+        // console.log(formData)
+        // ส่ง request ไปยัง API ตามที่กำหนด
+        const response = await axios.post(`${process.env.TOSSAGUNS_URL}/claim/compress`, formData, {
+            headers: {
+                ...formData.getHeaders(), // เพิ่ม headers ที่ได้จาก formData
+                'auth-token': req.headers['auth-token'], // หากต้องการส่ง token ด้วย
+                'Accept-Encoding': 'gzip, deflate, br',
+            },
+        });
+
+        return res.status(200).send({ status: true, ...response.data });
+    } catch (err) {
+        console.error('Error:', err);
+        return res.status(500).send({ status: false, message: err.message });
+    }
+};
+
 //ลบไฟล์ที่ต้องการ
 async function deleteFileWithShell(filePath) {
     const command = process.platform === 'win32' ? `del /f "${filePath}"` : `rm -f "${filePath}"`;
