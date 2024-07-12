@@ -18,7 +18,7 @@ app.use(express.json());
 // app.use(cors());
 app.use(cors({
   origin: '*', // หรือ '*' ถ้าต้องการอนุญาตทุก origin
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE, OPTIONS',
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'auth-token', 'Accept-Encoding']
 }));
@@ -28,13 +28,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS request');
-    res.sendStatus(200);
-  } else {
-    console.log('Handling regular request: ' + req.method);
-    next();
-  }
+  next();
 });
 
 app.use(helmet.contentSecurityPolicy({
