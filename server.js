@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 var router = require('./route/route')
 var router2 = require('./route/route2')
 const cors = require("cors");
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 app.use(bodyParser.json({limit: '50mb', type: 'application/json'}));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -37,10 +38,27 @@ app.use(helmet.contentSecurityPolicy({
   }
 }));
 
+app.use('/api-production', createProxyMiddleware({
+  target: 'https://api.orderhub.love/orderhub',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api-production': '', // ลบ /api ออกจาก URL
+  },
+}));
+
+app.use('/api-tossaguns', createProxyMiddleware({
+  target: 'https://api.tossaguns.online/orderhub',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api-tossaguns': '', // ลบ /api ออกจาก URL
+  },
+}));
+
 const port = process.env.PORT || 9019;
 
 app.listen(port, () => {
   console.log(`API Running PORT ${port}`);
+  console.log(`Proxy server running on port ${port}`);
 });
 app.use(router)
 app.use(router2)
