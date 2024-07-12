@@ -15,12 +15,13 @@ mongoose.connect(process.env.DB)
 .then(() => console.log('Connected!'));
 
 app.use(express.json());
-app.use(cors({
-  origin: '*', // หรือ '*' ถ้าต้องการอนุญาตทุก origin
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'auth-token']
-}));
+app.use(cors());
+// app.use(cors({
+//   origin: '*', // หรือ '*' ถ้าต้องการอนุญาตทุก origin
+//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+//   credentials: true,
+//   allowedHeaders: ['Content-Type', 'Authorization', 'auth-token', 'Accept-Encoding']
+// }));
 
 app.use(helmet.contentSecurityPolicy({
   directives: {
