@@ -22,6 +22,45 @@ const drive = google.drive({
 });
 
 async function uploadFileCreate(file, res, location) {
+  const filePath = file.path
+  
+   // Check if filePath is valid
+  if (!filePath || typeof filePath !== 'string') {
+    throw new Error('Invalid file path');
+  }
+  // Create a readable stream from the file path
+  let fileStream;
+  try {
+    fileStream = fs.createReadStream(filePath);
+  } catch (err) {
+    throw new Error(`Failed to create read stream: ${err.message}`);
+  }
+  let fileMetaData = {
+    name: file.originalname,
+    parents: [location],
+  };
+  let media = {
+    body: fileStream
+  };
+  try {
+    // Ensure token is refreshed if necessary
+    await ensureAuthenticated();
+
+    const response = await drive.files.create({
+      resource: fileMetaData,
+      media: media,
+    });
+
+    let genCode = await generatePublicUrl(response.data.id);
+    // reqFiles.push(response.data.id);
+    console.log(response.data.id);
+    return { genCode, responseDataId: response.data.id };
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+}
+
+async function uploadFileCreate2(file, res, location) {
   const filePath = file
   
    // Check if filePath is valid
@@ -142,4 +181,4 @@ async function deleteFile(fileId) {
   }
 }
 
-module.exports = { uploadFileCreate, deleteFile };
+module.exports = { uploadFileCreate, uploadFileCreate2, deleteFile };

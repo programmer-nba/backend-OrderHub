@@ -1,5 +1,5 @@
 const { claimOrder } = require("../../Models/claim_order/claim.models");
-const { uploadFileCreate, deleteFile } = require("../../functions/uploadfileTest");
+const { uploadFileCreate, uploadFileCreate2, deleteFile } = require("../../functions/uploadfileTest");
 const multer = require("multer");
 const cron = require('node-cron');
 const dayjs = require('dayjs');
@@ -634,7 +634,7 @@ exports.uploadPicTwo = async (req, res)=>{
                     // ตรวจสอบว่าไฟล์ที่ต้องการดึงมีอยู่จริงหรือไม่
                     if (fs.existsSync(filePath)) {
                         // console.log("filePath:",filePath)
-                        const src = await uploadFileCreate(filePath, res, location);
+                        const src = await uploadFileCreate2(filePath, res, location);
                             result.push(src);
                             resultLink.push(src.responseDataId)
                         // ลบไฟล์ที่บีบอัดทั้งหมดหลังจากส่ง response
