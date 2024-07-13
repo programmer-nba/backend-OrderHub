@@ -23,7 +23,29 @@ const storage = multer.diskStorage({
       cb(null, Date.now() + "-");
     },
   });
-const upload = multer({ dest: 'uploads/' });
+
+const storage2 = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadPath = 'uploads/';
+
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+
+        cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+
+const upload = multer({ storage: storage2 });
+const fields = [
+    { name: 'files', maxCount: 10 } // กำหนดจำนวนไฟล์สูงสุดที่สามารถอัปโหลดได้
+]
+exports.uploadMiddleware = upload.fields(fields);
+
+// const upload = multer({ dest: 'uploads/' });
 const uploadOne = multer({ dest: 'upload/' });
 exports.compressArray = upload.array('files')
 exports.compressOne = uploadOne.array('files')
@@ -521,32 +543,36 @@ exports.delPicture = async(req, res)=>{
     }
 }
 
-exports.compress = async(req, res)=>{
-    try{
-        const files = req.files;
-        // console.log(files)
+exports.compress = async (req, res) => {
+    try {
+        const files = req.files.files; // ตรวจสอบและรับค่าของ 'files' จาก req.files
         const type = req.body.type;
+
+        if (!files || files.length === 0) {
+            return res.status(400).send('No files were uploaded.');
+        }
+
         const compressedFiles = [];
 
         // สร้างโฟลเดอร์สำหรับไฟล์ที่บีบอัดถ้ายังไม่มี
         if (!fs.existsSync('compressed')) {
             fs.mkdirSync('compressed');
         }
-    
+
         // ฟังก์ชันที่ใช้ในการบีบอัดและจัดการไฟล์แต่ละไฟล์
         async function processFile(index) {
             if (index >= files.length) {
-                 // เมื่อประมวลผลไฟล์ทั้งหมดเสร็จแล้ว ส่ง response กลับไป
+                // เมื่อประมวลผลไฟล์ทั้งหมดเสร็จแล้ว ส่ง response กลับไป
                 const filenames = compressedFiles.map(filePath => path.basename(filePath));
-                
+
                 res.status(200).json({
-                     status: true,
-                     files: filenames
+                    status: true,
+                    files: filenames
                 });
- 
+
                 // ลบไฟล์ที่บีบอัดทั้งหมดหลังจากส่ง response
                 // compressedFiles.forEach(filePath => fs.unlinkSync(filePath));
- 
+
                 return;
             }
 
@@ -559,7 +585,6 @@ exports.compress = async(req, res)=>{
             const inputFilePath = file.path;
             const outputFilePath = path.join('compressed', file.filename + (type === 'image' ? '.jpg' : '.mp4'));
 
-            
             try {
                 await new Promise((resolve, reject) => {
                     checkAndCompressFile(type, inputFilePath, outputFilePath, 0, (err, finalPath) => {
@@ -567,7 +592,6 @@ exports.compress = async(req, res)=>{
                             reject(err);
                             return;
                         }
-                        // console.log('Final path:', finalPath);
                         compressedFiles.push(finalPath);
                         resolve();
                     });
@@ -581,15 +605,14 @@ exports.compress = async(req, res)=>{
             } catch (err) {
                 console.error('Error processing file:', err);
                 res.status(500).send('Error processing file');
-            };
+            }
         }
+
         // เริ่มประมวลผลไฟล์แรก
         await processFile(0);
-    }catch(err){
-        console.log(err)
-        return res
-                .status(500)
-                .send({status:false, message:err.message})
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send({ status: false, message: err.message });
     }
 }
 
