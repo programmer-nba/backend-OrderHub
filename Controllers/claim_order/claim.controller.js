@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
     filename: function (req, file, cb) {
       cb(null, Date.now() + "-");
     },
-  });
+});
 
 const storage2 = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -46,9 +46,9 @@ const fields = [
 exports.uploadMiddleware = upload.fields(fields);
 
 // const upload = multer({ dest: 'uploads/' });
-const uploadOne = multer({ dest: 'upload/' });
-exports.compressArray = upload.array('files')
-exports.compressOne = uploadOne.array('files')
+// const uploadOne = multer({ dest: 'upload/' });
+// exports.compressArray = upload.array('files')
+// exports.compressOne = uploadOne.array('files')
 
 exports.create = async (req, res) => {
     try {
@@ -582,8 +582,29 @@ exports.compress = async (req, res) => {
                 return;
             }
 
+            function getOutputFilePath(file, type) {
+                const parsedPath = path.parse(file.filename);
+                let outputFileName;
+            
+                if (type === 'image') {
+                    if (parsedPath.ext.toLowerCase() === '.jpg') {
+                        outputFileName = file.filename;
+                    } else {
+                        outputFileName = parsedPath.name + '.jpg';
+                    }
+                } else {
+                    if (parsedPath.ext.toLowerCase() === '.mp4') {
+                        outputFileName = file.filename;
+                    } else {
+                        outputFileName = parsedPath.name + '.mp4';
+                    }
+                }
+                return path.join('compressed', outputFileName);
+            }
+            
             const inputFilePath = file.path;
-            const outputFilePath = path.join('compressed', file.filename + (type === 'image' ? '.jpg' : '.mp4'));
+            // const outputFilePath = path.join('compressed', file.filename + (type === 'image' ? '.jpg' : '.mp4'));
+            const outputFilePath = getOutputFilePath(file, type);
 
             try {
                 await new Promise((resolve, reject) => {

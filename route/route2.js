@@ -338,7 +338,7 @@ router.route('/orderhub/claim/get/date').post( auth.checkToken, claimOrder.getDa
 router.route('/orderhub/claim/delete/picture/one').post( auth.checkToken, claimOrder.delPicture )
 router.route('/orderhub/claim/compress').post( auth.checkToken, claimOrder.uploadMiddleware, claimOrder.compress )
 router.route('/orderhub/claim/file/del').delete( auth.checkToken, claimOrder.delFile )
-router.route('/orderhub/claim/test/compress').post( auth.checkToken, claimOrder.compressOne, claimOrder.testCompress )
+// router.route('/orderhub/claim/test/compress').post( auth.checkToken, claimOrder.compressOne, claimOrder.testCompress )
 router.route('/orderhub/claim/upload/all/:id').put( auth.checkToken, claimOrder.uploadPicture )
 
 module.exports = router;
