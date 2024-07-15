@@ -14,7 +14,7 @@ const { promisify } = require('util');
 const axios = require("axios");
 const execAsync = promisify(exec);
 const FormData = require('form-data');
-
+const server = require('../../server');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -549,7 +549,9 @@ exports.compress = async (req, res) => {
         const type = req.body.type;
 
         if (!files || files.length === 0) {
-            return res.status(400).send('No files were uploaded.');
+            return res
+                    .status(400)
+                    .send({status:false, message:"No files were uploaded."})
         }
 
         const compressedFiles = [];
@@ -568,8 +570,8 @@ exports.compress = async (req, res) => {
                 res.status(200).json({
                     status: true,
                     files: filenames
-                });
-
+                  });
+                
                 // ลบไฟล์ที่บีบอัดทั้งหมดหลังจากส่ง response
                 // compressedFiles.forEach(filePath => fs.unlinkSync(filePath));
 
@@ -622,6 +624,7 @@ exports.compress = async (req, res) => {
                     await deleteFileWithShell(inputFilePath);
                 }
 
+                socket.emit('status', `Processed file ${index + 1} of ${files.length}`);
                 processFile(index + 1);
             } catch (err) {
                 console.error('Error processing file:', err);
@@ -634,6 +637,105 @@ exports.compress = async (req, res) => {
     } catch (err) {
         console.log(err);
         return res.status(500).send({ status: false, message: err.message });
+    }
+}
+
+exports.compressIo = async (socket, files, type) => {
+    try {
+        // const files = files; // ตรวจสอบและรับค่าของ 'files' จาก req.files
+        // const type = type;
+        console.log(type)
+        if (!files || files.length === 0) {
+            console.log("No files were uploaded.");
+            socket.emit('status', 'No files were uploaded.');
+            return;
+        }
+
+        const compressedFiles = [];
+
+        // สร้างโฟลเดอร์สำหรับไฟล์ที่บีบอัดถ้ายังไม่มี
+        if (!fs.existsSync('compressed')) {
+            fs.mkdirSync('compressed');
+        }
+
+        // ฟังก์ชันที่ใช้ในการบีบอัดและจัดการไฟล์แต่ละไฟล์
+        async function processFile(index) {
+            if (index >= files.length) {
+                // เมื่อประมวลผลไฟล์ทั้งหมดเสร็จแล้ว ส่ง response กลับไป
+                const filenames = compressedFiles.map(filePath => path.basename(filePath));
+                console.log(filenames)
+                socket.emit('complete', {
+                    status: true,
+                    files: filenames
+                  });
+
+                // ลบไฟล์ที่บีบอัดทั้งหมดหลังจากส่ง response
+                // compressedFiles.forEach(filePath => fs.unlinkSync(filePath));
+
+                return;
+            }
+
+            const file = files[index];
+            if (!file || !file.path) {
+                console.log(`File at index ${index} is invalid or missing 'path' property.`);
+                socket.emit('status', `File at index ${index} is invalid or missing 'path' property.`);
+                return;
+            }
+
+            function getOutputFilePath(file, type) {
+                const parsedPath = path.parse(file.filename);
+                let outputFileName;
+            
+                if (type === 'image') {
+                    if (parsedPath.ext.toLowerCase() === '.jpg') {
+                        outputFileName = file.filename;
+                    } else {
+                        outputFileName = parsedPath.name + '.jpg';
+                    }
+                } else {
+                    if (parsedPath.ext.toLowerCase() === '.mp4') {
+                        outputFileName = file.filename;
+                    } else {
+                        outputFileName = parsedPath.name + '.mp4';
+                    }
+                }
+                return path.join('compressed', outputFileName);
+            }
+            
+            const inputFilePath = file.path;
+            // const outputFilePath = path.join('compressed', file.filename + (type === 'image' ? '.jpg' : '.mp4'));
+            const outputFilePath = getOutputFilePath(file, type);
+
+            try {
+                await new Promise((resolve, reject) => {
+                    checkAndCompressFile(type, inputFilePath, outputFilePath, 0, (err, finalPath) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        compressedFiles.push(finalPath);
+                        resolve();
+                    });
+                });
+
+                if (type === 'video' || type === 'image') {
+                    await deleteFileWithShell(inputFilePath);
+                }
+                console.log(`Processed file ${index + 1} of ${files.length}`);
+                socket.emit('status', `Processed file ${index + 1} of ${files.length}`);
+                processFile(index + 1);
+            } catch (err) {
+                console.error('Error processing file:', err);
+                socket.emit('status', 'Error processing file');
+            }
+        }
+
+        // เริ่มประมวลผลไฟล์แรก
+        await processFile(0);
+    } catch (err) {
+        console.log(err);
+        socket.emit('status', 'Error processing file 500');
+        // return res.status(500).send({ status: false, message: err.message });
     }
 }
 
@@ -826,6 +928,34 @@ exports.testCompress = async (req, res) => {
         return res.status(500).send({ status: false, message: err.message });
     }
 };
+
+exports.compressData = async(req, res)=>{
+    try{
+        const files = req.files.files; // ตรวจสอบและรับค่าของ 'files' จาก req.files
+        const type = req.body.type;
+        // console.log(server.io)
+        if (!files || files.length === 0) {
+            return res
+                    .status(400)
+                    .send({status:false, message:"ไม่มีไฟล์ที่อัพโหลดเข้ามา"})
+        }
+        if(!type){
+            return res
+                    .status(400)
+                    .send({status:false, message:"กรุณาเลือกประเภทของไฟล์"})
+        }
+        let io = server.io
+        io.emit('compress', { files, type });
+        res
+            .status(200)
+            .send({ status: true, message: 'ไฟล์กำลังบีบอัด' });
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, meessage:err.message})
+    }
+}
 
 //ลบไฟล์ที่ต้องการ
 async function deleteFileWithShell(filePath) {

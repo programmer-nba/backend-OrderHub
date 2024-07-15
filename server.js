@@ -5,10 +5,17 @@ const helmet = require('helmet');
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 var router = require('./route/route')
-var router2 = require('./route/route2')
+var createRouter2 = require('./route/route2')
 const cors = require("cors");
-const { createProxyMiddleware } = require('http-proxy-middleware');
+// const { createProxyMiddleware } = require('http-proxy-middleware');
+const { compressIo } = require('./Controllers/claim_order/claim.controller');
+const http = require('http'); // ต้องการสำหรับการสร้างเซิร์ฟเวอร์ HTTP
+const socketIo = require('socket.io'); // เพิ่ม Socket.IO
 
+const server = http.createServer(app);
+const io = socketIo(server);
+
+// console.log(io)
 app.use(bodyParser.json({limit: '50mb', type: 'application/json'}));
 app.use(bodyParser.urlencoded({ extended: true }));
 mongoose.set("strictQuery", true);
@@ -38,27 +45,25 @@ app.use(helmet.contentSecurityPolicy({
   }
 }));
 
-app.use('/api-production', createProxyMiddleware({
-  target: 'https://api.orderhub.love/orderhub',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api-production': '', // ลบ /api ออกจาก URL
-  },
-}));
-
-app.use('/api-tossaguns', createProxyMiddleware({
-  target: 'https://api.tossaguns.online/orderhub',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api-tossaguns': '', // ลบ /api ออกจาก URL
-  },
-}));
+// ตั้งค่า socket.io
+io.on('connection', (socket) => {
+  console.log('A client connected');
+  // สร้างเหตุการณ์เมื่อ client ติดต่อเข้ามา
+  socket.on('compress', async (files, type) => {
+      console.log('Compressing files...');
+      await compressIo(socket, files, type); // เรียกใช้ฟังก์ชัน compress
+  });
+  socket.on('disconnect', () => {
+      console.log('Client disconnected');
+  });
+})
+exports.io = io
 
 const port = process.env.PORT || 9019;
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`API Running PORT ${port}`);
-  console.log(`Proxy server running on port ${port}`);
 });
+
 app.use(router)
-app.use(router2)
+app.use(createRouter2)

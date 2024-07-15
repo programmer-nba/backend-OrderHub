@@ -337,8 +337,13 @@ router.route('/orderhub/claim/upload/:id').put( auth.checkToken, claimOrder.uplo
 router.route('/orderhub/claim/get/date').post( auth.checkToken, claimOrder.getDate)
 router.route('/orderhub/claim/delete/picture/one').post( auth.checkToken, claimOrder.delPicture )
 router.route('/orderhub/claim/compress').post( auth.checkToken, claimOrder.uploadMiddleware, claimOrder.compress )
+// router.route('/orderhub/claim/compress/video').post( auth.checkToken, claimOrder.uploadMiddleware, claimOrder.compressData )
 router.route('/orderhub/claim/file/del').delete( auth.checkToken, claimOrder.delFile )
 // router.route('/orderhub/claim/test/compress').post( auth.checkToken, claimOrder.compressOne, claimOrder.testCompress )
 router.route('/orderhub/claim/upload/all/:id').put( auth.checkToken, claimOrder.uploadPicture )
+
+router.route('/orderhub/claim/compress/video').post(auth.checkToken, claimOrder.uploadMiddleware,
+        claimOrder.compressData // ส่ง io (socket.io instance) ไปยัง controller
+    );
 
 module.exports = router;
