@@ -20,7 +20,8 @@ const io = socketIo(server,{
     methods: ['GET','HEAD','PUT','PATCH','POST','DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'auth-token', 'Accept-Encoding']
-  }
+  },
+  path: '/socket.io'
 });
 
 app.use(bodyParser.json({limit: '50mb', type: 'application/json'}));
