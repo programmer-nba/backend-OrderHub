@@ -6,20 +6,71 @@
     <title>Socket.IO Test</title>
     <script src="/socket.io/socket.io.js"></script>
     <script nonce="<%= nonce %>">
-        var socket = io();
+        document.addEventListener('DOMContentLoaded', function () {
+            var socketUrl = 'http://localhost:9019';
+            var socket = io(socketUrl);
 
-        socket.on('connect', () => {
-            console.log('Connected to server');
+            socket.on('connect', () => {
+                console.log('Connected to server');
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+            });
+
+            document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+                event.preventDefault(); // ป้องกันการรีเฟรชหน้า
+
+                const videoFiles = document.getElementById('videoFiles').files;
+                const formData = new FormData();
+
+                for (const videoFile of videoFiles) {
+                    formData.append('files', videoFile);
+                }
+                formData.append('type', 'video');
+
+                // ล็อกข้อมูล formData
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
+                }
+
+                const files = Array.from(videoFiles).map(file => file.name);
+                const type = 'video';
+
+                // console.log('Emitting files:', files, 'and type:', type);
+                // socket.emit('compress', { files, type });
+
+                const response = await fetch(`${socketUrl}/orderhub/claim/compress/video`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        "auth-token": 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2NWE2NmIyN2M0M2Y0NDJjZjAzNjdiZWQiLCJ1c2VybmFtZSI6ImFkbWluIiwiZmlyc3RuYW1lIjoibWFodW5ub3AiLCJsYXN0bmFtZSI6ImthcGtoYW8iLCJyb2xlIjoiYWRtaW4iLCJpcF9hZGRyZXNzIjoiMjUwNjY0MTdjMDA3OGQ1MzY0OGE1MGIwYTlhZjJmNDQiLCJsYXRpdHVkZSI6ImQ2YzVhNzJkZmY4YzI0MTRkMjZjODA4OTg2NGZiNjA3IiwibG9uZ3RpdHVkZSI6Ijc2NjBiMmY3MTAwNzhhNGIwYzlhYWUxMGZhMjcxOTRmIiwiaWF0IjoxNzIxMTEzMTA4LCJleHAiOjE3MjExNDkxMDh9.VDVdTsHF5RP2S58DVUaevSvMkEP3jqRf6-ALzmRMj1U',
+                        // "Content-Type": "multipart/form-data" ไม่จำเป็นต้องใส่ Content-Type ใน fetch ตราบใดที่ใช้ FormData
+                    },
+                    timeout: 300000,
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                console.log(data);
+                if (data.status) {
+                    alert('อัพโหลดสำเร็จ: ' + data.message);
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.message);
+                }
+            });
         });
-
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
-        });
-
-        // socket.emit('compress', ['file1', 'file2'], 'type');
     </script>
 </head>
 <body>
     <h1>Socket.IO Test</h1>
+    <h1>อัพโหลดวิดีโอ</h1>
+    <form id="uploadForm">
+        <input type="file" id="videoFiles" name="videoFiles" accept="video/*" multiple required />
+        <button type="submit">อัพโหลด</button>
+    </form>
 </body>
 </html>

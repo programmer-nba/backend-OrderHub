@@ -644,7 +644,7 @@ exports.compressIo = async (socket, files, type) => {
     try {
         // const files = files; // ตรวจสอบและรับค่าของ 'files' จาก req.files
         // const type = type;
-        console.log(type)
+        // console.log(type)
         if (!files || files.length === 0) {
             console.log("No files were uploaded.");
             socket.emit('status', 'No files were uploaded.');

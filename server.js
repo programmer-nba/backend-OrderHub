@@ -58,7 +58,7 @@ app.use(helmet.contentSecurityPolicy({
     frameAncestors: ["'self'", "https://drive.google.com"]
   }
 }));
-
+ 
 // ตั้งค่า EJS เป็น template engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
