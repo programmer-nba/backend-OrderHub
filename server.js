@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
 // ตั้งค่า socket.io
 io.on('connection', (socket) => {
   console.log('A client connected');
-  socket.on('compress', async (files, type) => {
+  socket.on('compress', async ({files, type}) => {
     console.log('Compressing files...');
     await compressIo(socket, files, type); // เรียกใช้ฟังก์ชัน compress
   });
