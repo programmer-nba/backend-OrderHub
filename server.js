@@ -14,7 +14,14 @@ const path = require('path');
 const crypto = require('crypto');
 
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server,{
+  cors: {
+    origin: "*", // หรือ "*" ถ้าต้องการอนุญาตทุก origin
+    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'auth-token', 'Accept-Encoding']
+  }
+});
 
 app.use(bodyParser.json({limit: '50mb', type: 'application/json'}));
 app.use(bodyParser.urlencoded({ extended: true }));
