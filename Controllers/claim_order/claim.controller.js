@@ -624,7 +624,7 @@ exports.compress = async (req, res) => {
                     await deleteFileWithShell(inputFilePath);
                 }
 
-                socket.emit('status', `Processed file ${index + 1} of ${files.length}`);
+                // socket.emit('status', `Processed file ${index + 1} of ${files.length}`);
                 processFile(index + 1);
             } catch (err) {
                 console.error('Error processing file:', err);
