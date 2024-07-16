@@ -37,28 +37,28 @@ app.use((req, res, next) => {
   next();
 });
 
-// เพิ่ม nonce สำหรับ Content Security Policy
-app.use((req, res, next) => {
-  res.locals.nonce = crypto.randomBytes(16).toString('base64');
-  next();
-});
+// // เพิ่ม nonce สำหรับ Content Security Policy
+// app.use((req, res, next) => {
+//   res.locals.nonce = crypto.randomBytes(16).toString('base64');
+//   next();
+// });
 
 app.use(helmet.contentSecurityPolicy({
   directives: {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.nonce}'`],
+    // defaultSrc: ["'self'"],
+    // scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.nonce}'`],
     frameAncestors: ["'self'", "https://drive.google.com"]
   }
 }));
 
-// ตั้งค่า EJS เป็น template engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+// // ตั้งค่า EJS เป็น template engine
+// app.set('view engine', 'ejs');
+// app.set('views', path.join(__dirname, 'views'));
 
-// ตั้งค่าเส้นทางเพื่อเสิร์ฟไฟล์ HTML
-app.get('/', (req, res) => {
-  res.render('index', { nonce: res.locals.nonce });
-});
+// // ตั้งค่าเส้นทางเพื่อเสิร์ฟไฟล์ HTML
+// app.get('/', (req, res) => {
+//   res.render('index', { nonce: res.locals.nonce });
+// });
 
 // ตั้งค่า socket.io
 io.on('connection', (socket) => {
