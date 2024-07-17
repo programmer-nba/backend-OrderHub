@@ -933,7 +933,8 @@ exports.compressData = async(req, res)=>{
     try{
         const files = req.files.files; // ตรวจสอบและรับค่าของ 'files' จาก req.files
         const type = req.body.type;
-        // console.log(server.io)
+        // console.log('compressDataFiles',files)
+        // console.log('compressDataType',type)
         if (!files || files.length === 0) {
             return res
                     .status(400)
@@ -944,9 +945,9 @@ exports.compressData = async(req, res)=>{
                     .status(400)
                     .send({status:false, message:"กรุณาเลือกประเภทของไฟล์"})
         }
-        let io = server.io
-        io.emit('compress', { files, type });
-        res
+        const io = req.app.get('io')
+        this.compressIo(io, files, type)
+        return res 
             .status(200)
             .send({ status: true, message: 'ไฟล์กำลังบีบอัด' });
     }catch(err){

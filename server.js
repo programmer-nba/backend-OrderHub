@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 const router = require('./route/route');
 const createRouter2 = require('./route/route2');
 const cors = require("cors");
-const { compressIo } = require('./Controllers/claim_order/claim.controller');
+const { compressData, compressIo } = require('./Controllers/claim_order/claim.controller');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
@@ -54,7 +54,7 @@ app.use((req, res, next) => {
 app.use(helmet.contentSecurityPolicy({
   directives: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.nonce}'`],
+    scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", (req, res) => `'nonce-${res.locals.nonce}'`], // ให้รองรับ nonce ที่ถูกต้องและ unsafe-inline, unsafe-eval สำหรับ Axios
     frameAncestors: ["'self'", "https://drive.google.com"]
   }
 }));
@@ -73,15 +73,15 @@ io.on('connection', (socket) => {
   console.log('A client connected');
   socket.on('compress', async ({ files, type }) => {
     console.log('Compressing files...');
-    console.log('Files:', files);
-    console.log('Type:', type);
+    console.log('files:', files);
+    console.log('type:', type);
     await compressIo(socket, files, type); // เรียกใช้ฟังก์ชัน compress
   });
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });
 });
-exports.io = io;
+app.set('io', io); // กำหนด io ให้กับ Express app ของคุณ
 
 const port = process.env.PORT || 9019;
 
