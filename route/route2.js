@@ -177,6 +177,7 @@ router.route('/orderhub/best/cancel').delete( auth.checkToken, best.cancelOrder 
 router.route('/orderhub/best/priceList').post( auth.checkToken, best.priceList )
 router.route('/orderhub/best/getme').get( auth.checkToken, best.getMeBooking )
 router.route('/orderhub/best/getById/:txLogisticId').get( auth.checkToken, best.getById )
+router.route('/orderhub/best/getOrder/cancel').delete( auth.checkToken, best.getOrderCancel )
 
 //best Admin
 router.route('/orderhub/best/getAll').get( authAdmin.checkToken, best.getAll )

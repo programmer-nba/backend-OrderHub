@@ -1032,9 +1032,7 @@ cancelOrderAll = async (txLogisticId)=>{
                         }
                     }
                     
-                return res
-                        .status(200)
-                        .send({status:true, data:refundAll})
+                return `${txLogisticId} CANCEL สําเร็จ`
         }
         
     }catch(err){
@@ -1862,6 +1860,32 @@ getPartnerBooking = async (req, res)=>{
     }
 }
 
+getOrderCancel = async (req, res)=>{
+    try{
+        const day = dayjsTimestamp.format('YYYY-MM-DD')
+        const findOrder = await orderAll.find({
+            express:"BEST", 
+            day:day ,
+            order_status:"booking"
+        },  
+        {
+            tracking_code:1
+        })
+        let resd = []
+        console.log(findOrder.length)
+        for(const data of findOrder){
+            const response = await cancelOrderAll(data.tracking_code)
+            resd.push(response)
+        }
+        return res
+                .status(200)
+                .send({status:true, data:resd})
+    }catch(err){
+        return res  
+                .status(500)
+                .send({status:true, message:err.message})
+    }
+}
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 100000)
@@ -1901,5 +1925,5 @@ async function invoiceBST() {
 }
 
 module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList, getAll,
-                    getById, delend, getMeBooking, getPartnerBooking
+                    getById, delend, getMeBooking, getPartnerBooking, getOrderCancel
                  }

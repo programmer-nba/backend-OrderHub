@@ -268,7 +268,7 @@ getShopHistory = async(req, res)=>{
             }else{
                 findMe = await historyWalletShop.find({
                     day:{
-                        $gte:day_start, 
+                        $gte:day_start,
                         $lte:day_end
                     },type: { $ne: "เงินเข้า" }
                 })
