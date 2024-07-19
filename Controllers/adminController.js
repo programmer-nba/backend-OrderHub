@@ -749,7 +749,7 @@ cutCreditPartner = async(req, res)=>{
                   .status(400)
                   .send({ status: false, message: "กรุณาระบุจำนวนเงินที่มีทศนิยมไม่เกิน 2 ตำแหน่ง" });
       }
-
+  
     const creditToPartner = await invoiceCreditToAdmin(dayTime)
     let tranfer
     if(role == "partner"){
