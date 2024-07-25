@@ -31,7 +31,7 @@ twoContract = async (req, res)=>{
                     .status(400)
                     .send({status: false, message:"กรุณากรอกสัญญาฉบับที่ 1 เป็น true or false เท่านั้น"})
         }
-        
+      
         const upContractPartner = await Partner.findOneAndUpdate( //ทำการอัพเดทสถานะสัญญา(contract)ของ partner ใน partnerSchema ให้ตรงกับ upStatusOne และ upStatusTwo ที่ยิงมา
             {_id:id}, //เลือก _id ของ Partner ที่ตรงกับ id ที่ทำการ decoded มา
             {contractOne:upStatusOne, contractTwo:upStatusTwo}, //update field ของ contractOne และ contractTwo

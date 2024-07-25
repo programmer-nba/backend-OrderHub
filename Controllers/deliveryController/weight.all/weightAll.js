@@ -104,17 +104,17 @@ editWeight = async (req, res)=>{
                             .send({status:false, message:`กรุณาอย่าตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าราคาทุนที่ได้รับ`})
                 }
                 
-                if(role != 'admin'){
-                    if(data.costBangkok_metropolitan > base.salesBangkok_metropolitan){
-                        return res
-                                .status(400)
-                                .send({status:false, message:`กรุณาอย่าตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} มากกว่าราคาขายไตรมาสที่ได้รับ`})
-                    }else if(data.costUpcountry > base.salesUpcountry){
-                        return res
-                                .status(400)
-                                .send({status:false, message:`กรุณาอย่าตั้งราคา(ต่างจังหวัด) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} มากกว่าราคาขายไตรมาสที่ได้รับ`})
-                    }
-                }
+                // if(role != 'admin'){
+                //     if(data.costBangkok_metropolitan > base.salesBangkok_metropolitan){
+                //         return res
+                //                 .status(400)
+                //                 .send({status:false, message:`กรุณาอย่าตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} มากกว่าราคาขายไตรมาสที่ได้รับ`})
+                //     }else if(data.costUpcountry > base.salesUpcountry){
+                //         return res
+                //                 .status(400)
+                //                 .send({status:false, message:`กรุณาอย่าตั้งราคา(ต่างจังหวัด) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} มากกว่าราคาขายไตรมาสที่ได้รับ`})
+                //     }
+                // }
 
                 if(p.costUpcountry == 0 || p.costUpcountry == 0){
                     if(data.costUpcountry != 0 || data.costBangkok_metropolitan != 0){
