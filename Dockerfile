@@ -6,8 +6,7 @@ COPY package*.json ./
 
 COPY . .
 
-# ลบ node_modules และ package-lock.json ถ้ามีอยู่
-RUN rm -rf node_modules package-lock.json && npm install -g nodemon && npm install
+RUN npm install -g nodemon && npm install
 
 EXPOSE 9019
 

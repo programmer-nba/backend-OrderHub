@@ -433,7 +433,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -590,7 +590,7 @@ trackingOrderOne = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -1359,6 +1359,25 @@ priceList = async (req, res)=>{
 
         //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
         try{
+            let dataSenderFail = `ผู้ส่ง(${formData.from.name}) กรุณากรอก: `
+            if(!formData.from.province || !formData.from.district || !formData.from.state || !formData.from.postcode){
+                if(!formData.from.province){
+                    dataSenderFail += 'จังหวัด/ '
+                }
+                if(!formData.from.state){
+                    dataSenderFail += 'อำเภอ/ '
+                }
+                if(!formData.from.district){
+                    dataSenderFail += 'ตำบล/ '
+                }
+                if(!formData.from.postcode){
+                    dataSenderFail += 'รหัสไปรษณีย์/ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message: dataSenderFail});
+            }
+
             const data = await postalThailand.find({postcode: formData.from.postcode})
                 if (!data || data.length == 0) {
                     return res
@@ -1444,6 +1463,25 @@ priceList = async (req, res)=>{
 
         //ตรวจสอบข้อมูลผู้รับ จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
         try{
+            let dataReceiveFail = `ผู้รับ(${formData.to.name}) กรุณากรอก: `
+            if(!formData.to.province || !formData.to.district || !formData.to.state || !formData.to.postcode){
+                if(!formData.to.province){
+                    dataReceiveFail += 'จังหวัด/ '
+                }
+                if(!formData.to.state){
+                    dataReceiveFail += 'อำเภอ/ '
+                }
+                if(!formData.to.district){
+                    dataReceiveFail += 'ตำบล/ '
+                }
+                if(!formData.to.postcode){
+                    dataReceiveFail += 'รหัสไปรษณีย์/ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message: dataReceiveFail});
+            }
+        
             const data = await postalThailand.find({postcode: formData.to.postcode})
                 if (!data || data.length == 0) {
                     return res
@@ -1627,7 +1665,10 @@ priceList = async (req, res)=>{
                     }else if(percentCOD != 0 && percentCOD < pFirst.percent){
                         return res
                                 .status(400)
-                                .send({status:false, message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
+                                .send({
+                                    status:false, 
+                                    type:"sender",
+                                    message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
                     }
                     // console.log(percentCOD)
                         if(percentCOD != 0){ //กรณีกรอก %COD ที่ต้องการมา
