@@ -490,7 +490,7 @@ statusOrder = async (req, res)=>{
             partnerID: PARTNER_ID
         }
         const newData = await doSign(formData, charset, keys)
-        console.log(newData)
+        // console.log(newData)
         const response = await axios.post(BEST_URL,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -535,7 +535,9 @@ statusOrder = async (req, res)=>{
                     scantype = 'เซ็นรับแล้ว'
 
                     let datePart = formatDatePart(latestDetails.operateTime)
+                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
                     day_sign = datePart
+                    day_pay = newDate
                     
                 }else if(latestDetails.packageStatusCode == 'return_success'){
                     scantype = 'เซ็นรับพัสดุตีกลับ'
@@ -555,6 +557,8 @@ statusOrder = async (req, res)=>{
                     scantype = 'เซ็นรับแล้ว'
 
                     let datePart = formatDatePart(latestDetails.operateTime)
+                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    day_pay = newDate
                     day_sign = datePart
 
                 }else if(latestDetails.packageStatusCode == 'package_return'){
@@ -605,14 +609,64 @@ statusOrder = async (req, res)=>{
                     }
                 }
             }
+            detailBulk.push(changStatus)
+            codBulk.push(changStatusCod)
         }
+        // const bulkDetail = await orderAll.bulkWrite(detailBulk)
+        // const bulkCod = await profitTemplate.bulkWrite(codBulk)
+        const [bulkDetail, bulkCod] = await Promise.all([
+            orderAll.bulkWrite(detailBulk),
+            profitTemplate.bulkWrite(codBulk)
+        ]);
         return res
                 .status(200)
-                .send({status:true, data:response.data})
+                .send({status:true, 
+                    data:response.data,
+                    detailBulk: bulkDetail,
+                    codBulk:bulkCod
+                })
+
     }catch(err){
         return res 
                 .status(500)
                 .send({status:false, message:err})
+    }
+}
+
+statusOrderOne = async(req, res)=>{
+    try{
+        const mailNo = req.body.mailNo
+        const formData = {
+            serviceType:"KD_TRACE_QUERY",
+            bizData:{
+               mailNos:{
+                    mailNo: mailNo
+               }
+            },
+            partnerID: PARTNER_ID
+        }
+        const newData = await doSign(formData, charset, keys)
+        // console.log(newData)
+        const response = await axios.post(BEST_URL,newData,{
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                'Accept-Encoding': 'gzip, deflate, br'
+            },
+        })
+            if(!response){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
+            }
+        return res
+            .status(200)
+            .send({status:true, 
+                data: response.data
+            })
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
     }
 }
 
@@ -850,7 +904,7 @@ cancelOrder = async (req, res)=>{
     }
 }
 
-cancelOrderAll = async (txLogisticId)=>{
+cancelOrderAllBest = async (txLogisticId)=>{
     try{
         
         const formData = {
@@ -1925,5 +1979,5 @@ async function invoiceBST() {
 }
 
 module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList, getAll,
-                    getById, delend, getMeBooking, getPartnerBooking, getOrderCancel
+                    getById, delend, getMeBooking, getPartnerBooking, getOrderCancel, statusOrderOne, cancelOrderAllBest
                  }

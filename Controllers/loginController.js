@@ -13,12 +13,16 @@ loginController = async(req,res) =>{
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
-        const IP = await encrypt(ip_address)
-        const LT = await encrypt(latitude)
-        const LG = await encrypt(longtitude)
-        // const IP = "0.0.0.0"
-        // const LT = "0.0.0.0"
-        // const LG = "0.0.0.0"
+        let IP, LT, LG
+        if(!ip_address || !latitude || !longtitude){
+            IP = "0.0.0.0";
+            LT = "0.0.0.0";
+            LG = "0.0.0.0";
+        }else{
+            IP = await encrypt(ip_address)
+            LT = await encrypt(latitude)
+            LG = await encrypt(longtitude)
+        }
         Partner.findOne({username:UserID}).then(async (Partner)=>{
             if(Partner){
                 if(Partner.status_partner == "blacklist"){
@@ -93,12 +97,16 @@ async function checkAdmin(req, res){
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
-        const IP = await encrypt(ip_address)
-        const LT = await encrypt(latitude)
-        const LG = await encrypt(longtitude)
-        // const IP = "0.0.0.0"
-        // const LT = "0.0.0.0"
-        // const LG = "0.0.0.0"
+        let IP, LT, LG
+        if(!ip_address || !latitude || !longtitude){
+            IP = "0.0.0.0";
+            LT = "0.0.0.0";
+            LG = "0.0.0.0";
+        }else{
+            IP = await encrypt(ip_address)
+            LT = await encrypt(latitude)
+            LG = await encrypt(longtitude)
+        }
         Admin.findOne({username:UserID}).then(async (Admin)=>{
             if(Admin){
                 let cmp = await bcrypt.compare(Password, Admin.password).then(async (match)=>{
@@ -167,12 +175,16 @@ async function checkShopMember(req, res){
         const ip_address = req.body.ip_address
         const latitude = req.body.latitude
         const longtitude = req.body.longtitude
-        const IP = await encrypt(ip_address)
-        const LT = await encrypt(latitude)
-        const LG = await encrypt(longtitude)
-        // const IP = "0.0.0.0"
-        // const LT = "0.0.0.0"
-        // const LG = "0.0.0.0"
+        let IP, LT, LG
+        if(!ip_address || !latitude || !longtitude){
+            IP = "0.0.0.0";
+            LT = "0.0.0.0";
+            LG = "0.0.0.0";
+        }else{
+            IP = await encrypt(ip_address)
+            LT = await encrypt(latitude)
+            LG = await encrypt(longtitude)
+        }
         memberShop.findOne({username:UserID}).then(async (memberShop)=>{
             if(memberShop){
                 let cmp = await bcrypt.compare(Password, memberShop.password).then(async(match)=>{

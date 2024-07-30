@@ -433,7 +433,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -590,7 +590,7 @@ trackingOrderOne = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -1463,7 +1463,7 @@ priceList = async (req, res)=>{
 
         //ตรวจสอบข้อมูลผู้รับ จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
         try{
-            let dataReceiveFail = `ผู้รับ(${formData.to.name}) กรุณากรอก: `
+            let dataReceiveFail = `กรุณากรอก: `
             if(!formData.to.province || !formData.to.district || !formData.to.state || !formData.to.postcode){
                 if(!formData.to.province){
                     dataReceiveFail += 'จังหวัด/ '

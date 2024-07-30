@@ -2,6 +2,7 @@ const { orderAll } = require("../../../Models/Delivery/order_all");
 const { Partner } = require("../../../Models/partner");
 const { profitTemplate } = require("../../../Models/profit/profit.template");
 const { cancelOrderAll } = require("../J&T/J&T.controller");
+const { cancelOrderAllBest } = require("../BEST_EXPRESS/best.controller");
 const cron = require('node-cron');
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
@@ -534,30 +535,32 @@ cancelAll = async(req, res)=>{
         const txlogisticid = await orderAll.find({
             order_status:"booking",
             day_end: { $lte: dayEnd }
-        })
+        },{tracking_code: 1, express: 1})
             if(txlogisticid.length == 0){
                 return res
                         .status(200)
                         .send({status:true, data:[]})
             }
         console.log(txlogisticid.length)
-        // return res
-        //         .status(200)
-        //         .send({status:false, message:txlogisticid})
-
+        let all = []
+        let dataJT = []
+        let dataBEST = []
         let newData = await Promise.all(txlogisticid.map(async item => {
             // console.log(item.express)
             if(item.express == "J&T"){
                 let cancel = await cancelOrderAll(item.tracking_code);
                 // console.log(cancel)
-                return cancel
+                dataJT.push(cancel)
+            }else if(item.express == "BEST"){
+                let cancel = await cancelOrderAllBest(item.tracking_code);
+                dataBEST.push(cancel)
             }
         }));
-
+        all.concat(dataJT, dataBEST)
         // console.log(newData)
         return res
                 .status(200)
-                .send({status:true, data:newData})
+                .send({status:true, data:all})
     }catch(err){
         return res
                 .status(500)

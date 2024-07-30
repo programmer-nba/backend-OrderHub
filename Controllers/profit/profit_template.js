@@ -842,7 +842,8 @@ getDayPay = async(req, res)=>{
         if(partner_id){
                 const data = await profitTemplate.find({
                     owner_id: partner_id,
-                    day_sign: { $regex: new RegExp('^' + day) }
+                    day_sign: { $regex: new RegExp('^' + day) },
+                    express:{ $ne:"BEST" }
                 })
                     if(data.length == 0){
                         return res
@@ -854,7 +855,8 @@ getDayPay = async(req, res)=>{
                         .send({status:true, data: data})
         }else{
                 const data = await profitTemplate.find({ 
-                    day_sign: { $regex: new RegExp('^' + day) }
+                    day_sign: { $regex: new RegExp('^' + day) },
+                    express:{ $ne:"BEST" }
                 })
                     if(data.length == 0){
                         return res
