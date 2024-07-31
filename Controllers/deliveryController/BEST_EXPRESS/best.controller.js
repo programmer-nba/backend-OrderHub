@@ -550,7 +550,7 @@ statusOrder = async (req, res)=>{
             }else{
                 if(latestDetails.packageStatusCode == 'pickup_success'){
                     scantype = 'รับพัสดุแล้ว'
-                }else if(['arrive_station', 'send_from_station', 'arrive_hub', 'send_from_hub', 'out_for_delivery'].includes(latestDetails.packageStatusCode)){
+                }else if(['arrive_station', 'send_from_station', 'arrive_hub', 'send_from_hub', 'out_for_delivery' ,'arrive_destination_hub', 'send_from_destination_hub'].includes(latestDetails.packageStatusCode)){
                     scantype = 'ระหว่างการจัดส่ง'
                 }else if(latestDetails.packageStatusCode == 'delivered'){
 
@@ -569,6 +569,7 @@ statusOrder = async (req, res)=>{
                     return;
                 }
             }
+            
             let changStatus = {
                 updateOne: {
                     filter: { mailno: item.mailNo },
