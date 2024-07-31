@@ -282,7 +282,6 @@ getCode = async(req, res)=>{
     }
 }
 
-
 getCodeOrder = async(req, res)=>{
     try{
         const print_code = req.params.print_code
@@ -322,7 +321,7 @@ getOrderByDate = async(req, res)=>{
                             { day: { $gte: dayStart } },
                             { day: { $lte: dayEnd } }
                         ]
-                    })
+                    },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0, profitAll:0, day_end:0, bill_status:0})
                     if(findOrder.length == 0){
                         return res
                                 .status(200)
@@ -339,7 +338,7 @@ getOrderByDate = async(req, res)=>{
                             { day: { $gte: dayStart } },
                             { day: { $lte: dayEnd } }
                         ]
-                    })
+                    },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
                     if(findOrder.length == 0){
                         return res
                                 .status(200)
@@ -359,7 +358,7 @@ getOrderByDate = async(req, res)=>{
                             { day: { $gte: dayStart } },
                             { day: { $lte: dayEnd } }
                         ]
-                    })
+                    },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
                     // console.log(findOrderID)
                     if(findOrderID.length == 0){
                         return res
@@ -377,7 +376,7 @@ getOrderByDate = async(req, res)=>{
                             { day: { $gte: dayStart } },
                             { day: { $lte: dayEnd } }
                         ]
-                    })
+                    },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
                     // console.log(findOrderID)
                     if(findOrderID.length == 0){
                         return res
@@ -398,7 +397,7 @@ getOrderByDate = async(req, res)=>{
                             { day: { $gte: dayStart } },
                             { day: { $lte: dayEnd } }
                         ]
-                    })
+                    },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
                     // console.log(findOrderID)
                     if(findOrderID.length == 0){
                         return res
@@ -416,7 +415,7 @@ getOrderByDate = async(req, res)=>{
                             { day: { $gte: dayStart } },
                             { day: { $lte: dayEnd } }
                         ]
-                    })
+                    },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
                     // console.log(findOrderID)
                     if(findOrderID.length == 0){
                         return res
@@ -427,6 +426,24 @@ getOrderByDate = async(req, res)=>{
                             .status(200)
                             .send({status:true, data:findOrderID})
             }
+        }else if(express){
+            const findOrderID = await orderAll.find(
+                {
+                    express:express,
+                    $and: [
+                        { day: { $gte: dayStart } },
+                        { day: { $lte: dayEnd } }
+                    ]
+                },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
+                // console.log(findOrderID)
+                if(findOrderID.length == 0){
+                    return res
+                            .status(200)
+                            .send({status:true, data:[]})
+                }
+                return res
+                        .status(200)
+                        .send({status:true, data:findOrderID})
         }else{
             const findOrderID = await orderAll.find(
                 {
@@ -434,7 +451,7 @@ getOrderByDate = async(req, res)=>{
                         { day: { $gte: dayStart } },
                         { day: { $lte: dayEnd } }
                     ]
-                })
+                },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
                 // console.log(findOrderID)
                 if(findOrderID.length == 0){
                     return res

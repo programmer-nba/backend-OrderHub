@@ -1940,6 +1940,30 @@ getOrderCancel = async (req, res)=>{
                 .send({status:true, message:err.message})
     }
 }
+
+pickLabel = async (req, res)=>{
+    try{
+        const tracking_code = req.body.tracking_code
+        const findLabel = await orderAll.find({
+            tracking_code: { $in: tracking_code }
+        }, { pdfStream: 1 });
+        if(findLabel.length == 0){
+            return res
+                    .status(200)
+                    .send({status:false, data:[]})
+        }
+
+        return res
+                .status(200)
+                .send({status:true, data:findLabel})
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 100000)
@@ -1979,5 +2003,5 @@ async function invoiceBST() {
 }
 
 module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList, getAll,
-                    getById, delend, getMeBooking, getPartnerBooking, getOrderCancel, statusOrderOne, cancelOrderAllBest
+                    getById, delend, getMeBooking, getPartnerBooking, getOrderCancel, statusOrderOne, cancelOrderAllBest, pickLabel
                  }
