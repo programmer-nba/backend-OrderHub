@@ -10,19 +10,19 @@ loginController = async(req,res) =>{
     try{
         const UserID = req.body.username //รับ UserId ที่ User กรอกมา
         const Password = req.body.password //รับ Password ที่ User กรอกมา
-        const ip_address = req.body.ip_address
-        const latitude = req.body.latitude
-        const longtitude = req.body.longtitude
-        let IP, LT, LG
+        let ip_address = req.body.ip_address
+        let latitude = req.body.latitude
+        let longtitude = req.body.longtitude
         if(!ip_address || !latitude || !longtitude){
-            IP = "0.0.0.0";
-            LT = "0.0.0.0";
-            LG = "0.0.0.0";
-        }else{
-            IP = await encrypt(ip_address)
-            LT = await encrypt(latitude)
-            LG = await encrypt(longtitude)
+            ip_address = "0.0.0.0";
+            latitude = "0.0.0.0";
+            longtitude = "0.0.0.0";
         }
+        
+        let IP = await encrypt(ip_address)
+        let LT = await encrypt(latitude)
+        let LG = await encrypt(longtitude)
+
         Partner.findOne({username:UserID}).then(async (Partner)=>{
             if(Partner){
                 if(Partner.status_partner == "blacklist"){
@@ -94,19 +94,18 @@ async function checkAdmin(req, res){
     try{
         const UserID = req.body.username //รับ UserId ที่ User กรอกมา
         const Password = req.body.password //รับ Password ที่ User กรอกมา
-        const ip_address = req.body.ip_address
-        const latitude = req.body.latitude
-        const longtitude = req.body.longtitude
-        let IP, LT, LG
+        let ip_address = req.body.ip_address
+        let latitude = req.body.latitude
+        let longtitude = req.body.longtitude
         if(!ip_address || !latitude || !longtitude){
-            IP = "0.0.0.0";
-            LT = "0.0.0.0";
-            LG = "0.0.0.0";
-        }else{
-            IP = await encrypt(ip_address)
-            LT = await encrypt(latitude)
-            LG = await encrypt(longtitude)
+            ip_address = "0.0.0.0";
+            latitude = "0.0.0.0";
+            longtitude = "0.0.0.0";
         }
+        
+        let IP = await encrypt(ip_address)
+        let LT = await encrypt(latitude)
+        let LG = await encrypt(longtitude)
         Admin.findOne({username:UserID}).then(async (Admin)=>{
             if(Admin){
                 let cmp = await bcrypt.compare(Password, Admin.password).then(async (match)=>{
@@ -172,19 +171,18 @@ async function checkShopMember(req, res){
     try{
         const UserID = req.body.username //รับ UserId ที่ User กรอกมา
         const Password = req.body.password //รับ Password ที่ User กรอกมา
-        const ip_address = req.body.ip_address
-        const latitude = req.body.latitude
-        const longtitude = req.body.longtitude
-        let IP, LT, LG
+        let ip_address = req.body.ip_address
+        let latitude = req.body.latitude
+        let longtitude = req.body.longtitude
         if(!ip_address || !latitude || !longtitude){
-            IP = "0.0.0.0";
-            LT = "0.0.0.0";
-            LG = "0.0.0.0";
-        }else{
-            IP = await encrypt(ip_address)
-            LT = await encrypt(latitude)
-            LG = await encrypt(longtitude)
+            ip_address = "0.0.0.0";
+            latitude = "0.0.0.0";
+            longtitude = "0.0.0.0";
         }
+        
+        let IP = await encrypt(ip_address)
+        let LT = await encrypt(latitude)
+        let LG = await encrypt(longtitude)
         memberShop.findOne({username:UserID}).then(async (memberShop)=>{
             if(memberShop){
                 let cmp = await bcrypt.compare(Password, memberShop.password).then(async(match)=>{
