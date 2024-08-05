@@ -264,6 +264,7 @@ router.route('/orderhub/orderall/cancel/order/all').post( auth.checkToken, order
 router.route('/orderhub/orderall/get/order/search').post( auth.checkToken, orderAll.getOrderBySearch )
 router.route('/orderhub/orderall/pick/order').post( auth.checkToken, orderAll.pickOrder )
 router.route('/orderhub/orderall/select/order').post( auth.checkToken, orderAll.selectOrder )
+router.route('/orderhub/orderall/lebel/number').post( auth.checkToken, orderAll.labelNumber )
 
 //insured
 const insured = require('../Controllers/deliveryController/Insured/insuredFee')

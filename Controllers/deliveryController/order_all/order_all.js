@@ -470,6 +470,31 @@ getOrderByDate = async(req, res)=>{
     }
 }
 
+labelNumber = async(req, res)=>{
+    try{
+        const tracking_code = req.body.tracking_code
+        const bulkTracking = tracking_code.map(item =>({
+            updateOne: {
+                filter: { tracking_code: item},
+                update: { 
+                    $inc: {
+                        label_print: +1
+                    }
+                }
+            }
+        }))
+        const bulkWrite = await orderAll.bulkWrite(bulkTracking)
+        return res
+                .status(200)
+                .send({status:true, data:bulkWrite})
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 getOrderStatus = async(req, res)=>{
     try{
         const findOrder = await orderAll.find({
@@ -887,4 +912,4 @@ async function invoiceNumber() {
 }
 
 module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, 
-    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch, pickOrder, selectOrder }
+    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch, pickOrder, selectOrder, labelNumber }

@@ -46,6 +46,7 @@ const orderAllSchema = new Schema({
         order_status : {type: String, default: "booking", required: false},
         remark: {type : String, default: "", required : false},
         print_code : {type : String, default: "", required : false},
+        label_print: {type: Number, default: 1, required:false},
         day: {
                 type: String,
                 required: false,
@@ -53,7 +54,7 @@ const orderAllSchema = new Schema({
                     // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
                     return dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
                 }
-            },
+        },
         day_end: {
                 type: String,
                 required: false,
