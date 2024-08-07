@@ -440,12 +440,27 @@ trackingOrder = async (req, res)=>{
             }})
         // console.log(response)
             if(response.data.responseitems == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
+                // แยกสตริงออกเป็นอาร์เรย์
+                const txlogisticids = txlogisticid.split(',');
+                const txlogisticidUpdate = txlogisticids.map(item =>({
+                    updateOne:{
+                        filter: { tracking_code: item},
+                        update: { 
+                            $set: {
+                                order_status:"ข้อมูลถูกลบออกจากระบบ"
+                            }
+                        }
+                    }
+                }))
+                const update = await orderAll.bulkWrite(txlogisticidUpdate)
+                // console.log(txlogisticidUpdate)
                 return res
-                        .status(404)
+                        .status(200)
                         .send({
-                            status:false, 
+                            status:true, 
                             message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T",
-                            data: response.data
+                            data: response.data,
+                            detailBulk: update
                         })
             }
         
