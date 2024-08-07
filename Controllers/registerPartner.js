@@ -230,7 +230,27 @@ getPartnerByStatus = async (req,res)=>{
 upPartnerByID = async (req,res)=>{
     try{
         const upID = req.params.id; //รับไอดีที่ต้องการอัพเดท
-        console.log(req.body);
+        const username = req.body.username
+        const iden_number = req.body.iden_number
+        const findPartner = await Partner.findOne({
+          $and: [
+            {
+              $or: [
+                { username: username },
+                { iden_number: iden_number }
+              ]
+            },
+            { _id: { $ne: upID } } // ตรวจสอบให้แน่ใจว่า _id ของเอกสารที่ค้นหาไม่ตรงกับ upID
+          ]
+        });
+        if (findPartner) {
+          if (findPartner.username === username) {
+            return res.status(400).send({ status: false, message: 'มี User ID นี้ในระบบแล้ว' });
+          } else if (findPartner.iden_number === iden_number) {
+            return res.status(400).send({ status: false, message: 'มีบัตรประชาชนนี้ในระบบแล้ว' });
+          }
+        }
+        // console.log(req.body);
         if(!req.body.password){ //กรณีที่ไม่ได้ยิง password
           Partner.findByIdAndUpdate(upID,req.body, {new:true}).then((data) =>{
             if (!data) {
