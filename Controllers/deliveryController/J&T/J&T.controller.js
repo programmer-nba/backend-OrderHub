@@ -452,6 +452,7 @@ trackingOrder = async (req, res)=>{
                         }
                     }
                 }))
+                
                 const update = await orderAll.bulkWrite(txlogisticidUpdate)
                 // console.log(txlogisticidUpdate)
                 return res
