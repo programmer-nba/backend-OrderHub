@@ -14,7 +14,7 @@ async function compressVideo(inputFilePath, outputFilePath, callback, attempt) {
   ffmpeg(inputFilePath)
       .outputOptions([
           '-vcodec libx264',
-          '-crf 32',
+          '-crf 30',
           '-preset fast',
           '-movflags +faststart',
       ])

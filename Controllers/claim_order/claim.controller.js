@@ -15,6 +15,10 @@ const axios = require("axios");
 const execAsync = promisify(exec);
 const FormData = require('form-data');
 const server = require('../../server');
+
+const dayjsTimestamp = dayjs(Date.now());
+const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -640,11 +644,12 @@ exports.compress = async (req, res) => {
     }
 }
 
-exports.compressIo = async (socket, files, type) => {
+exports.compressIo = async (socket, files, type, vdoId) => {
     try {
         // const files = files; // ตรวจสอบและรับค่าของ 'files' จาก req.files
         // const type = type;
         // console.log(type)
+        
         if (!files || files.length === 0) {
             console.log("No files were uploaded.");
             socket.emit('status', 'No files were uploaded.');
@@ -663,9 +668,10 @@ exports.compressIo = async (socket, files, type) => {
             if (index >= files.length) {
                 // เมื่อประมวลผลไฟล์ทั้งหมดเสร็จแล้ว ส่ง response กลับไป
                 const filenames = compressedFiles.map(filePath => path.basename(filePath));
-                console.log(filenames)
+                console.log(filenames, vdoId);
                 socket.emit('complete', {
                     status: true,
+                    vdoId: vdoId,
                     files: filenames
                   });
 
@@ -933,6 +939,7 @@ exports.compressData = async(req, res)=>{
     try{
         const files = req.files.files; // ตรวจสอบและรับค่าของ 'files' จาก req.files
         const type = req.body.type;
+        const vdoId = await invoiceNumber(dayjsTimestamp)
         // console.log('compressDataFiles',files)
         // console.log('compressDataType',type)
         if (!files || files.length === 0) {
@@ -946,10 +953,10 @@ exports.compressData = async(req, res)=>{
                     .send({status:false, message:"กรุณาเลือกประเภทของไฟล์"})
         }
         const io = req.app.get('io')
-        this.compressIo(io, files, type)
+        this.compressIo(io, files, type, vdoId)
         return res 
             .status(200)
-            .send({ status: true, message: 'ไฟล์กำลังบีบอัด' });
+            .send({ status: true, vdoId : vdoId, message: 'ไฟล์กำลังบีบอัด' });
     }catch(err){
         console.log(err)
         return res
@@ -966,6 +973,18 @@ async function deleteFileWithShell(filePath) {
         console.log(`Successfully deleted file using shell command: ${filePath}`);
     } catch (err) {
         console.error(`Failed to delete file using shell command: ${filePath}`, err);
+    }
+}
+
+async function invoiceNumber(date) {
+    try{
+        data = `${dayjs(date).format("YYYYMMDD")}`
+        let random = Math.floor(Math.random() * 100000)
+        const combinedData = `VDO` + data + random;
+
+        return combinedData;
+    }catch(err){
+        console.log(err)
     }
 }
 
