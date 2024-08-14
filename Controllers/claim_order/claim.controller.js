@@ -977,8 +977,14 @@ exports.checkVideo = async(req, res)=>{
         const vdoId = req.body.vdoId; // รับค่าจาก req.body
 
         const filePath = path.join(__dirname, '..', '..', 'compressed', `${vdoId}` + '.mp4');
+        const filePathTemp = path.join(__dirname, '..', '..', 'compressed', `temp_${vdoId}` + '.mp4');
         // console.log(filePath)
-        if (fs.existsSync(filePath)) {
+        if (fs.existsSync(filePathTemp)) {
+            let files = [`${vdoId}` + '.mp4']
+            return res
+                    .status(200)
+                    .send({status:true, message:"ไฟล์กำลังอัพโหลด", files:files})
+        }else if (fs.existsSync(filePath)) {
             let files = [`${vdoId}` + '.mp4']
             return res
                     .status(200)
@@ -986,7 +992,7 @@ exports.checkVideo = async(req, res)=>{
         } else {
             return res
                     .status(400)
-                    .send({status:false, message:`ไม่มีไฟล์ ${vdoId} อยู่ในระบบ`, files:[]})
+                    .send({status:false, message:`ไม่มีไฟล์อยู่ในระบบ`, files:[]})
         }
     }catch(err){
         return res
