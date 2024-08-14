@@ -349,5 +349,10 @@ router.route('/orderhub/claim/upload/all/:id').put( auth.checkToken, claimOrder.
 router.route('/orderhub/claim/compress/video').post(auth.checkToken, claimOrder.uploadMiddleware,
         claimOrder.compressData // ส่ง io (socket.io instance) ไปยัง controller
     );
+router.route('/orderhub/claim/check/vdo').post( auth.checkToken, claimOrder.checkVideo )
+
+const facebook = require('../Controllers/chat/facebook/api.facebook')
+router.route('/orderhub/chat/facebook/profile').post( auth.checkToken, facebook.getMe )
+router.route('/orderhub/chat/facebook/mypage').post( auth.checkToken, facebook.getMyPage )
 
 module.exports = router;

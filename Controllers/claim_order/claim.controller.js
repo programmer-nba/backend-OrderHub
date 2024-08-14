@@ -699,11 +699,7 @@ exports.compressIo = async (socket, files, type, vdoId) => {
                         outputFileName = parsedPath.name + '.jpg';
                     }
                 } else {
-                    if (parsedPath.ext.toLowerCase() === '.mp4') {
-                        outputFileName = file.filename;
-                    } else {
-                        outputFileName = parsedPath.name + '.mp4';
-                    }
+                    outputFileName = vdoId + '.mp4';
                 }
                 return path.join('compressed', outputFileName);
             }
@@ -940,8 +936,8 @@ exports.compressData = async(req, res)=>{
         const files = req.files.files; // ตรวจสอบและรับค่าของ 'files' จาก req.files
         const type = req.body.type;
         const vdoId = await invoiceNumber(dayjsTimestamp)
-        // console.log('compressDataFiles',files)
-        // console.log('compressDataType',type)
+
+        // ตรวจสอบว่ามี files ที่ถูกอัพโหลดหรือไม่
         if (!files || files.length === 0) {
             return res
                     .status(400)
@@ -973,6 +969,29 @@ async function deleteFileWithShell(filePath) {
         console.log(`Successfully deleted file using shell command: ${filePath}`);
     } catch (err) {
         console.error(`Failed to delete file using shell command: ${filePath}`, err);
+    }
+}
+
+exports.checkVideo = async(req, res)=>{
+    try{
+        const vdoId = req.body.vdoId; // รับค่าจาก req.body
+
+        const filePath = path.join(__dirname, '..', '..', 'compressed', `${vdoId}` + '.mp4');
+        // console.log(filePath)
+        if (fs.existsSync(filePath)) {
+            let files = [`${vdoId}` + '.mp4']
+            return res
+                    .status(200)
+                    .send({status:true, message:"มีไฟล์นี้อยู่ในระบบ", files:files})
+        } else {
+            return res
+                    .status(400)
+                    .send({status:false, message:`ไม่มีไฟล์ ${vdoId} อยู่ในระบบ`, files:[]})
+        }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
     }
 }
 

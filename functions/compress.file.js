@@ -23,14 +23,9 @@ async function compressVideo(inputFilePath, outputFilePath, callback, attempt) {
 
           try {
               const fileSizeInMegabytes = await checkFileSize(tempOutputPath);
-              if (fileSizeInMegabytes <= 60 || attempt >= 1) {
-                  fs.renameSync(tempOutputPath, outputFilePath);
-                  callback(null, outputFilePath);
-              } else {
-                  console.log('File size is still above 50MB, compressing again...');
-                  fs.renameSync(tempOutputPath, inputFilePath);
-                  compressVideo(inputFilePath, outputFilePath, callback, attempt + 1);
-              }
+              fs.renameSync(tempOutputPath, outputFilePath);
+              callback(null, outputFilePath);
+
           } catch (err) {
               console.error('Error checking file size:', err);
               callback(err);

@@ -73,8 +73,6 @@ io.on('connection', (socket) => {
   console.log('A client connected');
   socket.on('compress', async ({ files, type }) => {
     console.log('Compressing files...');
-    console.log('files:', files);
-    console.log('type:', type);
     await compressIo(socket, files, type); // เรียกใช้ฟังก์ชัน compress
   });
   socket.on('disconnect', () => {
