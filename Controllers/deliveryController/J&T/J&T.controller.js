@@ -433,7 +433,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -606,7 +606,7 @@ trackingOrderOne = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -1398,7 +1398,7 @@ priceList = async (req, res)=>{
                 if (!data || data.length == 0) {
                     return res
                             .status(404)
-                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
+                            .send({status:false, type:"sender", message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
                 }
 
             const tel = formData.from.tel;
@@ -1502,7 +1502,7 @@ priceList = async (req, res)=>{
                 if (!data || data.length == 0) {
                     return res
                             .status(404)
-                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
+                            .send({status:false, type:"receive", message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
                 }
 
             const telTo = formData.to.tel;

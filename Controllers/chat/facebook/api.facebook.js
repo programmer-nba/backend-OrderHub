@@ -19,12 +19,17 @@ exports.getMe = async(req, res)=>{
             }
         }).catch(error => {
             dataErr = error.response.data
-            console.log(dataErr);
+            // console.log(dataErr);
         });
         if(dataErr){
             return res
                     .status(400)
-                    .send({status:false, message:"Authentication token หมดอายุ"})
+                    .send({
+                        status:false,
+                        code: dataErr.error.code,
+                        err: dataErr.error.message, 
+                        message:"Authentication token หมดอายุ"
+                    })
         }
         return res
                 .status(200)
@@ -57,7 +62,12 @@ exports.getMyPage = async(req, res)=>{
         if(dataErr){
             return res
                     .status(400)
-                    .send({status:false, message:"Authentication token หมดอายุ"})
+                    .send({
+                        status:false,
+                        code: dataErr.error.code,
+                        err: dataErr.error.message, 
+                        message:"Authentication token หมดอายุ"
+                    })
         }
         const dataArray = response.data.data
         let dataAll = []
@@ -73,7 +83,7 @@ exports.getMyPage = async(req, res)=>{
             });
             // console.log(picture.data)
             let v = {
-                access_token : data.access_token,
+                token_page : data.access_token,
                 category : data.category,
                 id : data.id,
                 name : data.name,
@@ -91,3 +101,43 @@ exports.getMyPage = async(req, res)=>{
     }
 }
 
+exports.getMessagePage = async(req, res)=>{
+    try{
+        const id = req.params.id
+        let dataErr
+        let TOKEN = req.body.token_page
+        // console.log(id)
+        const response = await axios.get(`${FB_URL}/${id}/conversations`, {
+            params: {
+                access_token: TOKEN
+            }
+        }).catch(error => {
+            dataErr = error.response.data
+            // console.log(dataErr);
+        });
+        if(dataErr){
+            return res
+                    .status(400)
+                    .send({
+                        status:false,
+                        code: dataErr.error.code,
+                        err: dataErr.error.message,
+                        data: "conversations", 
+                        message:"Authentication token หมดอายุ"
+                    })
+        }
+        let dataMessage = response.data
+
+        return res
+                .status(200)
+                .send({status:true, data:response.data.data})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+async function getMessageId (id) {
+    
+}

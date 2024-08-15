@@ -354,5 +354,5 @@ router.route('/orderhub/claim/check/vdo').post( auth.checkToken, claimOrder.chec
 const facebook = require('../Controllers/chat/facebook/api.facebook')
 router.route('/orderhub/chat/facebook/profile').post( auth.checkToken, facebook.getMe )
 router.route('/orderhub/chat/facebook/mypage').post( auth.checkToken, facebook.getMyPage )
-
+router.route('/orderhub/chat/facebook/get/message/:id').post( auth.checkToken, facebook.getMessagePage )
 module.exports = router;
