@@ -104,33 +104,13 @@ exports.getMyPage = async(req, res)=>{
 exports.getMessagePage = async(req, res)=>{
     try{
         const id = req.params.id
-        let dataErr
+        
         let TOKEN = req.body.token_page
         // console.log(id)
-        const response = await axios.get(`${FB_URL}/${id}/conversations`, {
-            params: {
-                access_token: TOKEN
-            }
-        }).catch(error => {
-            dataErr = error.response.data
-            // console.log(dataErr);
-        });
-        if(dataErr){
-            return res
-                    .status(400)
-                    .send({
-                        status:false,
-                        code: dataErr.error.code,
-                        err: dataErr.error.message,
-                        data: "conversations", 
-                        message:"Authentication token หมดอายุ"
-                    })
-        }
-        let dataMessage = response.data
-
+        const dataConversation = await getConversation(id,TOKEN) // getConversation
         return res
                 .status(200)
-                .send({status:true, data:response.data.data})
+                .send({status:true, conversation:dataConversation})
     }catch(err){
         return res
                 .status(500)
@@ -138,6 +118,45 @@ exports.getMessagePage = async(req, res)=>{
     }
 }
 
-async function getMessageId (id) {
-    
+async function getConversation (id,TOKEN) {
+    try{
+        let dataErr
+        const response = await axios.get(`${FB_URL}/${id}/conversations`, {
+            params: {
+                access_token: TOKEN,
+                limit: 1
+            }
+        }).catch(error => {
+            dataErr = error.response.data
+            // console.log(dataErr);
+        });
+        if(dataErr){
+            return {
+                    status:false,
+                    code: dataErr.error.code,
+                    err: dataErr.error.message,
+                    data: "conversations", 
+                    message:"Authentication token หมดอายุ"
+                }
+        }
+        let dataConversation = response.data
+        return dataConversation
+    }catch(err){
+        return {
+            status:false, 
+            data:"conversations", 
+            message:err.message
+        }
+    }
+}
+
+async function getMessage(id) {
+    try{
+
+    }catch(err){
+        return {
+            status:false, 
+            message:err.message
+        }
+    }
 }
