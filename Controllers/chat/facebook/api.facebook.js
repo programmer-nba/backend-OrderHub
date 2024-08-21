@@ -107,10 +107,14 @@ exports.getMessagePage = async(req, res)=>{
         
         let TOKEN = req.body.token_page
         // console.log(id)
-        const dataConversation = await getConversation(id,TOKEN) // getConversation
+        const dataConversation = await getConversation(id,TOKEN, 2) // getConversation
+        const dataMessage = await getMessage(dataConversation.data,TOKEN, 10) 
         return res
                 .status(200)
-                .send({status:true, conversation:dataConversation})
+                .send({status:true, 
+                    conversation:dataConversation,
+                    message:dataMessage
+                })
     }catch(err){
         return res
                 .status(500)
@@ -118,13 +122,34 @@ exports.getMessagePage = async(req, res)=>{
     }
 }
 
-async function getConversation (id,TOKEN) {
+exports.getMessageDecode = async(req, res)=>{
+    try{
+        let TOKEN = req.body.token_page
+        const message = req.body.message
+        const dataMessage = message.map(item => {
+            return {
+                data: item.data
+            }
+        })
+        // console.log(dataMessage)
+        const decode = await getDecodeMessage(dataMessage,TOKEN)
+        return res
+                .status(200)
+                .send({status:true, decode:decode})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+async function getConversation (id,TOKEN,limit) {
     try{
         let dataErr
         const response = await axios.get(`${FB_URL}/${id}/conversations`, {
             params: {
                 access_token: TOKEN,
-                limit: 1
+                limit: limit
             }
         }).catch(error => {
             dataErr = error.response.data
@@ -150,13 +175,89 @@ async function getConversation (id,TOKEN) {
     }
 }
 
-async function getMessage(id) {
+async function getMessage(dataConversation,TOKEN,limit) {
     try{
-
+        let dataErr
+        if(limit == undefined || limit == 0){
+            limit = 10
+        }
+        let messageData = []
+        for(const data of dataConversation){
+            let message = await axios.get(`${FB_URL}/${data.id}/messages`, {
+                params: {
+                    access_token: TOKEN,
+                    limit: limit
+                }
+            }).catch(error => {
+                dataErr = error.response.data
+                // console.log(dataErr);
+            });
+            messageData.push(message.data)
+        }
+        
+        if(dataErr){
+            return {
+                    status:false,
+                    code: dataErr.error.code,
+                    err: dataErr.error.message,
+                    data: "message api", 
+                    message:"Authentication token หมดอายุ"
+                }
+        }
+        return messageData
     }catch(err){
         return {
             status:false, 
+            data:"message api", 
             message:err.message
         }
+    }
+}
+
+async function getDecodeMessage(dataMessage, TOKEN) {
+    try {
+        let dataErr;
+        let messageData = [];
+        
+        for (const dataM of dataMessage) {
+            let messageDecode = [];
+            let dataMe = dataM.data;
+            // console.log(dataMe);
+            for (const data of dataMe) {
+                try {
+                    const response = await axios.get(`${FB_URL}/${data.id}`, {
+                        params: {
+                            access_token: TOKEN,
+                            fields: 'to,from,message'
+                        }
+                    });
+                    if (response && response.data) {
+                        messageDecode.push(response.data);
+                    }
+                } catch (error) {
+                    dataErr = error.response ? error.response.data : error.message;
+                    console.error('Error fetching data:', dataErr);
+                    break; // หยุดการวนลูปถ้ามีข้อผิดพลาด
+                }
+            }
+            messageData.push(messageDecode);
+        }
+        if (dataErr) {
+            return {
+                status: false,
+                code: dataErr.error ? dataErr.error.code : 'Unknown',
+                err: dataErr.error ? dataErr.error.message : dataErr,
+                data: "decode message api", 
+                message: "Authentication token หมดอายุหรือมีข้อผิดพลาดอื่นๆ"
+            };
+        }
+        return messageData;
+    } catch (err) {
+        console.error('Error in getDecodeMessage:', err);
+        return {
+            status: false, 
+            data: "decode message api", 
+            message: err.message
+        };
     }
 }
