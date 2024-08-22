@@ -8,7 +8,7 @@ create = async (req, res)=>{
     try{
         const user = req.body.username;
         const idenNumber = req.body.iden_number;
-        
+        const id = req.params.id
         const findUser = await Promise.all([
             Partner.findOne({username: user}),
             Admin.findOne({username: user}),
