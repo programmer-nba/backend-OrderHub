@@ -57,16 +57,7 @@ app.use(helmet.contentSecurityPolicy({
     scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.nonce}'`], // ให้รองรับ nonce ที่ถูกต้องและ unsafe-inline, unsafe-eval สำหรับ Axios
     frameAncestors: ["'self'", "https://drive.google.com"]
   }
-}));
- 
-// // ตั้งค่า EJS เป็น template engine
-// app.set('view engine', 'ejs');
-// app.set('views', path.join(__dirname, 'views'));
-
-// // ตั้งค่าเส้นทางเพื่อเสิร์ฟไฟล์ HTML
-// app.get('/', (req, res) => {
-//   res.render('index', { nonce: res.locals.nonce });
-// });
+}))
 
 // ตั้งค่า socket.io
 io.on('connection', (socket) => {

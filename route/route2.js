@@ -356,5 +356,6 @@ router.route('/orderhub/chat/facebook/profile').post( auth.checkToken, facebook.
 router.route('/orderhub/chat/facebook/mypage').post( auth.checkToken, facebook.getMyPage )
 router.route('/orderhub/chat/facebook/get/message/:id').post( auth.checkToken, facebook.getMessagePage )
 router.route('/orderhub/chat/facebook/decode/message').post( auth.checkToken, facebook.getMessageDecode )
+router.route('/orderhub/chat/facebook/get/message/after/:id').post( auth.checkToken, facebook.getMessageAfter )
 
 module.exports = router;

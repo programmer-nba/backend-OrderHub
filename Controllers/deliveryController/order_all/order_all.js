@@ -504,8 +504,8 @@ getOrderStatus = async(req, res)=>{
                 { order_status: "ระหว่างการจัดส่ง" },
                 { order_status: "พัสดุมีปัญหา" },
                 { order_status: "พัสดุตีกลับ" },
-              ]
-        }).sort({ day: -1 });
+            ]
+        }, { tracking_code: 1 }).sort({ day: -1 });
             if(findOrder.length == 0){
                 return res
                         .status(200)

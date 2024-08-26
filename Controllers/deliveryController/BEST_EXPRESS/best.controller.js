@@ -512,7 +512,7 @@ statusOrder = async (req, res)=>{
         for(const item of detail){
             // console.log(item)
                 if(item.traces == null){
-                    return
+                    continue;
                 }
             const latestDetails = item.traces.trace[item.traces.trace.length - 1];
 
@@ -622,7 +622,7 @@ statusOrder = async (req, res)=>{
         return res
                 .status(200)
                 .send({status:true, 
-                    data:response.data,
+                    // data:response.data,
                     detailBulk: bulkDetail,
                     codBulk:bulkCod
                 })

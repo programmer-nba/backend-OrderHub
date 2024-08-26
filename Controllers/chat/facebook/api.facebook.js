@@ -101,14 +101,36 @@ exports.getMyPage = async(req, res)=>{
     }
 }
 
+exports.getMessageAfter = async(req, res)=>{
+    try{
+        const id = req.params.id
+        const after = req.body.after
+        const limit = req.body.limit
+        let TOKEN = req.body.token_page
+        
+        // console.log(dataMessage)
+        const conversation = await getConversation(id,TOKEN, limit, after)
+        
+        return res
+                .status(200)
+                .send({status:true, conversation_page:conversation})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 exports.getMessagePage = async(req, res)=>{
     try{
         const id = req.params.id
-        
+        const after = req.body.after
+        const limit = req.body.limit
+        const limit_message = req.body.limit_message
         let TOKEN = req.body.token_page
         // console.log(id)
-        const dataConversation = await getConversation(id,TOKEN, 2) // getConversation
-        const dataMessage = await getMessage(dataConversation.data,TOKEN, 10) 
+        const dataConversation = await getConversation(id,TOKEN, limit, after) // getConversation
+        const dataMessage = await getMessage(dataConversation.data,TOKEN, limit_message) 
         return res
                 .status(200)
                 .send({status:true, 
@@ -128,6 +150,7 @@ exports.getMessageDecode = async(req, res)=>{
         const message = req.body.message
         const dataMessage = message.map(item => {
             return {
+                id: item.id,
                 data: item.data
             }
         })
@@ -143,15 +166,20 @@ exports.getMessageDecode = async(req, res)=>{
     }
 }
 
-async function getConversation (id,TOKEN,limit) {
+async function getConversation (id,TOKEN,limit,after) {
     try{
         let dataErr
-        const response = await axios.get(`${FB_URL}/${id}/conversations`, {
-            params: {
-                access_token: TOKEN,
-                limit: limit
-            }
-        }).catch(error => {
+        let pams = {
+                params: {
+                    access_token: TOKEN,
+                    limit: limit
+                }
+        }
+        if(after != undefined || after != ''){
+            pams.params.after = after
+        }
+        // console.log(pams)
+        const response = await axios.get(`${FB_URL}/${id}/conversations`, pams).catch(error => {
             dataErr = error.response.data
             // console.log(dataErr);
         });
@@ -175,42 +203,56 @@ async function getConversation (id,TOKEN,limit) {
     }
 }
 
-async function getMessage(dataConversation,TOKEN,limit) {
-    try{
-        let dataErr
-        if(limit == undefined || limit == 0){
-            limit = 10
+async function getMessage(dataConversation,TOKEN,limit_message,after) {
+    try {
+        let dataErr;
+        let pams = {
+            params: {
+                access_token: TOKEN,
+                limit: limit_message
+            }
+        };
+        if (after) {
+            pams.params.after = after;
         }
-        let messageData = []
-        for(const data of dataConversation){
-            let message = await axios.get(`${FB_URL}/${data.id}/messages`, {
-                params: {
-                    access_token: TOKEN,
-                    limit: limit
-                }
-            }).catch(error => {
-                dataErr = error.response.data
-                // console.log(dataErr);
-            });
-            messageData.push(message.data)
-        }
-        
-        if(dataErr){
+
+        // สร้าง array ของ promises สำหรับการดึงข้อมูลจาก Facebook API
+        const promises = dataConversation.map(async (data) => {
+            try {
+                let message = await axios.get(`${FB_URL}/${data.id}/messages`, pams);
+                return {
+                    id: data.id,
+                    ...message.data
+                };
+            } catch (error) {
+                dataErr = error.response.data;
+                return null; // ส่งกลับ null ถ้าเกิดข้อผิดพลาด
+            }
+        });
+
+        // ใช้ Promise.all เพื่อรอให้ทุก promise ทำงานเสร็จ
+        let messageData = await Promise.all(promises);
+
+        // กรองผลลัพธ์ที่เป็น null ออก
+        messageData = messageData.filter(item => item !== null);
+
+        if (dataErr) {
             return {
-                    status:false,
-                    code: dataErr.error.code,
-                    err: dataErr.error.message,
-                    data: "message api", 
-                    message:"Authentication token หมดอายุ"
-                }
+                status: false,
+                code: dataErr.error.code,
+                err: dataErr.error.message,
+                data: "message api",
+                message: "Authentication token หมดอายุ"
+            };
         }
-        return messageData
-    }catch(err){
+
+        return messageData;
+    } catch (err) {
         return {
-            status:false, 
-            data:"message api", 
-            message:err.message
-        }
+            status: false,
+            data: "message api",
+            message: err.message
+        };
     }
 }
 
@@ -218,7 +260,7 @@ async function getDecodeMessage(dataMessage, TOKEN) {
     try {
         let dataErr;
         let messageData = [];
-        
+        console.log(dataMessage)
         for (const dataM of dataMessage) {
             let messageDecode = [];
             let dataMe = dataM.data;
@@ -240,7 +282,11 @@ async function getDecodeMessage(dataMessage, TOKEN) {
                     break; // หยุดการวนลูปถ้ามีข้อผิดพลาด
                 }
             }
-            messageData.push(messageDecode);
+            let v ={
+                id: dataM.id,
+                data: messageDecode
+            }
+            messageData.push(v)
         }
         if (dataErr) {
             return {

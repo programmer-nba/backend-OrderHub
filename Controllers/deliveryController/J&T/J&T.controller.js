@@ -469,10 +469,10 @@ trackingOrder = async (req, res)=>{
         let codBulk = []
         const detail = response.data.responseitems[0].tracesList
         // console.log(detail)
-        const detailMap = detail.map(item =>{
+        for(const item of detail){
             // console.log(item)
                 if(item == null){
-                    return
+                    continue;
                 }
 
             const latestDetails = item.details[item.details.length - 1];
@@ -571,13 +571,17 @@ trackingOrder = async (req, res)=>{
             
             detailBulk.push(changStatus)
             codBulk.push(changStatusCod)
-        })
-        const bulkDetail = await orderAll.bulkWrite(detailBulk)
-        const bulkCod = await profitTemplate.bulkWrite(codBulk)
+        }
+        const [bulkDetail, bulkCod] = await Promise.all([
+            orderAll.bulkWrite(detailBulk),
+            profitTemplate.bulkWrite(codBulk)
+        ]);
+        // const bulkDetail = await orderAll.bulkWrite(detailBulk)
+        // const bulkCod = await profitTemplate.bulkWrite(codBulk)
         return res
                 .status(200)
                 .send({status:true, 
-                    data: response.data,
+                    // data: response.data,
                     detailBulk: bulkDetail,
                     codBulk:bulkCod
                 })
