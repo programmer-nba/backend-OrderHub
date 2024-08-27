@@ -108,12 +108,15 @@ exports.getMessageAfter = async(req, res)=>{
         const limit = req.body.limit
         let TOKEN = req.body.token_page
         
+        let dataConversation = [{
+            id: id,
+        }]
         // console.log(dataMessage)
-        const conversation = await getConversation(id,TOKEN, limit, after)
+        const conversation = await getMessage(dataConversation,TOKEN, limit, after)
         
         return res
                 .status(200)
-                .send({status:true, conversation_page:conversation})
+                .send({status:true, message:conversation})
     }catch(err){
         return res
                 .status(500)
@@ -215,7 +218,7 @@ async function getMessage(dataConversation,TOKEN,limit_message,after) {
         if (after) {
             pams.params.after = after;
         }
-
+        console.log(dataConversation)
         // สร้าง array ของ promises สำหรับการดึงข้อมูลจาก Facebook API
         const promises = dataConversation.map(async (data) => {
             try {

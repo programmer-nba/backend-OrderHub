@@ -433,7 +433,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -610,7 +610,7 @@ trackingOrderOne = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -1379,6 +1379,15 @@ priceList = async (req, res)=>{
 
         //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
         try{
+            if(!formData.from.name){
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message:"กรุณากรอกชื่อผู้ส่ง"});
+            }else if(!formData.from.tel){
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message:"กรุณากรอกเบอร์โทรผู้ส่ง"});
+            }
             let dataSenderFail = `ผู้ส่ง(${formData.from.name}) กรุณากรอก: `
             if(!formData.from.province || !formData.from.district || !formData.from.state || !formData.from.postcode){
                 if(!formData.from.province){
@@ -1483,6 +1492,15 @@ priceList = async (req, res)=>{
 
         //ตรวจสอบข้อมูลผู้รับ จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
         try{
+            if(!formData.to.name){
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message:"กรุณากรอกชื่อผู้รับ"});
+            }else if(!formData.to.tel){
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message:"กรุณากรอกเบอร์โทรผู้รับ"});
+            }
             let dataReceiveFail = `กรุณากรอก: `
             if(!formData.to.province || !formData.to.district || !formData.to.state || !formData.to.postcode){
                 if(!formData.to.province){
