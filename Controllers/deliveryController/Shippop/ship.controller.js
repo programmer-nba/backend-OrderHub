@@ -356,6 +356,14 @@ priceList = async (req, res)=>{
                         .send({status:false, message:"ท่านไม่สามารถใช้งานระบบขนส่งนี้ได้"})
             }
         }
+        if(reqCod != 0){
+            const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
+                if(!findShopCod){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่มีร้านค้าที่ท่านระบุในการค้นหาเปอร์เซ็นต์ COD"})
+                }
+        }
         // let codCal = codCalculate(findForCost)
         let cod_percent = []
         let fee_cod_total = 0
