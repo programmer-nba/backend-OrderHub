@@ -13,6 +13,7 @@ const { profitTemplate } = require("../../../Models/profit/profit.template");
 const { orderAll } = require('../../../Models/Delivery/order_all');
 const { bangkokMetropolitan } = require('../../../Models/postcal_bangkok/postcal.bangkok');
 const { insuredExpress } = require('../../../Models/Delivery/insured/insured');
+const { codPercent } = require('../../../Models/COD/cod.shop.model');
 
 priceList = async (req, res)=>{
     try{
@@ -20,36 +21,298 @@ priceList = async (req, res)=>{
         const shop = req.body.shop_number
         const id = req.decoded.userid
         const weight = req.body.parcel.weight * 1000
+        const role = req.decoded.role
         const declared_value = req.body.declared_value
+        const remark = req.body.remark
+        const packing_price = req.body.packing_price
+        const send_behalf = formData.from.send_behalf
+        const send_number = formData.from.send_number
+        const send_type = formData.from.send_type
         const formData = req.body
         let reqCod = req.body.cod
-        let percentCod
-            if(reqCod > 0){
-                const findCod = await codExpress.findOne({express:"SHIPPOP"})
-                percentCod = findCod.percent
-            }
-            if(weight == 0){
+
+        if(send_behalf != "บริษัท" && send_behalf != "บุคคล"){
+            return res
+                    .status(400)
+                    .send({status:false, type:"sender",message:"ผู้ส่ง กรุณากรอก ส่งในนาม บริษัทหรือบุคคล"})
+        }else if(send_number == undefined || send_number == ""){
+            return res
+                    .status(400)
+                    .send({status:false, type:"sender",message:"ผู้ส่ง กรุณากรอกหมายเลขผู้เสียภาษี, บัตรประชาชน หรือ passport"})
+        }
+        if(send_behalf == "บริษัท"){
+            if(send_type != "หมายเลขผู้เสียภาษี"){
                 return res
-                        .status(400)
-                        .send({status:false, message:"กรุณาระบุน้ำหนัก"})
+                    .status(400)
+                    .send({status:false, type:"sender",message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
             }
-        const cod = percentCod
-        console.log(cod)
-        if(req.decoded.role == 'shop_member'){
-            if(req.decoded.shop_number != shop){
-                console.log(req.decoded.shop_number, shop)
+        }else if(send_behalf == "บุคคล"){
+            if(send_type != "บัตรประชาชน" && send_type != "passport"){
                 return res
-                        .status(400)
-                        .send({status:false, message:"กรุณาระบุรหัสร้านค้าที่ท่านอยู่"})
+                    .status(400)
+                    .send({status:false, type:"sender",message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
             }
         }
 
-        let priceBangkok = false;
-        const findPostcal = await bangkokMetropolitan.findOne({ Postcode: req.body.to.postcode });
-            if (findPostcal) {
-                priceBangkok = true;
+        //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+        try{
+            if(!formData.from.name){
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message:"กรุณากรอกชื่อผู้ส่ง"});
+            }else if(!formData.from.tel){
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message:"กรุณากรอกเบอร์โทรผู้ส่ง"});
+            }
+            let dataSenderFail = `ผู้ส่ง(${formData.from.name}) กรุณากรอก: `
+            if(!formData.from.province || !formData.from.district || !formData.from.state || !formData.from.postcode){
+                if(!formData.from.province){
+                    dataSenderFail += 'จังหวัด/ '
+                }
+                if(!formData.from.state){
+                    dataSenderFail += 'อำเภอ/ '
+                }
+                if(!formData.from.district){
+                    dataSenderFail += 'ตำบล/ '
+                }
+                if(!formData.from.postcode){
+                    dataSenderFail += 'รหัสไปรษณีย์/ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message: dataSenderFail});
             }
 
+            const data = await postalThailand.find({postcode: formData.from.postcode})
+                if (!data || data.length == 0) {
+                    return res
+                            .status(404)
+                            .send({status:false, type:"sender", message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
+                }
+
+            const tel = formData.from.tel;
+
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
+
+                // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+                if (!regexWord.test(tel)) {
+                    return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"sender",
+                                    message:"กรุณาอย่ากรอกเบอร์โทร ผู้ส่ง โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+                }
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
+                
+                if (regex.test(tel) || tel.length != 10) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"sender",
+                                message:"กรุณากรอกเบอร์โทร ผู้ส่ง ให้ครบ 10 หลัก(อย่าเกิน)และอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
+
+            // console.log(data)
+            let isValid = false;
+            let errorMessage = 'ผู้ส่ง:';
+            let errorProvince = false;
+            let errorState = []
+            let errorDistrict = []
+
+            for (const item of data) {
+                if (item.province == formData.from.province && item.district == formData.from.district && item.state == formData.from.state) {
+                    isValid = true;
+                    break;
+                } else {
+                    if (item.province != formData.from.province && !errorProvince){
+                        errorMessage += 'จังหวัดไม่ถูกต้อง / ';
+                        errorProvince = true;
+                    }
+
+                    if (item.state != formData.from.state){ 
+                        errorState.push(false)
+                    }else{
+                        errorState.push(true)
+                    }
+
+                    if (item.district != formData.from.district){ 
+                        errorDistrict.push(false)
+                    }else{
+                        errorDistrict.push(true)
+                    }
+                }
+            }
+            // console.log(errorState)
+            // เช็คว่า errorState มีค่าเป็น false ทั้งหมดหรือไม่
+            if (errorState.length > 0 && !errorState.includes(true)) { //เช็คอำเภอว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'อำเภอไม่ถูกต้อง / ';
+            }
+            if (errorDistrict.length > 0 && !errorDistrict.includes(true)) {//เช็คตำบลว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'ตำบลไม่ถูกต้อง / ';
+            }
+            
+            if (!isValid) {
+                return res
+                        .status(400)
+                        .send({staus:false, type:"sender",message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+            } 
+        }catch(err){
+            console.log(err)
+        }
+
+        //ตรวจสอบข้อมูลผู้รับ จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+        try{
+            if(!formData.to.name){
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message:"กรุณากรอกชื่อผู้รับ"});
+            }else if(!formData.to.tel){
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message:"กรุณากรอกเบอร์โทรผู้รับ"});
+            }
+            let dataReceiveFail = `กรุณากรอก: `
+            if(!formData.to.province || !formData.to.district || !formData.to.state || !formData.to.postcode){
+                if(!formData.to.province){
+                    dataReceiveFail += 'จังหวัด/ '
+                }
+                if(!formData.to.state){
+                    dataReceiveFail += 'อำเภอ/ '
+                }
+                if(!formData.to.district){
+                    dataReceiveFail += 'ตำบล/ '
+                }
+                if(!formData.to.postcode){
+                    dataReceiveFail += 'รหัสไปรษณีย์/ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message: dataReceiveFail});
+            }
+        
+            const data = await postalThailand.find({postcode: formData.to.postcode})
+                if (!data || data.length == 0) {
+                    return res
+                            .status(404)
+                            .send({status:false, type:"receive", message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
+                }
+
+            const telTo = formData.to.tel;
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
+
+                // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+                if (!regexWord.test(telTo)) {
+                    return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"receive",
+                                    message:"กรุณาอย่ากรอกเบอร์โทร ผู้รับ โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+                }
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
+                
+                if (regex.test(telTo) || telTo.length != 10) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"receive",
+                                message:"กรุณากรอกเบอร์โทร ผู้รับ ให้ครบ 10 หลัก(อย่าเกิน)และอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
+
+            // console.log(data)
+            let isValid = false;
+            let errorMessage = 'ผู้รับ:';
+            let errorProvince = false;
+            let errorState = []
+            let errorDistrict = []
+
+            //ตรวจสอบข้อมูล จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
+            for (const item of data) {
+                if (item.province == formData.to.province && item.district == formData.to.district && item.state == formData.to.state) {
+                    isValid = true;
+                    break;
+                } else {
+                    if (item.province != formData.to.province && !errorProvince){
+                        errorMessage += 'จังหวัดไม่ถูกต้อง / ';
+                        errorProvince = true;
+                    }
+
+                    if (item.state != formData.to.state){ 
+                        errorState.push(false)
+                    }else{
+                        errorState.push(true)
+                    }
+
+                    if (item.district != formData.to.district){ 
+                        errorDistrict.push(false)
+                    }else{
+                        errorDistrict.push(true)
+                    }
+                }
+            }
+            // console.log(errorState)
+            // เช็คว่า errorState มีค่าเป็น false ทั้งหมดหรือไม่
+            if (errorState.length > 0 && !errorState.includes(true)) { //เช็คอำเภอว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'อำเภอไม่ถูกต้อง / ';
+            }
+            if (errorDistrict.length > 0 && !errorDistrict.includes(true)) {//เช็คตำบลว่าไม่มีอำเภอไหนถูกต้องเลย
+                errorMessage += 'ตำบลไม่ถูกต้อง / ';
+            }
+            
+            if (!isValid) {
+                return res
+                        .status(400)
+                        .send({staus:false, type:"receive", message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+            } 
+        }catch(err){
+            console.log(err)
+        }
+
+        if(weight <= 0 || weight == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, type:"receive", message:`กรุณาระบุน้ำหนัก(kg)`})
+        }
+        if(formData.parcel.width == 0 || formData.parcel.width == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, type:"receive", message:`กรุณากรอกความกว้าง(cm)`})
+        }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
+            return res
+                    .status(400)
+                    .send({status:false,type:"receive", message:`ลำกรุณากรอกความยาว(cm)`})
+        }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
+            return res
+                    .status(400)
+                    .send({status:false, type:"receive", message:`กรุณากรอกความสูง(cm)`})
+        }
+
+        if(!Number.isInteger(packing_price)){
+            return res
+                    .status(400)
+                    .send({status:false, type:"receive", message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
+        }
+        if (!Number.isInteger(reqCod)||
+            !Number.isInteger(declared_value)) {
+                    return res.status(400).send({
+                        status: false,
+                        type:"receive",
+                        message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
+                    });
+                }
         //ผู้ส่ง
         const sender = formData.from; 
         const filterSender = { shop_id: shop , tel: sender.tel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -59,6 +322,9 @@ priceList = async (req, res)=>{
                 ID: id,
                 status: 'ผู้ส่ง',
                 shop_id: shop,
+                send_behalf: send_behalf,
+                send_number: send_number,
+                send_type: send_type,
                 postcode: String(sender.postcode),
             };
 
@@ -76,68 +342,103 @@ priceList = async (req, res)=>{
                 console.log('ไม่มีข้อมูลผู้ส่ง')
             }
 
-        //ผู้รับ
-        const recipient = formData.to; // ผู้รับ
-        const filter = { ID: id, tel: recipient.tel, status: 'ผู้รับ' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
-
-            const update = { //ข้อมูลที่ต้องการอัพเดท หรือ สร้างใหม่
-                ...recipient,
-                ID: id,
-                status: 'ผู้รับ',
-                shop_id: shop,
-                postcode: String(recipient.postcode),
-            };
-
-        const options = { upsert: true }; // upsert: true จะทำการเพิ่มข้อมูลถ้าไม่พบข้อมูลที่ตรงกับเงื่อนไข
-        
-        const result = await dropOffs.updateOne(filter, update, options);
-            if (result.upsertedCount > 0) {
-                console.log('สร้างข้อมูลผู้รับคนใหม่');
-            } else {
-                console.log('อัปเดตข้อมูลผู้รับเรียบร้อย');
-            }
-
-        const line = []
-        const findForCost = await shopPartner.findOne({shop_number:shop})
-            if(findForCost){
-                line.push({
-                    shop_id:findForCost._id,
-                    head_line:findForCost.upline.head_line,
-                    down_line:findForCost.upline.down_line,
-                    shop_line:findForCost.upline.shop_line,
-                    level:findForCost.upline.level,
-                    express:findForCost.express
-                })
-                let shop_line = findForCost.upline.shop_line
-                while (shop_line != 'ICE') {
-                    const findLine = await shopPartner.findOne({_id:shop_line})
-                        if(findLine){
-                            line.push({
-                                shop_id:findLine._id,
-                                head_line:findLine.upline.head_line,
-                                down_line:findLine.upline.down_line,
-                                shop_line:findLine.upline.shop_line,
-                                level:findLine.upline.level,
-                                express:findLine.express})
-                        }
-                        shop_line = findLine.upline.shop_line; // อัปเดตค่าของ findForCost สำหรับการวนลูปต่อไป
-                }
-                // return res
-                //         .status(200)
-                //         .send({status:false, data:line})
-            }else if(!findForCost){
+        const findForCost = await shopPartner.findOne({shop_number:shop})//เช็คว่ามีร้านค้าอยู่จริงหรือเปล่า
+            if(!findForCost){
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
+        if(express){
+            const checkSwitch = findForCost.express.find(item => item.express == `${express}`)
+            if(checkSwitch.on_off == false || checkSwitch.cancel_contract == true){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ท่านไม่สามารถใช้งานระบบขนส่งนี้ได้"})
+            }
+        }
+        // let codCal = codCalculate(findForCost)
+        let cod_percent = []
+        let fee_cod_total = 0
+        let profitCOD = 0 //ห้ามลบ
+        if(reqCod != 0){
+            const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
+                if(findShopCod){
+                    let fee_cod = 0
+                    let percentCOD = req.body.percentCOD 
+                    
+                    // สร้าง regular expression เพื่อตรวจสอบทศนิยมไม่เกิน 2 ตำแหน่ง
+                    const regex = /^\d+(\.\d{1,2})?$/;
 
-        // const findPartner = await Partner.findOne({partnerNumber:findForCost.partner_number})
-        //     if(!findPartner){
-        //         return res
-        //                 .status(400)
-        //                 .send({status:false, message:"ไม่มีหมายเลขพาร์ทเนอร์ของท่าน"})
-        //     }
-        // const upline = findPartner.upline.head_line
+                    let pFirst = findShopCod.express.find((item)=> item.express == `${express}`)
+
+                    if(pFirst.percent == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่แนะนำท่านกรอกเปอร์เซ็น COD ที่ต้องการ"})
+                    }else if(!regex.test(percentCOD)){
+                        return res
+                                .status(400)
+                                .send({ status: false, message: "ค่าเปอร์เซ็น COD ต้องเป็นทศนิยมไม่เกิน 2 ตำแหน่ง" });
+                    }else if(percentCOD != 0 && percentCOD < pFirst.percent){
+                        return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"sender",
+                                    message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
+                    }
+                    // console.log(percentCOD)
+                        if(percentCOD != 0){ //กรณีกรอก %COD ที่ต้องการมา
+                            let feeOne = (reqCod * percentCOD)/100
+                            fee_cod_total = feeOne
+                            fee_cod = (reqCod * pFirst.percent)/100
+                            let profit = feeOne - fee_cod
+                                let v = {
+                                    id:findShopCod.owner_id,
+                                    cod_profit:profit
+                                }
+                            profitCOD = profit
+                            cod_percent.push(v)
+                            
+                        }else{
+                            fee_cod = ((reqCod * pFirst.percent)/100)
+                            fee_cod_total = fee_cod
+                        }
+
+                    // console.log(shop_line)
+                    if(findShopCod.shop_line != 'ICE'){
+                        let shop_line = findShopCod.shop_line
+                        do{
+                            const findShopLine = await codPercent.findOne({shop_id:shop_line})
+                            const p = findShopLine.express.find((item)=> item.express == "J&T")
+                            let feeOne = (reqCod * p.percent)/100
+                            let profit = fee_cod - feeOne
+                                fee_cod -= profit
+                                    let v = {
+                                            id:findShopLine.owner_id,
+                                            cod_profit:profit
+                                        }
+                                cod_percent.push(v)
+                                    if(findShopLine.shop_line == 'ICE'){
+                                        let b = {
+                                                id:'ICE',
+                                                cod_profit:fee_cod
+                                            }
+                                        cod_percent.push(b)
+                                    }
+                                shop_line = findShopLine.shop_line
+                            
+                        }while(shop_line != "ICE")
+                    }else{
+                        let v = {
+                                id:'ICE',
+                                cod_profit:fee_cod
+                            }
+                        cod_percent.push(v)
+                    }
+                    
+                }
+        }
 
         let data = [];
             data.push({
@@ -1480,6 +1781,98 @@ async function invoiceNumber() {
 
     console.log(combinedData);
     return combinedData;
+}
+
+async function codCalculate(){
+    try{
+        let cod_percent = []
+        let fee_cod_total = 0
+        let profitCOD = 0 //ห้ามลบ
+        if(reqCod != 0){
+            const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
+                if(findShopCod){
+                    let fee_cod = 0
+                    let percentCOD = req.body.percentCOD 
+                    
+                    // สร้าง regular expression เพื่อตรวจสอบทศนิยมไม่เกิน 2 ตำแหน่ง
+                    const regex = /^\d+(\.\d{1,2})?$/;
+
+                    let pFirst = findShopCod.express.find((item)=> item.express == `${express}`)
+
+                    if(pFirst.percent == 0){
+                        return res
+                                .status(400)
+                                .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่แนะนำท่านกรอกเปอร์เซ็น COD ที่ต้องการ"})
+                    }else if(!regex.test(percentCOD)){
+                        return res
+                                .status(400)
+                                .send({ status: false, message: "ค่าเปอร์เซ็น COD ต้องเป็นทศนิยมไม่เกิน 2 ตำแหน่ง" });
+                    }else if(percentCOD != 0 && percentCOD < pFirst.percent){
+                        return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"sender",
+                                    message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
+                    }
+                    // console.log(percentCOD)
+                        if(percentCOD != 0){ //กรณีกรอก %COD ที่ต้องการมา
+                            let feeOne = (reqCod * percentCOD)/100
+                            fee_cod_total = feeOne
+                            fee_cod = (reqCod * pFirst.percent)/100
+                            let profit = feeOne - fee_cod
+                                let v = {
+                                    id:findShopCod.owner_id,
+                                    cod_profit:profit
+                                }
+                            profitCOD = profit
+                            cod_percent.push(v)
+                            
+                        }else{
+                            fee_cod = ((reqCod * pFirst.percent)/100)
+                            fee_cod_total = fee_cod
+                        }
+
+                    // console.log(shop_line)
+                    if(findShopCod.shop_line != 'ICE'){
+                        let shop_line = findShopCod.shop_line
+                        do{
+                            const findShopLine = await codPercent.findOne({shop_id:shop_line})
+                            const p = findShopLine.express.find((item)=> item.express == "J&T")
+                            let feeOne = (reqCod * p.percent)/100
+                            let profit = fee_cod - feeOne
+                                fee_cod -= profit
+                                    let v = {
+                                            id:findShopLine.owner_id,
+                                            cod_profit:profit
+                                        }
+                                cod_percent.push(v)
+                                    if(findShopLine.shop_line == 'ICE'){
+                                        let b = {
+                                                id:'ICE',
+                                                cod_profit:fee_cod
+                                            }
+                                        cod_percent.push(b)
+                                    }
+                                shop_line = findShopLine.shop_line
+                            
+                        }while(shop_line != "ICE")
+                    }else{
+                        let v = {
+                                id:'ICE',
+                                cod_profit:fee_cod
+                            }
+                        cod_percent.push(v)
+                    }
+                    
+                }
+        }
+    }catch(err){
+        console.log(err)
+        return {
+            error:err
+        }
+    }
 }
 
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup

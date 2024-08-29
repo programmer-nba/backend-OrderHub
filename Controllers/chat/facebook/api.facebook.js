@@ -218,7 +218,7 @@ async function getMessage(dataConversation,TOKEN,limit_message,after) {
         if (after) {
             pams.params.after = after;
         }
-        console.log(dataConversation)
+        // console.log(dataConversation)
         // สร้าง array ของ promises สำหรับการดึงข้อมูลจาก Facebook API
         const promises = dataConversation.map(async (data) => {
             try {

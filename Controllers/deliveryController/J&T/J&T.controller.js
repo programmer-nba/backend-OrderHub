@@ -433,7 +433,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -463,8 +463,12 @@ trackingOrder = async (req, res)=>{
                             data: response.data,
                             detailBulk: update
                         })
+            }else if(response.data.responseitems[0].tracesList == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
+                console.log("trackingOrder:null")
+                // เรียกใช้ function trackingOrder อีกครั้งโดยใช้ req.body.txlogisticid เดิม
+                return await trackingOrder(req, res);
             }
-        
+        // console.log(response.data)
         let detailBulk = []
         let codBulk = []
         const detail = response.data.responseitems[0].tracesList
@@ -610,7 +614,7 @@ trackingOrderOne = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -1607,31 +1611,32 @@ priceList = async (req, res)=>{
         if(weight <= 0 || weight == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
+                    .send({status:false, type:"receive", message:`กรุณาระบุน้ำหนัก(kg)`})
         }
         if(formData.parcel.width == 0 || formData.parcel.width == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกความกว้าง(cm)`})
         }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`ลำกรุณากรอกความยาว(cm)`})
+                    .send({status:false,type:"receive", message:`ลำกรุณากรอกความยาว(cm)`})
         }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกความสูง(cm)`})
         }
 
         if(!Number.isInteger(packing_price)){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
         }
         if (!Number.isInteger(reqCod)||
             !Number.isInteger(declared_value)) {
                     return res.status(400).send({
                         status: false,
+                        type:"receive",
                         message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
                     });
                 }

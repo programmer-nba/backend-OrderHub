@@ -1142,11 +1142,38 @@ priceList = async (req, res)=>{
 
         //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
          try{
+            if(!formData.from.name){
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message:"กรุณากรอกชื่อผู้ส่ง"});
+            }else if(!formData.from.tel){
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message:"กรุณากรอกเบอร์โทรผู้ส่ง"});
+            }
+            let dataSenderFail = `ผู้ส่ง(${formData.from.name}) กรุณากรอก: `
+            if(!formData.from.province || !formData.from.district || !formData.from.state || !formData.from.postcode){
+                if(!formData.from.province){
+                    dataSenderFail += 'จังหวัด/ '
+                }
+                if(!formData.from.state){
+                    dataSenderFail += 'อำเภอ/ '
+                }
+                if(!formData.from.district){
+                    dataSenderFail += 'ตำบล/ '
+                }
+                if(!formData.from.postcode){
+                    dataSenderFail += 'รหัสไปรษณีย์/ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message: dataSenderFail});
+            }
             const data = await postalThailand.find({postcode: formData.from.postcode})
                 if (!data || data.length == 0) {
                     return res
                             .status(404)
-                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
+                            .send({status:false, type:"sender", message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
                 }
             const tel = formData.from.tel;
 
@@ -1225,11 +1252,38 @@ priceList = async (req, res)=>{
 
         //ตรวจสอบข้อมูลผู้รับ จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
         try{
+            if(!formData.to.name){
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message:"กรุณากรอกชื่อผู้รับ"});
+            }else if(!formData.to.tel){
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message:"กรุณากรอกเบอร์โทรผู้รับ"});
+            }
+            let dataReceiveFail = `กรุณากรอก: `
+            if(!formData.to.province || !formData.to.district || !formData.to.state || !formData.to.postcode){
+                if(!formData.to.province){
+                    dataReceiveFail += 'จังหวัด/ '
+                }
+                if(!formData.to.state){
+                    dataReceiveFail += 'อำเภอ/ '
+                }
+                if(!formData.to.district){
+                    dataReceiveFail += 'ตำบล/ '
+                }
+                if(!formData.to.postcode){
+                    dataReceiveFail += 'รหัสไปรษณีย์/ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message: dataReceiveFail});
+            }
             const data = await postalThailand.find({postcode: formData.to.postcode})
                 if (!data || data.length == 0) {
                     return res
                             .status(404)
-                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
+                            .send({status:false, type:"receive", message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
                 }
 
             const telTo = formData.to.tel;
@@ -1312,25 +1366,25 @@ priceList = async (req, res)=>{
         if(weight <= 0 || weight == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
+                    .send({status:false, type:"receive", message:`กรุณาระบุน้ำหนัก(kg)`})
         }
         if(formData.parcel.width == 0 || formData.parcel.width == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกความกว้าง(cm)`})
         }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกความยาว(cm)`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกความยาว(cm)`})
         }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
+                    .send({status:false,type:"receive", message:`กรุณากรอกความสูง(cm)`})
         }
         if(reqCod > 50000){ //เอามาจาก PDF best knowledge
             return res
                     .status(400)
-                    .send({status:false, meessage:"บริการ COD ต้องไม่เกิน 50,000 บาท/ชิ้น"})
+                    .send({status:false, type:"receive", meessage:"บริการ COD ต้องไม่เกิน 50,000 บาท/ชิ้น"})
         }else if (!Number.isInteger(reqCod)||
                     !Number.isInteger(declared_value)) {
             return res
@@ -1343,7 +1397,7 @@ priceList = async (req, res)=>{
         if(!Number.isInteger(packing_price)){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
         }
 
         if(declared_value > 0){
@@ -1364,7 +1418,7 @@ priceList = async (req, res)=>{
             }else{
                 return res
                         .status(200)
-                        .send({status:false, message:"น้ำหนักที่ท่านกรอกมากเกิน 300 KG"})
+                        .send({status:false, type:"receive", message:"น้ำหนักที่ท่านกรอกมากเกิน 300 KG"})
             }
         }
         //ผู้ส่ง
@@ -1436,7 +1490,7 @@ priceList = async (req, res)=>{
                     }else if(percentCOD != 0 && percentCOD < pFirst.percent){
                         return res
                                 .status(400)
-                                .send({status:false, message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
+                                .send({status:false, type:"sender", message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
                     }
                     // console.log(percentCOD)
                         if(percentCOD != 0){ //กรณีกรอก %COD ที่ต้องการมา
@@ -1489,7 +1543,7 @@ priceList = async (req, res)=>{
                     
                 }
         }
-        console.log(cod_percent)
+        // console.log(cod_percent)
 
         //ดึงข้อมูลตารางของ Partner มาเพื่อเช็คว่าค่าไหนยังไม่ถูกกรอกบ้าง
         const result  = await weightAll.findOne(
