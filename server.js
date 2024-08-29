@@ -18,7 +18,7 @@ const io = socketIo(server,{
   cors: {
     origin: "*", // หรือ "*" ถ้าต้องการอนุญาตทุก origin
     methods: ['GET','HEAD','PUT','PATCH','POST','DELETE', 'OPTIONS'],
-    credentials: true,
+    // credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'auth-token', 'Accept-Encoding']
   },
   path: '/socket.io'
@@ -34,7 +34,7 @@ app.use(express.json());
 app.use(cors({
   origin: 'https://orderhub.love',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE, OPTIONS',
-  credentials: true,
+  // credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'auth-token', 'Accept-Encoding', 'Origin', 'X-Requested-With', 'Accept']
 }));
 
