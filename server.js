@@ -32,7 +32,7 @@ mongoose.connect(process.env.DB)
 
 app.use(express.json());
 app.use(cors({
-  origin: 'https://orderhub.love',
+  origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE, OPTIONS',
   // credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'auth-token', 'Accept-Encoding', 'Origin', 'X-Requested-With', 'Accept']
