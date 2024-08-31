@@ -132,13 +132,14 @@ exports.getMessagePage = async(req, res)=>{
         const limit_message = req.body.limit_message
         let TOKEN = req.body.token_page
         // console.log(id)
-        const dataConversation = await getConversation(id,TOKEN, limit, after) // getConversation
-        const dataMessage = await getMessage(dataConversation.data,TOKEN, limit_message) 
+        const dataConversation = await getConversation(id,TOKEN, limit, limit_message, after) // getConversation
+        // const dataMessage = await getMessage(dataConversation.data,TOKEN, limit_message)
         return res
                 .status(200)
-                .send({status:true, 
+                .send({
+                    status:true,
                     conversation:dataConversation,
-                    message:dataMessage
+                    // message:dataMessage
                 })
     }catch(err){
         return res
@@ -169,13 +170,14 @@ exports.getMessageDecode = async(req, res)=>{
     }
 }
 
-async function getConversation (id,TOKEN,limit,after) {
+async function getConversation (id,TOKEN,limit, limit_message, after) {
     try{
         let dataErr
         let pams = {
                 params: {
                     access_token: TOKEN,
-                    limit: limit
+                    limit: limit,
+                    fields: `participants,messages.limit(${limit_message})`
                 }
         }
         if(after != undefined || after != ''){
@@ -186,6 +188,7 @@ async function getConversation (id,TOKEN,limit,after) {
             dataErr = error.response.data
             // console.log(dataErr);
         });
+        // console.log(response)
         if(dataErr){
             return {
                     status:false,
@@ -263,28 +266,32 @@ async function getDecodeMessage(dataMessage, TOKEN) {
     try {
         let dataErr;
         let messageData = [];
-        console.log(dataMessage)
+        // console.log(dataMessage)
         for (const dataM of dataMessage) {
             let messageDecode = [];
             let dataMe = dataM.data;
             // console.log(dataMe);
-            for (const data of dataMe) {
                 try {
-                    const response = await axios.get(`${FB_URL}/${data.id}`, {
-                        params: {
-                            access_token: TOKEN,
-                            fields: 'to,from,message'
+                    const requests = dataMe.map(async (data) => {
+                        const response = await axios.get(`${FB_URL}/${data.id}`, {
+                            params: {
+                                access_token: TOKEN,
+                                fields: 'to,from,message'
+                            }
+                        });
+                        if (response && response.data) {
+                            messageDecode.push(response.data);
                         }
-                    });
-                    if (response && response.data) {
-                        messageDecode.push(response.data);
-                    }
+                    })
+                     // รอให้ทุกคำขอเสร็จสิ้น
+                    const results = await Promise.all(requests);
+                    // console.log(results)
                 } catch (error) {
                     dataErr = error.response ? error.response.data : error.message;
                     console.error('Error fetching data:', dataErr);
                     break; // หยุดการวนลูปถ้ามีข้อผิดพลาด
                 }
-            }
+            
             let v ={
                 id: dataM.id,
                 data: messageDecode
