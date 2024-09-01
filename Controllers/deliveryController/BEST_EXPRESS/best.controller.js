@@ -22,11 +22,25 @@ const { Admin } = require('../../../Models/admin');
 const { profitTemplate } = require('../../../Models/profit/profit.template');
 const { decrypt } = require("../../../functions/encodeCrypto");
 const { logOrder } = require('../../../Models/logs_order');
+const cron = require('node-cron');
+require('dayjs/plugin/timezone');
+require('dayjs/plugin/utc');
+
+// เพิ่ม plugin สำหรับใช้งาน timezone และ utc
+dayjs.extend(require('dayjs/plugin/timezone'));
+dayjs.extend(require('dayjs/plugin/utc'));
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
 const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
+
+let currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+function updateRealTime (){
+    currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+}
+// เรียกใช้ฟังก์ชัน updateRealTime() ทุก 1 นาที
+setInterval(updateRealTime, 60000);
 
 const BEST_URL = process.env.BEST_URL
 const keys = process.env.PARTNER_KEY
@@ -497,6 +511,7 @@ statusOrder = async (req, res)=>{
                 'Accept-Encoding': 'gzip, deflate, br'
             },
         })
+        // console.log(response.data)
             if(!response){
                 return res
                         .status(400)
@@ -504,7 +519,173 @@ statusOrder = async (req, res)=>{
             }
             if (Array.isArray(response.data.traceLogs) && response.data.traceLogs.length === 0) {
                 // Return ออกจากฟังก์ชันทันที
-                return;
+                return res
+                        .status(200)
+                        .send({status:true, data:response.data})
+            }
+        // console.log(response.data)
+        let detailBulk = []
+        let codBulk = []
+        const detail = response.data.traceLogs
+        // console.log(detail)
+        for(const item of detail){
+            // console.log(item)
+                if(item.traces == null){
+                    continue;
+                }
+            const latestDetails = item.traces.trace[item.traces.trace.length - 1];
+            // console.log(latestDetails)
+            let scantype
+            let day_pay = ""
+            let day_sign = ""
+            let day_pick = ""
+
+            const formatUnixTimestamp = (timestamp) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss');
+            const formatDatePart = (timestamp) => dayjs(timestamp).format('YYYY-MM-DD');
+
+            const findReturn = item.traces.trace.find(item => item.packageStatusCode == 'package_return')
+            const findPickup = item.traces.trace.find(item => item.packageStatusCode == 'pickup_success')
+                if(findPickup){
+                    day_pick = formatUnixTimestamp(findPickup.operateTime)
+                }
+            // console.log(findPickup)
+            if(findReturn){
+                if(latestDetails.packageStatusCode == 'delivered'){
+
+                    scantype = 'เซ็นรับแล้ว'
+
+                    let datePart = formatDatePart(latestDetails.operateTime)
+                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    day_sign = datePart
+                    day_pay = newDate
+                    
+                }else if(latestDetails.packageStatusCode == 'return_success'){
+                    scantype = 'เซ็นรับพัสดุตีกลับ'
+
+                    let datePart = formatDatePart(latestDetails.operateTime)
+                    day_sign = datePart
+                }else{
+                    scantype = 'พัสดุตีกลับ'
+                }
+            }else{
+                if(latestDetails.packageStatusCode == 'pickup_success'){
+                    scantype = 'รับพัสดุแล้ว'
+                }else if(['arrive_station', 'send_from_station', 'arrive_hub', 'send_from_hub', 'out_for_delivery' ,'arrive_destination_hub', 'send_from_destination_hub'].includes(latestDetails.packageStatusCode)){
+                    scantype = 'ระหว่างการจัดส่ง'
+                }else if(latestDetails.packageStatusCode == 'delivered'){
+
+                    scantype = 'เซ็นรับแล้ว'
+
+                    let datePart = formatDatePart(latestDetails.operateTime)
+                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    day_pay = newDate
+                    day_sign = datePart
+
+                }else if(latestDetails.packageStatusCode == 'package_return'){
+                    scantype = 'พัสดุตีกลับ'
+                }else if(['hold_in_station', 'pickup_failure'].includes(latestDetails.packageStatusCode)){
+                    scantype = 'พัสดุมีปัญหา'
+                }else{
+                    return;
+                }
+            }
+            
+            let changStatus = {
+                updateOne: {
+                    filter: { mailno: item.mailNo },
+                    update: { 
+                        $set: {
+                            order_status:scantype,
+                            day_sign: day_sign,
+                            day_pick: day_pick
+                        }
+                    }
+                }
+            }
+            let changStatusCod 
+            if(scantype == 'เซ็นรับพัสดุตีกลับ'){
+                changStatusCod = {
+                    updateOne: {
+                        filter: { 'template.partner_number': item.mailNo },
+                        update: {
+                            $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
+                                status:scantype,
+                                day_pick:day_pick
+                            }
+                        }
+                    }
+                }
+            }else{
+                changStatusCod = {
+                    updateOne: {
+                        filter: { 'template.partner_number': item.mailNo },
+                        update: {
+                            $set: {
+                                status:scantype,
+                                day_sign: day_sign,
+                                day_pay: day_pay,
+                                day_pick: day_pick
+                            }
+                        }
+                    }
+                }
+            }
+            detailBulk.push(changStatus)
+            codBulk.push(changStatusCod)
+            // console.log("detailBulk: ",detailBulk)
+            // console.log("codBulk: ",codBulk)
+        }
+        // const bulkDetail = await orderAll.bulkWrite(detailBulk)
+        // const bulkCod = await profitTemplate.bulkWrite(codBulk)
+        const [bulkDetail, bulkCod] = await Promise.all([
+            orderAll.bulkWrite(detailBulk),
+            profitTemplate.bulkWrite(codBulk)
+        ]);
+        return res
+                .status(200)
+                .send({status:true, 
+                    // data:response.data,
+                    detailBulk: bulkDetail,
+                    codBulk:bulkCod
+                })
+
+    }catch(err){
+        return res 
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+statusOrderAuto = async (req, res)=>{
+    try{
+        const mailNo = req.body.mailNo
+        const formData = {
+            serviceType:"KD_TRACE_QUERY",
+            bizData:{
+               mailNos:{
+                    mailNo: mailNo
+               }
+            },
+            partnerID: PARTNER_ID
+        }
+        const newData = await doSign(formData, charset, keys)
+        // console.log(newData)
+        const response = await axios.post(BEST_URL,newData,{
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                'Accept-Encoding': 'gzip, deflate, br'
+            },
+        })
+            if(!response){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
+            }
+            if (Array.isArray(response.data.traceLogs) && response.data.traceLogs.length === 0) {
+                // Return ออกจากฟังก์ชันทันที
+                return res
+                        .status(200)
+                        // .send({status:true, data:response.data})
             }
         let detailBulk = []
         let codBulk = []
@@ -621,11 +802,11 @@ statusOrder = async (req, res)=>{
         ]);
         return res
                 .status(200)
-                .send({status:true, 
+                // .send({status:true, 
                     // data:response.data,
-                    detailBulk: bulkDetail,
-                    codBulk:bulkCod
-                })
+                    // detailBulk: bulkDetail,
+                    // codBulk:bulkCod
+                // })
 
     }catch(err){
         return res 
@@ -2019,19 +2200,76 @@ pickLabel = async (req, res)=>{
     }
 }
 
+// ฟังก์ชันสำหรับแบ่ง array ออกเป็นกลุ่ม (chunk)
+function chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+}
+
+async function myTask() {
+    try{
+        console.log(currentTime)
+        const findOrder = await orderAll.find({
+            $or: [
+                { order_status: "booking" },
+                { order_status: "รับพัสดุแล้ว" },
+                { order_status: "ระหว่างการจัดส่ง" },
+                { order_status: "พัสดุมีปัญหา" },
+                { order_status: "พัสดุตีกลับ" },
+            ],
+            express:"BEST"
+        }, { mailno: 1, _id:0}).sort({ day: -1 });
+            if(findOrder.length == 0){
+                return res
+                        .status(200)
+                        .send({status:true, data:[]})
+                }
+        const mailnoCode = findOrder.map(order => order.mailno);
+        const chunks = chunkArray(mailnoCode, 20);
+
+        const order = { body: { mailNo: mailnoCode } }; // สร้าง request mock object
+        console.log("จำนวนพัสดุ BEST ทั้งหมดที่ต้องอัพเดท:",order.body.mailNo.length)
+        for (const chunk of chunks) {
+            const req = { body: { mailNo: chunk } }; // สร้าง request mock object สำหรับแต่ละกลุ่ม
+            const res = {
+                status: (code) => ({
+                    send: (response) => console.log('Response:', response)
+                })
+            }; // สร้าง response mock object
+        
+            await statusOrderAuto(req, res); // เรียกใช้ฟังก์ชันทีละกลุ่ม
+        }
+        console.log(`Complate update BEST: ${order.body.mailNo.length}`)
+    }catch(err){
+        console.log(err)
+    }
+}
+
+// เรียกใช้ฟังก์ชันทันทีเมื่อ Node.js เริ่มต้นหรือรีสตาร์ท
+myTask();
+
+// ตั้งค่า cron job ให้ทำงานทุกๆ 4 ชั่วโมง
+cron.schedule('0 */3 * * *',myTask, {
+    scheduled: true,
+    timezone: "Asia/Bangkok"
+});
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
-    let random = Math.floor(Math.random() * 100000)
-    const combinedData = `BE`+data + random;
-    const findInvoice = await bestOrder.find({txLogisticId:combinedData})
+    let random = Math.floor(Math.random() * 1000000)
+    const combinedData = `BE`+ data + random;
+    const findInvoice = await orderAll.find({tracking_code:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
-        random = Math.floor(Math.random() * 100000);
-        combinedData = `BE`+data + random;
+        random = Math.floor(Math.random() * 1000000);
+        combinedData = `BE`+ data + random;
 
         // เช็คใหม่
-        findInvoice = await bestOrder.find({txLogisticId: combinedData});
+        findInvoice = await orderAll.find({tracking_code: combinedData});
     }
 
     // console.log(combinedData);
@@ -2040,20 +2278,20 @@ async function invoiceNumber(date) {
 
 async function invoiceBST() {
     data = `ODHBST`
-    let random = Math.floor(Math.random() * 10000000000)
+    let random = Math.floor(Math.random() * 10000000)
     const combinedData = data + random;
-    const findInvoice = await bestOrder.find({invoice:combinedData})
+    const findInvoice = await orderAll.find({invoice:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
-        random = Math.floor(Math.random() * 10000000000);
+        random = Math.floor(Math.random() * 10000000);
         combinedData = data + random;
 
         // เช็คใหม่
-        findInvoice = await bestOrder.find({invoice: combinedData});
+        findInvoice = await orderAll.find({invoice: combinedData});
     }
 
-    console.log(combinedData);
+    // console.log(combinedData);
     return combinedData;
 }
 
