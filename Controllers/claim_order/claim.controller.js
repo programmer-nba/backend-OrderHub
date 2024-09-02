@@ -1013,8 +1013,8 @@ async function invoiceNumber(date) {
     }
 }
 
-// ตั้งเวลาให้รันฟังก์ชันทุกวันเวลา 10:00 (เวลาประเทศไทย)
-cron.schedule('0 10 * * *', async () => {
+// ตั้งเวลาให้รันฟังก์ชันทุกวันเวลา 2:00 AM (เวลาประเทศไทย)
+cron.schedule('0 2 * * *', async () => {
     const now = dayjs().tz("Asia/Bangkok");
     const dayEnd = now.subtract(1, 'day').format('YYYY-MM-DD');
     console.log(dayEnd)
@@ -1026,7 +1026,7 @@ cron.schedule('0 10 * * *', async () => {
     }; // สร้าง response mock object
 
     await exports.delPicture(req, res);
-    console.log('delPicture function executed at 10:00 AM Bangkok time');
+    console.log('delPicture function executed at 2:00 AM AM Bangkok time');
 }, {
     scheduled: true,
     timezone: "Asia/Bangkok"

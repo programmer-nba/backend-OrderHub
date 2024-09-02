@@ -2201,7 +2201,7 @@ pickLabel = async (req, res)=>{
 }
 
 // ฟังก์ชันสำหรับแบ่ง array ออกเป็นกลุ่ม (chunk)
-function chunkArray(array, size) {
+function chunkArray(array, size){
     const chunks = [];
     for (let i = 0; i < array.length; i += size) {
         chunks.push(array.slice(i, i + size));
@@ -2249,10 +2249,10 @@ async function myTask() {
 }
 
 // เรียกใช้ฟังก์ชันทันทีเมื่อ Node.js เริ่มต้นหรือรีสตาร์ท
-myTask();
+// myTask();
 
-// ตั้งค่า cron job ให้ทำงานทุกๆ 4 ชั่วโมง
-cron.schedule('0 */3 * * *',myTask, {
+// ตั้งค่า cron job ให้ทำงานทุกๆ 2.30 AM ชั่วโมง
+cron.schedule('30 2 * * *',myTask, {
     scheduled: true,
     timezone: "Asia/Bangkok"
 });
