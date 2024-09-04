@@ -1298,7 +1298,7 @@ cancelOrderAll = async (txlogisticid)=>{
                         }
                     }
                 
-                return refundAll
+                return `${txlogisticid} CANCEL สําเร็จ`
         }
         
     }catch(err){
@@ -2348,7 +2348,7 @@ priceListOne = async (req, res)=>{
                             break;
                         }
                     }
-                // console.log(resultBase)    
+                // console.log(resultBase)
                     if(resultBase.costUpcountry == 0){
                         return res
                                 .status(400)

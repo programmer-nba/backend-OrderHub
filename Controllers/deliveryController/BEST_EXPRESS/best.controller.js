@@ -528,7 +528,7 @@ statusOrder = async (req, res)=>{
         let codBulk = []
         const detail = response.data.traceLogs
         // console.log(detail)
-        for(const item of detail){
+        for(const item of detail){ //for of ใช้กับ ปริมาณ 20 ออเดอร์ไม่ได้ ต้องใช้ map เหมือน statusOrderAuto
             // console.log(item)
                 if(item.traces == null){
                     continue;
@@ -632,8 +632,6 @@ statusOrder = async (req, res)=>{
             }
             detailBulk.push(changStatus)
             codBulk.push(changStatusCod)
-            // console.log("detailBulk: ",detailBulk)
-            // console.log("codBulk: ",codBulk)
         }
         // const bulkDetail = await orderAll.bulkWrite(detailBulk)
         // const bulkCod = await profitTemplate.bulkWrite(codBulk)
@@ -658,6 +656,7 @@ statusOrder = async (req, res)=>{
 
 statusOrderAuto = async (req, res)=>{
     try{
+        
         const mailNo = req.body.mailNo
         const formData = {
             serviceType:"KD_TRACE_QUERY",
@@ -668,6 +667,7 @@ statusOrderAuto = async (req, res)=>{
             },
             partnerID: PARTNER_ID
         }
+        // console.log(mailNo)
         const newData = await doSign(formData, charset, keys)
         // console.log(newData)
         const response = await axios.post(BEST_URL,newData,{
@@ -676,6 +676,7 @@ statusOrderAuto = async (req, res)=>{
                 'Accept-Encoding': 'gzip, deflate, br'
             },
         })
+        // console.log(response.data)
             if(!response){
                 return res
                         .status(400)
@@ -685,18 +686,21 @@ statusOrderAuto = async (req, res)=>{
                 // Return ออกจากฟังก์ชันทันที
                 return res
                         .status(200)
-                        // .send({status:true, data:response.data})
+                        .send({status:true, data:response.data})
             }
-        let detailBulk = []
-        let codBulk = []
+
+        let detailBulk = []; // ensure initialization
+        let codBulk = []; // ensure initialization
         const detail = response.data.traceLogs
-        for(const item of detail){
+        // console.log(detail)
+        // for(const item of detail){
+        let iDetail = detail.map(item => {
             // console.log(item)
                 if(item.traces == null){
-                    continue;
+                    return;
                 }
             const latestDetails = item.traces.trace[item.traces.trace.length - 1];
-
+            // console.log(latestDetails)
             let scantype
             let day_pay = ""
             let day_sign = ""
@@ -793,7 +797,7 @@ statusOrderAuto = async (req, res)=>{
             }
             detailBulk.push(changStatus)
             codBulk.push(changStatusCod)
-        }
+        })
         // const bulkDetail = await orderAll.bulkWrite(detailBulk)
         // const bulkCod = await profitTemplate.bulkWrite(codBulk)
         const [bulkDetail, bulkCod] = await Promise.all([
@@ -803,9 +807,9 @@ statusOrderAuto = async (req, res)=>{
         return res
                 .status(200)
                 // .send({status:true, 
-                    // data:response.data,
-                    // detailBulk: bulkDetail,
-                    // codBulk:bulkCod
+                //     // data:response.data,
+                //     // detailBulk: bulkDetail,
+                //     // codBulk:bulkCod
                 // })
 
     }catch(err){
@@ -2223,16 +2227,15 @@ async function myTask() {
             express:"BEST"
         }, { mailno: 1, _id:0}).sort({ day: -1 });
             if(findOrder.length == 0){
-                return res
-                        .status(200)
-                        .send({status:true, data:[]})
-                }
+                return {message:"ไม่มีออเดอร์ BEST ที่ต้องอัพเดท", status:true, data:[]}
+            }
         const mailnoCode = findOrder.map(order => order.mailno);
         const chunks = chunkArray(mailnoCode, 20);
 
         const order = { body: { mailNo: mailnoCode } }; // สร้าง request mock object
         console.log("จำนวนพัสดุ BEST ทั้งหมดที่ต้องอัพเดท:",order.body.mailNo.length)
         for (const chunk of chunks) {
+            // console.log(`Updating status for chunk: ${chunk}`);
             const req = { body: { mailNo: chunk } }; // สร้าง request mock object สำหรับแต่ละกลุ่ม
             const res = {
                 status: (code) => ({

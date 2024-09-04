@@ -587,17 +587,15 @@ cancelAll = async(req, res)=>{
         let all = []
         let dataJT = []
         let dataBEST = []
-        let newData = await Promise.all(txlogisticid.map(async item => {
-            // console.log(item.express)
-            if(item.express == "J&T"){
+        for (const item of txlogisticid) {
+            if (item.express === "J&T") {
                 let cancel = await cancelOrderAll(item.tracking_code);
-                // console.log(cancel)
-                dataJT.push(cancel)
-            }else if(item.express == "BEST"){
+                dataJT.push(cancel);
+            } else if (item.express === "BEST") {
                 let cancel = await cancelOrderAllBest(item.tracking_code);
-                dataBEST.push(cancel)
+                dataBEST.push(cancel);
             }
-        }));
+        }
         all.concat(dataJT, dataBEST)
         // console.log(newData)
         return res

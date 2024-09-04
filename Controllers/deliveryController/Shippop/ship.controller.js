@@ -16,6 +16,7 @@ const { insuredExpress } = require('../../../Models/Delivery/insured/insured');
 const { codPercent } = require('../../../Models/COD/cod.shop.model');
 const { postalThailand } = require('../../../Models/postal.thailand/postal.thai.model');
 const { weightAll } = require('../../../Models/Delivery/weight/weight.all.express');
+const { priceBase } = require('../../../Models/Delivery/weight/priceBase.express');
 
 priceList = async (req, res)=>{
     try{
@@ -337,7 +338,7 @@ priceList = async (req, res)=>{
             if (resultSender.upsertedCount > 0) {
                 console.log('สร้างข้อมูลผู้ส่งคนใหม่');
             } else {
-                console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+                // console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
             }
         
         const infoSender = await dropOffs.findOne(filterSender)
@@ -351,7 +352,8 @@ priceList = async (req, res)=>{
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
-        if(express){
+
+        if(express){ //กรณีมีการกำหนด ขนส่ง เข้ามาเช่น เช่นการใช้ EXCEL ต้องมีการกำหนดขนส่งมาแน่นอน
             const checkSwitch = findForCost.express.find(item => item.express == `SHIPPOP(${express})`)
             if(checkSwitch.on_off == false || checkSwitch.cancel_contract == true){
                 return res
@@ -359,6 +361,7 @@ priceList = async (req, res)=>{
                         .send({status:false, message:"ท่านไม่สามารถใช้งานระบบขนส่งนี้ได้"})
             }
         }
+
         let shopLine = []
         if(reqCod != 0){
             const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
@@ -426,31 +429,61 @@ priceList = async (req, res)=>{
                     .send({status: false, message: resp.data.message});
         }
         const obj = resp.data.data[0];
-        const new_data = [];
 
         const findinsured = await insuredExpress.findOne({express:"SHIPPOP"})
         let insuranceFee = 0
             if(findinsured){
-                    // console.log(findinsured.product_value)
-                    let product_value = findinsured.product_value
-                    for (let i = 0; i < product_value.length; i++){
-                        if (declared_value >= product_value[i].valueStart && declared_value <= product_value[i].valueEnd){
-                            insuranceFee = product_value[i].insurance_fee
-                            break;
-                        }
+                // console.log(findinsured.product_value)
+                let product_value = findinsured.product_value
+                for (let i = 0; i < product_value.length; i++){
+                    if (declared_value >= product_value[i].valueStart && declared_value <= product_value[i].valueEnd){
+                        insuranceFee = product_value[i].insurance_fee
+                        break;
                     }
+                }
             }
-        let express_in = []
-        let express_active = Object.keys(obj)
+
+        let express_active = Object.keys(obj) //ใช้หาว่า ขนส่งไหนบ้านที่ SHIPPOP อนุญาติให้ใช้ใน ORDER นี้
                 .filter(item => obj[item].available == true)
                 .map(item => {
                     let v ={
                         ...obj[item],
                         courier_code: `SHIPPOP(${obj[item].courier_code})`
                     }
-                    express_in.push(`SHIPPOP(${obj[item].courier_code})`)
                     return v 
                 })
+
+        const express_true = findForCost.express.filter(item =>  //ใช้หาว่า ขนส่ง SHIPPOP ใดบ้างของร้านค้าที่มีการ อนุมัติ และ ไม่ถูกยกเลิกสัญญา
+                item.on_off === true && 
+                item.cancel_contract === false && 
+                item.express.startsWith("SHIPPOP")
+            );
+        // console.log(express_true)
+
+        let express_approve = []
+        //ทำการวนเช็คว่ามีขนส่งที่อนุมัติ อันไหนบ้าง ที่ SHIPPOP อนุญาติให้ใช้งาน
+        for(const express of express_true){ 
+            const findExpress = express_active.find(item => item.courier_code == express.express)
+            if(findExpress){
+                express_approve.push(findExpress)
+                // console.log(findExpress)
+            }else{
+                let v = {
+                    courier_code: express.express,//ชื่อของ ขนส่งที่ อนุมัติ แต่ Shippop ไม่มีอนุญาติให้ทำการขนส่ง
+                    courier_name: express.courier_name,
+                    available: false,
+                    status: "ขนส่งนี้ไม่รองรับออเดอร์ของท่าน"
+                }
+                express_approve.push(v)
+            }
+        }
+        // console.log(express_approve)
+
+        const express_in = express_approve //สร้าง Array ของขนส่งที่ อนุมัติ และ Shippop อนุญาติให้ทำการใช้งาน
+                .filter(item => item.available == true)
+                .map(item => item.courier_code)
+        
+        //ดึงราคากับน้ำหนักของขนส่งที่ อนุมัติ และ Shippop อนุญาติให้ทำการใช้งาน
         const result = await weightAll.find(
             {
                 shop_id: findForCost._id,
@@ -460,9 +493,113 @@ priceList = async (req, res)=>{
                 return res
                         .status(400)
                         .send({status:false, message:"ไม่มีร้านค้านี้ในระบบ"})
-            }       
-        // // if(upline === 'ICE'){
-        //     for (const ob of Object.keys(obj)) {
+            }
+
+        //ดึงราคาขายหน้าร้านมาตรฐาน ของขนส่งที่ อนุมัติ และ Shippop อนุญาติให้ทำการใช้งาน
+        const findPriceBase = await priceBase.find({express: { $in: express_in }})
+            if(!findPriceBase){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ค้นหาราคามาตรฐานไม่เจอ"})
+            }
+
+         //เช็คว่าอยู่เขต กรุงเทพ/ปริมณฑล หรือเปล่า
+         let priceBangkok = false;
+         const findPostcal = await bangkokMetropolitan.findOne({ Postcode: req.body.to.postcode });
+             if (findPostcal) {
+                 priceBangkok = true;
+             }
+        let new_data = [];
+        for(const ob of express_approve){
+            if(ob.available){
+                if(reqCod > 0 && ob.courier_code == `SHIPPOP(ECP)`){
+                    console.log('"ECP" not support COD. Skipping this iteration.');
+                    continue; // ข้ามไปยังรอบถัดไป
+                }
+                let resultP
+                let findP = result.find(item => item.express == ob.courier_code)
+                let p = findP.weight
+                let weightKG = weight / 1000
+                // console.log(weightKG)
+                    for(let i = 0; i< p.length; i++){
+                        if(weightKG >= p[i].weightStart && weightKG <= p[i].weightEnd){
+                            resultP = p[i]
+                            break;
+                        }
+                    }
+
+                let resultBase
+                let findBase = findPriceBase.find(item => item.express == ob.courier_code)
+                let base = findBase.weight
+                    for(let i = 0; i< base.length; i++){
+                        if(weightKG >= base[i].weightStart && weightKG <= base[i].weightEnd){
+                            resultBase = base[i]
+                            break;
+                        }
+                    }
+
+                let returnMessage = {
+                    courier_code : ob.courier_code,
+                    courier_name : ob.courier_name
+                }
+                    if(findP.weightMax < weightKG){
+                        if(findP.weightMax == 0){
+                            returnMessage.status = `ร้านค้า ${req.body.shop_number} กรุณารอการระบุน้ำหนักที่สามารถใช้งานได้`
+                            returnMessage.available = false
+                            new_data.push(returnMessage)
+                        }else{
+                            returnMessage.status = `น้ำหนักของร้านค้า ${req.body.shop_number} ที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`
+                            returnMessage.available = false
+                            new_data.push(returnMessage)
+                        }
+                    }else if(resultP.costUpcountry == 0){
+                        returnMessage.status = `กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`
+                        returnMessage.available = false
+                        new_data.push(returnMessage)
+                    }else if(resultP.costBangkok_metropolitan == 0){
+                        returnMessage.status = `กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`
+                        returnMessage.available = false
+                        new_data.push(returnMessage)
+                    }else if(resultP.salesBangkok_metropolitan == 0){
+                        returnMessage.status = `กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`
+                        returnMessage.available = false
+                        new_data.push(returnMessage)
+                    }else if(resultP.salesUpcountry == 0){
+                        returnMessage.status = `กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`
+                        returnMessage.available = false
+                        new_data.push(returnMessage)
+                    }else if(resultBase.costUpcountry == 0){
+                        returnMessage.status = `กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
+                        returnMessage.available = false
+                        new_data.push(returnMessage)
+                    }else if(resultBase.costBangkok_metropolitan == 0){
+                        returnMessage.status = `กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
+                        returnMessage.available = false
+                        new_data.push(returnMessage)
+                    }else if(resultBase.salesBangkok_metropolitan == 0){
+                        returnMessage.status = `กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
+                        returnMessage.available = false
+                        new_data.push(returnMessage)
+                    }else if(resultBase.salesUpcountry == 0){
+                        returnMessage.status = `กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
+                        returnMessage.available = false
+                        new_data.push(returnMessage)
+                    }
+                if(express){
+                    if(returnMessage.available == false){
+                        return res
+                            .status(400)
+                            .send({status:false, type:"sender", message:returnMessage.status})
+                    }
+                }
+
+            }else{
+                new_data.push(ob)
+            }
+        }
+        
+
+        //    for (const ob of Object.keys(obj)) {
         //         if (obj[ob].available) { // ทำการประมวลผลเฉพาะเมื่อ obj[ob].available เป็น true
         //             if (reqCod > 0 && obj[ob].courier_code == 'ECP') {
         //                 console.log('Encountered "ECP". Skipping this iteration.');
@@ -622,16 +759,16 @@ priceList = async (req, res)=>{
         //             // ทำสิ่งที่คุณต้องการทำเมื่อ obj[ob].available เป็น false
         //             console.log(`Skipping ${obj[ob].courier_code} because available is false`);
         //         }
-        //     }
+        //    }
 
         return res
                 .status(200)
                 .send({ 
                     status: true, 
                     // origin_data: req.body, 
-                    // data: resp.data.data,
+                    // data: new_data,
                     express_active: express_in,
-                    result: result
+                    result: new_data
                 });
     }catch(err){
         console.log(err)
