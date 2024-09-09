@@ -590,9 +590,11 @@ cancelAll = async(req, res)=>{
         for (const item of txlogisticid) {
             if (item.express === "J&T") {
                 let cancel = await cancelOrderAll(item.tracking_code);
+                console.log(cancel)
                 dataJT.push(cancel);
             } else if (item.express === "BEST") {
                 let cancel = await cancelOrderAllBest(item.tracking_code);
+                console.log(cancel)
                 dataBEST.push(cancel);
             }
         }
@@ -659,7 +661,8 @@ pickOrder = async(req, res)=>{
                     order_status:1,
                     day:1,
                     day_pick:1,
-                    day_sign:1
+                    day_sign:1,
+                    express:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -693,7 +696,8 @@ pickOrder = async(req, res)=>{
                     order_status:1,
                     day:1,
                     day_pick:1,
-                    day_sign:1
+                    day_sign:1,
+                    express:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -725,7 +729,8 @@ pickOrder = async(req, res)=>{
                     order_status:1,
                     day:1,
                     day_pick:1,
-                    day_sign:1
+                    day_sign:1,
+                    express:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -757,7 +762,8 @@ pickOrder = async(req, res)=>{
                     order_status:1,
                     day:1,
                     day_pick:1,
-                    day_sign:1
+                    day_sign:1,
+                    express:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -789,7 +795,8 @@ pickOrder = async(req, res)=>{
                     order_status:1,
                     day:1,
                     day_pick:1,
-                    day_sign:1
+                    day_sign:1,
+                    express:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -822,7 +829,8 @@ pickOrder = async(req, res)=>{
                     order_status:1,
                     day:1,
                     day_pick:1,
-                    day_sign:1
+                    day_sign:1,
+                    express:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -853,7 +861,8 @@ pickOrder = async(req, res)=>{
                     order_status:1,
                     day:1,
                     day_pick:1,
-                    day_sign:1
+                    day_sign:1,
+                    express:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -884,7 +893,8 @@ pickOrder = async(req, res)=>{
                     order_status:1,
                     day:1,
                     day_pick:1,
-                    day_sign:1
+                    day_sign:1,
+                    express:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res

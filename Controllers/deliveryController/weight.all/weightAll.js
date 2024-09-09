@@ -83,7 +83,7 @@ editWeight = async (req, res)=>{
             const base = findWeightBase.weight.find((itme) => itme.weightEnd == data.weightEnd)
             // console.log(p,data)
             if(data.weightEnd <= weightShop[0].weightMax){
-                console.log(data.costBangkok_metropolitan, base.salesBangkok_metropolitan)
+                // console.log(data.costBangkok_metropolitan, base.salesBangkok_metropolitan)
                 if (!Number.isInteger(data.costUpcountry) ||
                     !Number.isInteger(data.costBangkok_metropolitan) ||
                     !Number.isInteger(data.salesBangkok_metropolitan) ||
@@ -103,7 +103,7 @@ editWeight = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:`กรุณาอย่าตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} ต่ำกว่าราคาทุนที่ได้รับ`})
                 }
-                
+
                 // if(role != 'admin'){
                 //     if(data.costBangkok_metropolitan > base.salesBangkok_metropolitan){
                 //         return res

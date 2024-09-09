@@ -131,15 +131,15 @@ exports.getMessagePage = async(req, res)=>{
         const limit = req.body.limit
         const limit_message = req.body.limit_message
         let TOKEN = req.body.token_page
+        let picture = []
         // console.log(id)
         const dataConversation = await getConversation(id,TOKEN, limit, limit_message, after) // getConversation
-        // const dataMessage = await getMessage(dataConversation.data,TOKEN, limit_message)
+
         return res
                 .status(200)
                 .send({
                     status:true,
-                    conversation:dataConversation,
-                    // message:dataMessage
+                    ...dataConversation,
                 })
     }catch(err){
         return res
@@ -317,3 +317,41 @@ async function getDecodeMessage(dataMessage, TOKEN) {
         };
     }
 }
+
+const fetchProfilePicture = async (userId,TOKEN) => {
+    const params = {
+        params: {
+            access_token: TOKEN,
+            fields: 'picture.type(large)',  // ใช้ type เพื่อขนาดที่ใหญ่ขึ้น
+            redirect : false
+        }
+    };
+
+    try {
+        const response = await axios.get(`${FB_URL}/${userId}`, params);
+        const pictureData = response.data.picture;
+        console.log(response.data)
+        // ตรวจสอบว่ามีรูปโปรไฟล์หรือไม่
+        if (pictureData && pictureData.data && pictureData.data.url) {
+            return pictureData.data.url; // ส่ง URL รูปโปรไฟล์กลับมา
+        } else {
+            return null; // ถ้าไม่มีรูปโปรไฟล์ให้ return null
+        }
+    } catch (error) {
+        // console.error(`Error fetching profile picture for user ${userId}:`, error);
+        return null;
+    }
+};
+
+const processParticipants = async (participants,TOKEN) => {
+    const profilePictures = await Promise.all(participants.map(async (participant) => {
+        const userId = participant.id;
+        const profilePicture = await fetchProfilePicture(userId,TOKEN);
+
+        return { userId, profilePicture };
+
+    }));
+
+    // ลบข้อมูลที่เป็น null ออก
+    return profilePictures
+};

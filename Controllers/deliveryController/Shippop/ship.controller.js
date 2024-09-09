@@ -33,6 +33,7 @@ priceList = async (req, res)=>{
         const send_behalf = formData.from.send_behalf
         const send_number = formData.from.send_number
         const send_type = formData.from.send_type
+        const percentCOD = req.body.percentCOD 
         let reqCod = req.body.cod_amount
 
         if(send_behalf != "บริษัท" && send_behalf != "บุคคล"){
@@ -370,6 +371,7 @@ priceList = async (req, res)=>{
                             .status(400)
                             .send({status:false, message:"ไม่มีร้านค้าที่ท่านระบุในการค้นหาเปอร์เซ็นต์ COD"})
                 }
+                shopLine.push(findShopCod)
                 let shop_line = findShopCod.shop_line
                 if(shop_line != "ICE"){
                     do{
@@ -380,9 +382,10 @@ priceList = async (req, res)=>{
                             }
                     }while(shop_line != "ICE")
                 }
+                shopLine.push({shop_line :"ICE"})
         }
         // let codCal = codCalculate(findForCost)
-
+        // console.log(shopLine)
         let data = [];
             data.push({
                 "from": {
@@ -411,7 +414,7 @@ priceList = async (req, res)=>{
                     "height": req.body.parcel.height
                 },
             //DHL FLE
-                "showall": 1,
+                "showall": 0,
                 "shop_number": req.body.shop_number//524854
         });
         const value = {
@@ -488,7 +491,7 @@ priceList = async (req, res)=>{
             {
                 shop_id: findForCost._id,
                 express: { $in: express_in }  // เปลี่ยนตำแหน่ง $in
-            },{shop_id:1, weightMax:1, weight:1, express:1})
+            },{shop_id:1, weightMax:1, weight:1, express:1, owner_id:1, shop_line:1})
             if(!result){
                 return res
                         .status(400)
@@ -509,6 +512,7 @@ priceList = async (req, res)=>{
              if (findPostcal) {
                  priceBangkok = true;
              }
+
         let new_data = [];
         for(const ob of express_approve){
             if(ob.available){
@@ -546,57 +550,213 @@ priceList = async (req, res)=>{
                         if(findP.weightMax == 0){
                             returnMessage.status = `ร้านค้า ${req.body.shop_number} กรุณารอการระบุน้ำหนักที่สามารถใช้งานได้`
                             returnMessage.available = false
-                            new_data.push(returnMessage)
+
                         }else{
                             returnMessage.status = `น้ำหนักของร้านค้า ${req.body.shop_number} ที่คุณสามารถสั่ง Order ได้ต้องไม่เกิน ${result.weightMax} กิโลกรัม`
                             returnMessage.available = false
-                            new_data.push(returnMessage)
+
                         }
                     }else if(resultP.costUpcountry == 0){
+                        returnMessage.available = false
                         returnMessage.status = `กรุณารอการตั้งราคา(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`
-                        returnMessage.available = false
-                        new_data.push(returnMessage)
+
                     }else if(resultP.costBangkok_metropolitan == 0){
+                        returnMessage.available = false
                         returnMessage.status = `กรุณารอการตั้งราคา(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`
-                        returnMessage.available = false
-                        new_data.push(returnMessage)
+                        
                     }else if(resultP.salesBangkok_metropolitan == 0){
+                        returnMessage.available = false
                         returnMessage.status = `กรุณากรอกราคาขายหน้าร้าน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`
-                        returnMessage.available = false
-                        new_data.push(returnMessage)
+                       
                     }else if(resultP.salesUpcountry == 0){
+                        returnMessage.available = false
                         returnMessage.status = `กรุณากรอกราคาขายหน้าร้าน(ต่างจังหวัด) น้ำหนัก ${resultP.weightStart} ถึง ${resultP.weightEnd} กิโลกรัม`
-                        returnMessage.available = false
-                        new_data.push(returnMessage)
+                       
                     }else if(resultBase.costUpcountry == 0){
+                        returnMessage.available = false
                         returnMessage.status = `กรุณารอการตั้งราคาแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
-                        returnMessage.available = false
-                        new_data.push(returnMessage)
+     
                     }else if(resultBase.costBangkok_metropolitan == 0){
+                        returnMessage.available = false
                         returnMessage.status = `กรุณารอการตั้งราคาแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
-                        returnMessage.available = false
-                        new_data.push(returnMessage)
+                       
                     }else if(resultBase.salesBangkok_metropolitan == 0){
+                        returnMessage.available = false
                         returnMessage.status = `กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
-                        returnMessage.available = false
-                        new_data.push(returnMessage)
+                        
                     }else if(resultBase.salesUpcountry == 0){
-                        returnMessage.status = `กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
                         returnMessage.available = false
-                        new_data.push(returnMessage)
+                        returnMessage.status = `กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`
+
                     }
+                //คำนวนกำไร COD ของแต่ละคน 
+                const cod_cal = await codCalculate(percentCOD,shopLine,ob.courier_code,reqCod,ob.courier_name)
+                // console.log(cod_cal)
                 if(express){
                     if(returnMessage.available == false){
                         return res
-                            .status(400)
-                            .send({status:false, type:"sender", message:returnMessage.status})
+                                .status(400)
+                                .send({status:false,type:"sender",message:returnMessage.status})
+                    }else if(cod_cal.available == false){
+                        return res
+                                .status(400)
+                                .send({status:false,type:"sender",message:cod_cal.status})
                     }
                 }
+                if(returnMessage.available == false){
+                    new_data.push(returnMessage)
+                    continue;
+                }else if(cod_cal.available == false){
+                    new_data.push(cod_cal)
+                    continue;
+                }
 
+                // คำนวนต้นทุนของร้านค้า
+                let cost_hub
+                let price
+                let profit_partner
+                let profit = []
+                let status = null;
+                let cut_partner
+                let cost_base
+                let cod_profit
+                // let profitSaleMartket
+                
+                let findOwner = cod_cal.cod_percent.find((item)=> item.id == findP.owner_id)
+                    if(!findOwner){
+                        cod_profit = 0
+                    }else{
+                        cod_profit = findOwner.cod_profit //กำไร COD ของผู้ส่งออเดอร์
+                    }
+                // console.log(findOwner)
+                if(priceBangkok){
+                    cost_hub = resultP.costBangkok_metropolitan
+                    price = resultP.salesBangkok_metropolitan
+                    // profitSaleMartket = price - resultBase.salesBangkok_metropolitan
+                    cut_partner = parseFloat(resultP.costBangkok_metropolitan.toFixed(2))
+                    cost_base = resultBase.salesBangkok_metropolitan
+                    profit_partner = price - cost_hub
+
+                    let cost = resultP.costBangkok_metropolitan
+                    let total = profit_partner + cod_profit
+                        let dataOne = {
+                            id: findP.owner_id,
+                            cost_price: parseFloat(price.toFixed(2)),
+                            cost: parseFloat(cost.toFixed(2)),
+                            profit: parseFloat(profit_partner.toFixed(2)),
+                            cod_profit: parseFloat(cod_profit.toFixed(2)),
+                            total: parseFloat(total.toFixed(2))
+                        }
+                    profit.push(dataOne)
+                }else{
+                    cost_hub = resultP.costUpcountry
+                    price = resultP.salesUpcountry
+                    // profitSaleMartket = price - resultBase.salesUpcountry
+                    profit_partner = price - cost_hub
+                    cut_partner = parseFloat(resultP.costUpcountry.toFixed(2))
+                    cost_base = resultBase.salesUpcountry
+
+                    let cost = resultP.costUpcountry
+                    let total = profit_partner + cod_profit
+                        let dataOne = {
+                            id: findP.owner_id,
+                            cost_price: parseFloat(price.toFixed(2)),
+                            cost: parseFloat(cost.toFixed(2)),
+                            profit: parseFloat(profit_partner.toFixed(2)),
+                            cod_profit: parseFloat(cod_profit.toFixed(2)),
+                            total: parseFloat(total.toFixed(2))
+                        }
+                    profit.push(dataOne)
+                }
+                // console.log(profit)
+                let shop_line = findP.shop_line
+                if(shop_line != 'ICE'){
+                    do{
+                        const findHead = await weightAll.findOne(
+                                {
+                                    shop_id: shop_line,
+                                    express:ob.courier_code
+                                })
+                        let profitOne 
+                        let cod_profit
+                        let findWeight = findHead.weight.find((item)=> item.weightEnd == resultP.weightEnd )
+                        let findOwner = cod_cal.cod_percent.find((item)=> item.id == findHead.owner_id)
+                        // let findOwner = cod_percent.find((item)=> item.id == findHead.owner_id)  
+                            if(!findOwner){
+                                cod_profit = 0
+                            }else{
+                                cod_profit = findOwner.cod_profit
+                            }
+                            // console.log(findOwner)
+                        let cost 
+                            if(priceBangkok){
+                                profitOne = cost_hub - findWeight.costBangkok_metropolitan
+                                cost = findWeight.costBangkok_metropolitan
+                            }else{
+                                profitOne = cost_hub - findWeight.costUpcountry
+                                cost = findWeight.costUpcountry
+                            }
+                        let total = profitOne + cod_profit
+                        let data = {
+                                    id: findHead.owner_id,
+                                    cost_price: parseFloat(cost_hub.toFixed(2)),
+                                    cost: parseFloat(cost.toFixed(2)),
+                                    profit: parseFloat(profitOne.toFixed(2)),
+                                    cod_profit: parseFloat(cod_profit.toFixed(2)),
+                                    total: parseFloat(total.toFixed(2)),
+                            }
+                        profit.push(data)
+                        shop_line = findHead.shop_line
+                        cost_hub -= profitOne
+                    }while(shop_line != 'ICE')
+                }
+                
+                let cod_iceprofit
+                let findIce = cod_cal.cod_percent.find((item)=> item.id == 'ICE')
+                    if(!findIce){
+                        cod_iceprofit = 0
+                    }else{
+                        cod_iceprofit = findIce.cod_profit
+                    }
+
+                if(priceBangkok){
+                    // console.log(cost_hub)
+                    let cost = resultBase.costBangkok_metropolitan
+                    let profitTwo = cost_hub - resultBase.costBangkok_metropolitan
+                    let total = profitTwo + cod_iceprofit
+                    let dataICE = {
+                        id:"ICE",
+                        cost_price: parseFloat(cost_hub.toFixed(2)),
+                        cost: parseFloat(cost.toFixed(2)),
+                        profit: parseFloat(profitTwo.toFixed(2)),
+                        cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
+                        total: parseFloat(total.toFixed(2))
+                    }
+                    profit.push(dataICE)
+                    cost_hub -= profitTwo
+                }else{
+                    let cost = resultBase.costUpcountry
+                    let profitTwo = cost_hub - resultBase.costUpcountry
+                    let total = profitTwo + cod_iceprofit
+                    let dataICE = {
+                        id:"ICE",
+                        cost_price: parseFloat(cost_hub.toFixed(2)),
+                        cost: parseFloat(cost.toFixed(2)),
+                        profit: parseFloat(profitTwo.toFixed(2)),
+                        cod_profit: parseFloat(cod_iceprofit.toFixed(2)),
+                        total: parseFloat(total.toFixed(2))
+                    }
+                    profit.push(dataICE)
+                    cost_hub -= profitTwo
+                    // console.log(cost_hub)
+                }
+                // console.log(profit)
             }else{
                 new_data.push(ob)
             }
         }
+        // console.log("new_data",new_data)
+
         
 
         //    for (const ob of Object.keys(obj)) {
@@ -768,7 +928,7 @@ priceList = async (req, res)=>{
                     // origin_data: req.body, 
                     // data: new_data,
                     express_active: express_in,
-                    result: new_data
+                    result: express_active
                 });
     }catch(err){
         console.log(err)
@@ -1873,62 +2033,75 @@ async function invoiceNumber() {
     return combinedData;
 }
 
-async function codCalculate(){
+async function codCalculate(percent,shopLine,express,reqCod,courier_name){
     try{
         let cod_percent = []
         let fee_cod_total = 0
         let profitCOD = 0 //ห้ามลบ
-        if(reqCod != 0){
-            const findShopCod = await codPercent.findOne({shop_id:findForCost._id})
-                if(findShopCod){
-                    let fee_cod = 0
-                    let percentCOD = req.body.percentCOD 
+
+            let fee_cod = 0
+            let percentCOD = percent
                     
-                    // สร้าง regular expression เพื่อตรวจสอบทศนิยมไม่เกิน 2 ตำแหน่ง
-                    const regex = /^\d+(\.\d{1,2})?$/;
+            // สร้าง regular expression เพื่อตรวจสอบทศนิยมไม่เกิน 2 ตำแหน่ง
+            const regex = /^\d+(\.\d{1,2})?$/;
 
-                    let pFirst = findShopCod.express.find((item)=> item.express == `${express}`)
+            let pFirst = shopLine[0].express.find((item)=> item.express == express)
 
-                    if(pFirst.percent == 0){
-                        return res
-                                .status(400)
-                                .send({status:false, message:"กรุณารอพาร์ทเนอร์ที่แนะนำท่านกรอกเปอร์เซ็น COD ที่ต้องการ"})
-                    }else if(!regex.test(percentCOD)){
-                        return res
-                                .status(400)
-                                .send({ status: false, message: "ค่าเปอร์เซ็น COD ต้องเป็นทศนิยมไม่เกิน 2 ตำแหน่ง" });
-                    }else if(percentCOD != 0 && percentCOD < pFirst.percent){
-                        return res
-                                .status(400)
-                                .send({
-                                    status:false, 
-                                    type:"sender",
-                                    message:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"})
-                    }
-                    // console.log(percentCOD)
-                        if(percentCOD != 0){ //กรณีกรอก %COD ที่ต้องการมา
-                            let feeOne = (reqCod * percentCOD)/100
-                            fee_cod_total = feeOne
-                            fee_cod = (reqCod * pFirst.percent)/100
-                            let profit = feeOne - fee_cod
-                                let v = {
-                                    id:findShopCod.owner_id,
-                                    cod_profit:profit
-                                }
-                            profitCOD = profit
-                            cod_percent.push(v)
-                            
-                        }else{
-                            fee_cod = ((reqCod * pFirst.percent)/100)
-                            fee_cod_total = fee_cod
+                if(pFirst.percent == 0){
+                        return {
+                            courier_code: express,
+                            courier_name:courier_name,
+                            available:false,
+                            type:"sender",
+                            status:"กรุณารอพาร์ทเนอร์ที่แนะนำท่านกรอกเปอร์เซ็น COD ที่ต้องการ"
                         }
+    
+                }else if(!regex.test(percentCOD)){
+                        return {
+                                courier_code: express,
+                                courier_name:courier_name,
+                                available:false,
+                                type:"sender",
+                                status:"ค่าเปอร์เซ็น COD ต้องเป็นทศนิยมไม่เกิน 2 ตำแหน่ง"
+                            }
+                }else if(percentCOD != 0 && percentCOD < pFirst.percent){
+                        return {
+                                courier_code: express,
+                                courier_name:courier_name,
+                                available:false, 
+                                type:"sender",
+                                status:"กรุณาอย่าตั้ง %COD ต่ำกว่าพาร์ทเนอร์ที่แนะนำท่าน"
+                            }
+                }
+                // console.log(percentCOD)
+                if(percentCOD != 0){ //กรณีกรอก %COD ที่ต้องการมา
+                        let feeOne = (reqCod * percentCOD)/100
+                        fee_cod_total = feeOne
+                        fee_cod = (reqCod * pFirst.percent)/100
+                        let profit = feeOne - fee_cod
+                            let v = {
+                                id:shopLine[0].owner_id,
+                                cod_profit:profit
+                            }
+                        profitCOD = profit
+                        cod_percent.push(v)
+                }else{
+                        fee_cod = ((reqCod * pFirst.percent)/100)
+                        fee_cod_total = fee_cod
+                }
 
-                    // console.log(shop_line)
-                    if(findShopCod.shop_line != 'ICE'){
-                        let shop_line = findShopCod.shop_line
-                        do{
-                            const findShopLine = await codPercent.findOne({shop_id:shop_line})
-                            const p = findShopLine.express.find((item)=> item.express == "J&T")
+                // console.log(shop_line)
+                for(const item of shopLine.slice(1)){  //เริ่มที่ Array index ที่ 1 ทันทีไม่ต้องเริ่มที่ 0 
+                    // console.log(item)
+                    if(!item.head_line){
+                            let v = {
+                                id:'ICE',
+                                cod_profit:fee_cod
+                            }
+                        cod_percent.push(v)
+                    }else{
+                        const findShopLine = item
+                            const p = findShopLine.express.find((item)=> item.express == express)
                             let feeOne = (reqCod * p.percent)/100
                             let profit = fee_cod - feeOne
                                 fee_cod -= profit
@@ -1937,26 +2110,14 @@ async function codCalculate(){
                                             cod_profit:profit
                                         }
                                 cod_percent.push(v)
-                                    if(findShopLine.shop_line == 'ICE'){
-                                        let b = {
-                                                id:'ICE',
-                                                cod_profit:fee_cod
-                                            }
-                                        cod_percent.push(b)
-                                    }
-                                shop_line = findShopLine.shop_line
-                            
-                        }while(shop_line != "ICE")
-                    }else{
-                        let v = {
-                                id:'ICE',
-                                cod_profit:fee_cod
-                            }
-                        cod_percent.push(v)
                     }
-                    
                 }
-        }
+            return {
+                express:express,
+                fee_cod_total:fee_cod_total,
+                cod_percent:cod_percent
+            }
+
     }catch(err){
         console.log(err)
         return {

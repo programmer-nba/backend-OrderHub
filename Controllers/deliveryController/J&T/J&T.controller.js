@@ -33,6 +33,7 @@ const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 let apiUrl = process.env.JT_URL
 let ecom_id = process.env.ECOMPANY_ID
 let customer_id = process.env.CUSTOMER_ID
+let count_number = 0
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -398,7 +399,11 @@ createOrder = async (req, res)=>{
                 }
             allProfit.push(createTemplate)
         }
-        
+        count_number += 1
+        console.log(count_number)
+        if(count_number == 30){
+            throw new Error("ออเดอร์เกิน 30 ต้องเข้า CATCH"); // สร้าง error เพื่อบังคับให้เข้า catch
+        }
         return res
                 .status(200)
                 .send({
@@ -406,13 +411,15 @@ createOrder = async (req, res)=>{
                     res: response.data,
                     order: createOrderAll,
                     // shop: findShop,
-                    profitAll: allProfit
+                    profitAll: allProfit,
+                    count_number:count_number
                 })
     }catch(err){
         // console.log(err)
+        count_number = 0
         return res
                 .status(500)
-                .send({status:false, message:err})
+                .send({status:false, message:err.message})
     }
 }
 
@@ -433,7 +440,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -614,7 +621,7 @@ trackingOrderOne = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
