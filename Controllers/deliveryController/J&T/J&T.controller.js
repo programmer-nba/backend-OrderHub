@@ -41,7 +41,7 @@ dayjs.extend(timezone);
 createOrder = async (req, res)=>{
     try{
         console.log(count_number)
-        if(count_number == 31){
+        if(count_number == 16){
             // ตอบกลับด้วย CORS error โดยการลบ headers ที่ใช้ใน CORS ออก
             res.setHeader('Access-Control-Allow-Origin', ''); // ไม่ให้ค่า origin ถูกต้อง
             return res.status(403).json({ error: "CORS blocked after reaching 31 orders" }); // ส่ง status 403
