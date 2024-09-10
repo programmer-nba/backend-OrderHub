@@ -516,6 +516,7 @@ priceList = async (req, res)=>{
         let new_data = [];
         for(const ob of express_approve){
             if(ob.available){
+                let v = null;
                 if(reqCod > 0 && ob.courier_code == `SHIPPOP(ECP)`){
                     console.log('"ECP" not support COD. Skipping this iteration.');
                     continue; // ข้ามไปยังรอบถัดไป
@@ -751,6 +752,50 @@ priceList = async (req, res)=>{
                     // console.log(cost_hub)
                 }
                 // console.log(profit)
+                v = {
+                    ...req.body,
+                    express: ob.courier_code,
+                    price_remote_area: 0,
+                    cost_hub: cost_hub,
+                    cost_base: cost_base,
+                    fee_cod: 0,
+                    price: Number(price.toFixed()),
+                    declared_value: declared_value,
+                    insuranceFee: insuranceFee,
+                    packing_price: packing_price,
+                    total: 0,
+                    cut_partner: 0,
+                    status: status,
+                    remark: remark,
+                    profitAll: profit
+                }
+                 let formattedFee = parseFloat(fee_cod_total.toFixed(2));
+                        let total = price + formattedFee + insuranceFee + packing_price
+                            v.fee_cod = formattedFee
+                            // v.profitPartner = profitPartner
+                                if(price_remote_area != undefined){
+                                    let total1 = total + price_remote_area
+                                        v.total = parseFloat(total1.toFixed(2))
+                                        let cut = cut_partner + price_remote_area + insuranceFee + formattedFee
+                                        v.cut_partner = parseFloat(cut.toFixed(2))
+                                        v.price_remote_area = price_remote_area
+                                }else{
+                                    let cut = cut_partner + insuranceFee + formattedFee
+                                    v.cut_partner = parseFloat(cut.toFixed(2))
+                                    v.total = parseFloat(total.toFixed(2))
+                                }
+                            new_data.push(v);
+                    
+                    try {
+                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                        if (findForCost.credit < new_data[0].cut_partner) {
+                            new_data[0].status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                        } else {
+                            new_data[0].status = 'พร้อมใช้บริการ';
+                        }
+                    } catch (error) {
+                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                    }
             }else{
                 new_data.push(ob)
             }
@@ -928,7 +973,7 @@ priceList = async (req, res)=>{
                     // origin_data: req.body, 
                     // data: new_data,
                     express_active: express_in,
-                    result: express_active
+                    result: express_approve
                 });
     }catch(err){
         console.log(err)
