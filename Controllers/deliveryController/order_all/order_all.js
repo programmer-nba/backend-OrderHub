@@ -284,6 +284,26 @@ getCode = async(req, res)=>{
 
 getCodeOrder = async(req, res)=>{
     try{
+        const print_code = req.params.print_code
+        const findOrder = await orderAll.find({print_code:print_code})
+        // console.log(findOrder)
+            if(findOrder.length == 0){
+                return res
+                        .status(400)
+                        .send({status:false, message:"ไม่พบข้อมูลในระบบ"})
+            }
+        return res
+                .status(200)
+                .send({status:true, data:findOrder})
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
+getCodeRandom = async(req, res)=>{
+    try{
         const number = await invoiceNumber()
         const numberString = number.toString(); // หรือใช้ String(number)
         return res
@@ -954,4 +974,4 @@ async function invoiceNumber() {
 }
 
 module.exports = { getAll, getByIdUser, getByTrackingCode, delend, updateBillStatus, getOrderMeAll, 
-    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch, pickOrder, selectOrder, labelNumber }
+    getCode, getCodeOrder, getOrderByDate, getOrderStatus, getOrderCancel, cancelAll, getOrderBySearch, pickOrder, selectOrder, labelNumber, getCodeRandom }
