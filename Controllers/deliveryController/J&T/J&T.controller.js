@@ -33,13 +33,17 @@ const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 let apiUrl = process.env.JT_URL
 let ecom_id = process.env.ECOMPANY_ID
 let customer_id = process.env.CUSTOMER_ID
-let count_number = 0
+let count_number = 1
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 createOrder = async (req, res)=>{
     try{
+        console.log(count_number)
+        if(count_number == 31){
+            throw new Error("ออเดอร์เกิน 30 ต้องเข้า CATCH"); // สร้าง error เพื่อบังคับให้เข้า catch
+        }
         const id = req.decoded.userid
         const role = req.decoded.role
         const data = req.body
@@ -402,10 +406,6 @@ createOrder = async (req, res)=>{
             allProfit.push(createTemplate)
         }
         count_number += 1
-        console.log(count_number)
-        if(count_number == 30){
-            throw new Error("ออเดอร์เกิน 30 ต้องเข้า CATCH"); // สร้าง error เพื่อบังคับให้เข้า catch
-        }
         return res
                 .status(200)
                 .send({
@@ -1117,7 +1117,7 @@ cancelOrder = async (req, res)=>{
     }catch(err){
         return res
                 .status(500)
-                .send({status:false, message:err})
+                .send({status:false, message:err.message})
     }
 }
 
