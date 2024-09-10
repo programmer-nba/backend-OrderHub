@@ -54,6 +54,7 @@ createOrder = async (req, res)=>{
         const insuranceFee = req.body.insuranceFee
         const cost_base = req.body.cost_base
         const profitAll = req.body.profitAll
+        const print_code = req.body.print_code
         const price_remote_area = req.body.price_remote_area //ราคาพื้นที่ห่างไกล J&T ไม่มีบอกน้าา
         let cut = req.body.cut_partner
         const cut_partner = parseFloat(cut.toFixed(2))
@@ -361,6 +362,7 @@ createOrder = async (req, res)=>{
                 packing_price: packing_price,
                 price_remote_area: price_remote_area,
                 price: price,
+                print_code: print_code,
                 declared_value: declared_value,
                 insuranceFee: insuranceFee,
                 profitAll: profitAll,

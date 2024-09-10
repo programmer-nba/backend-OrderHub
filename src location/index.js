@@ -14,7 +14,7 @@ const split = async (req, res) => {
     } catch (error) {
         return res
                 .status(500)
-                .send({status:false, message:err})
+                .send({status:false, message:error})
     }
 };
 
