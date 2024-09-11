@@ -34,18 +34,26 @@ let apiUrl = process.env.JT_URL
 let ecom_id = process.env.ECOMPANY_ID
 let customer_id = process.env.CUSTOMER_ID
 let count_number = 1
-
+let err_number = 0
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 createOrder = async (req, res)=>{
     try{
         console.log(count_number)
-        if(count_number == 16){
+        if(count_number == 11){
             // ตอบกลับด้วย CORS error โดยการลบ headers ที่ใช้ใน CORS ออก
             count_number = 0
+            err_number = 1
             res.setHeader('Access-Control-Allow-Origin', ''); // ไม่ให้ค่า origin ถูกต้อง
             return res.status(403).json({ error: "CORS blocked after reaching 31 orders" }); // ส่ง status 403
+        }
+        if(err_number >= 1){
+            if(err_number == 3){
+                err_number = 0
+                throw new Error("ERROR CATCH 500");
+            }
+            err_number += 1
         }
         const id = req.decoded.userid
         const role = req.decoded.role

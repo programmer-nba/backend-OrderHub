@@ -769,16 +769,16 @@ priceList = async (req, res)=>{
                     remark: remark,
                     profitAll: profit
                 }
-                 let formattedFee = parseFloat(fee_cod_total.toFixed(2));
+                 let formattedFee = parseFloat(cod_cal.fee_cod_total.toFixed(2));
                         let total = price + formattedFee + insuranceFee + packing_price
                             v.fee_cod = formattedFee
                             // v.profitPartner = profitPartner
-                                if(price_remote_area != undefined){
-                                    let total1 = total + price_remote_area
+                                if(ob.hasOwnProperty("price_remote_area")){
+                                    let total1 = total + ob.price_remote_area
                                         v.total = parseFloat(total1.toFixed(2))
-                                        let cut = cut_partner + price_remote_area + insuranceFee + formattedFee
+                                        let cut = cut_partner + ob.price_remote_area + insuranceFee + formattedFee
                                         v.cut_partner = parseFloat(cut.toFixed(2))
-                                        v.price_remote_area = price_remote_area
+                                        v.price_remote_area = ob.price_remote_area
                                 }else{
                                     let cut = cut_partner + insuranceFee + formattedFee
                                     v.cut_partner = parseFloat(cut.toFixed(2))
@@ -973,7 +973,8 @@ priceList = async (req, res)=>{
                     // origin_data: req.body, 
                     // data: new_data,
                     express_active: express_in,
-                    result: express_approve
+                    result: express_approve,
+                    new_data: new_data
                 });
     }catch(err){
         console.log(err)
