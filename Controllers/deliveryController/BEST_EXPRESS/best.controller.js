@@ -884,10 +884,12 @@ cancelOrder = async (req, res)=>{
                         .status(404)
                         .send({status:false, message:"ไม่สามารถค้นหาหมายเลข Tracking ได้"})
             }else if(findCancel.order_status == 'cancel'){
+                console.log(findCancel)
                 return res
                         .status(200)
                         .send({status:true, message:"ออเดอร์นี้ถูก Cancel ไปแล้ว"})
             }
+            
         const newData = await doSign(formData, charset, keys)
             // console.log(newData)
         const response = await axios.post(BEST_URL,newData,{

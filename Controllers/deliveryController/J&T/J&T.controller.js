@@ -34,6 +34,7 @@ let apiUrl = process.env.JT_URL
 let ecom_id = process.env.ECOMPANY_ID
 let customer_id = process.env.CUSTOMER_ID
 let count_number = 1
+let count_tracking = 1
 let err_number = 0
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -424,7 +425,7 @@ createOrder = async (req, res)=>{
                     res: response.data,
                     order: createOrderAll,
                     // shop: findShop,
-                    profitAll: allProfit,
+                    // profitAll: allProfit,
                     count_number:count_number
                 })
     }catch(err){
@@ -438,6 +439,13 @@ createOrder = async (req, res)=>{
 
 trackingOrder = async (req, res)=>{
     try{
+        console.log(count_tracking)
+        if(count_tracking >= 3){
+            // ตอบกลับด้วย CORS error โดยการลบ headers ที่ใช้ใน CORS ออก
+            count_tracking = 0
+            res.setHeader('Access-Control-Allow-Origin', ''); // ไม่ให้ค่า origin ถูกต้อง
+            return res.status(403).json({ error: "CORS blocked after reaching 31 orders" }); // ส่ง status 403
+        }
         const txlogisticid = req.body.txlogisticid
         const formData = {
             "logistics_interface":{
@@ -602,6 +610,7 @@ trackingOrder = async (req, res)=>{
         ]);
         // const bulkDetail = await orderAll.bulkWrite(detailBulk)
         // const bulkCod = await profitTemplate.bulkWrite(codBulk)
+        count_tracking += 1
         return res
                 .status(200)
                 .send({status:true, 
