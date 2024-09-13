@@ -81,6 +81,7 @@ createPDFOrder = async(req, res)=>{
         const declared_value = req.body.declared_value
         const cost_base = req.body.cost_base
         const profitAll = req.body.profitAll
+        const print_code = req.body.print_code
         const cod_amount = req.body.cod_amount
         const price = req.body.price
         const data = req.body
@@ -401,6 +402,7 @@ createPDFOrder = async(req, res)=>{
                     status:'booking',
                     cost_hub: cost_hub,
                     cost_base: cost_base,
+                    print_code: print_code,
                     cod_amount:cod_amount,
                     fee_cod: fee_cod,
                     total: total,
