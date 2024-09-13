@@ -1710,6 +1710,7 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
 callPickup = async (req, res)=>{ //ใช้ไม่ได้
     try{
         const courier_tracking_code = req.params.courier_tracking_code
+        const num_of_parcel = req.body.num_of_parcel
         const valueCheck = {
             api_key: process.env.SHIPPOP_API_KEY,
             tracking_code: courier_tracking_code

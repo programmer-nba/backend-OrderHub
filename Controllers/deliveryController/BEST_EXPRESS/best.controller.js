@@ -46,9 +46,27 @@ const BEST_URL = process.env.BEST_URL
 const keys = process.env.PARTNER_KEY
 const PARTNER_ID = process.env.PARTNER_ID
 const charset = 'utf-8'
+let count_number = 1
+let count_tracking = 1
+let err_number = 0
 
 createPDFOrder = async(req, res)=>{
     try{
+        console.log(count_number)
+        if(count_number == 11){
+            // ตอบกลับด้วย CORS error โดยการลบ headers ที่ใช้ใน CORS ออก
+            count_number = 0
+            err_number = 1
+            res.setHeader('Access-Control-Allow-Origin', ''); // ไม่ให้ค่า origin ถูกต้อง
+            return res.status(403).json({ error: "CORS blocked after reaching 31 orders" }); // ส่ง status 403
+        }
+        if(err_number >= 1){
+            if(err_number == 3){
+                err_number = 0
+                throw new Error("ERROR CATCH 500");
+            }
+            err_number += 1
+        }
         const txLogistic = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
             // console.log('txLogisticId : '+txLogistic);
         const id = req.decoded.userid
@@ -431,7 +449,7 @@ createPDFOrder = async(req, res)=>{
                     }
                 allProfit.push(createTemplate)
             }
-
+            count_number += 1
             return res
                 .status(200)
                 .send({
