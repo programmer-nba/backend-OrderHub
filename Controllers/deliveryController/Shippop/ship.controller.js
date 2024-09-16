@@ -451,7 +451,21 @@ priceList = async (req, res)=>{
                     .send({status: false, message: resp.data.message});
         }
         const obj = resp.data.data[0];
-
+        const express_true = findForCost.express.filter(item =>  //ใช้หาว่า ขนส่ง SHIPPOP ใดบ้างของร้านค้าที่มีการ อนุมัติ และ ไม่ถูกยกเลิกสัญญา
+                item.on_off === true && 
+                item.cancel_contract === false && 
+                item.express.startsWith("SHIPPOP")
+            )
+        // console.log(express_true)
+            if(express_true.length == 0){ //ผู้แนะนำไม่ได้อนุมัติให้ใช้ ขนส่งของ SHIPPOP ตัวไหนเลย
+                return res
+                        .status(400)
+                        .send({
+                            status:false, 
+                            message:"ไม่มีขนส่ง ORDERHUB PACKAGE อันไหนได้รับการอนุมัติ กรุณาให้ผู้แนะนำท่านอนุมัติการใช้งาน",
+                            data:[]
+                        })
+            }
         const findinsured = await insuredExpress.findOne({express:"SHIPPOP"})
         let insuranceFee = 0
             if(findinsured){
@@ -484,20 +498,14 @@ priceList = async (req, res)=>{
             if(express_active.length == 0){ //shippop ไม่มีขนส่งไหนอนุมัติให้ใช้เลย
                 return res
                         .status(400)
-                        .send({status:false, message:"ไม่มีขนส่งไหนของ ORDERHUB PACKAGE รองรับออเดอร์ของท่าน"})
+                        .send({
+                            status:false, 
+                            message:"ไม่มีขนส่งไหนของ ORDERHUB PACKAGE รองรับออเดอร์ของท่าน",
+                            data:[]
+                        })
             }
         }
-        const express_true = findForCost.express.filter(item =>  //ใช้หาว่า ขนส่ง SHIPPOP ใดบ้างของร้านค้าที่มีการ อนุมัติ และ ไม่ถูกยกเลิกสัญญา
-                item.on_off === true && 
-                item.cancel_contract === false && 
-                item.express.startsWith("SHIPPOP")
-            )
-        // console.log(express_true)
-            if(express_true.length == 0){ //ผู้แนะนำไม่ได้อนุมัติให้ใช้ ขนส่งของ SHIPPOP ตัวไหนเลย
-                return res
-                        .status(400)
-                        .send({status:false, message:"ไม่มีขนส่ง ORDERHUB PACKAGE อันไหนได้รับการอนุมัติ กรุณาให้ผู้แนะนำท่านอนุมัติการใช้งาน"})
-            }
+
         let express_approve = []
         //ทำการวนเช็คว่ามีขนส่งที่อนุมัติ อันไหนบ้าง ที่ SHIPPOP อนุญาติให้ใช้งาน
         for(const express of express_true){ 
@@ -859,7 +867,7 @@ priceList = async (req, res)=>{
                     status: true, 
                     // origin_data: req.body, 
                     express_active: express_in,
-                    result: express_active,
+                    // result: express_active,
                     data: new_data
                 });
     }catch(err){
@@ -1709,15 +1717,20 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
 
 callPickup = async (req, res)=>{ //ใช้ไม่ได้
     try{
-        const courier_tracking_code = req.params.courier_tracking_code
+        const courier_tracking_code = req.body.courier_tracking_code
+        console.log(courier_tracking_code)
         const num_of_parcel = req.body.num_of_parcel
+        const datetime_pickup = req.body.datetime_pickup
         const valueCheck = {
             api_key: process.env.SHIPPOP_API_KEY,
-            tracking_code: courier_tracking_code
+            tracking_code: courier_tracking_code,
+            num_of_parcel: num_of_parcel,
+            datetime_pickup: datetime_pickup
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/calltopickup/`,valueCheck,
             {
-                headers: {"Content-Type": "application/json"},
+                headers: {"Accept-Encoding": "gzip,deflate,compress",
+                    "Content-Type": "application/json"},
             }
         )
         if(resp){
