@@ -184,7 +184,7 @@ getShopHistory = async(req, res)=>{
                                     .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
                         }
                 }else if(orderer && type){
-                    console.log("11")
+                    // console.log("11")
                     findMe = await historyWalletShop.find({
                         shop_number:shop_number, 
                         ID:orderer, 
@@ -199,7 +199,7 @@ getShopHistory = async(req, res)=>{
                                     .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
                         }
                 }else if(orderer){
-                    console.log("9")
+                    // console.log("9")
                     findMe = await historyWalletShop.find({
                         shop_number:shop_number, 
                         ID:orderer, 
@@ -289,4 +289,15 @@ getShopHistory = async(req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
+
+getShopCancel = async(req, res)=>{
+    try{
+
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 module.exports = { getAll, getOne, getById, getCreditDis, getShopHistory }

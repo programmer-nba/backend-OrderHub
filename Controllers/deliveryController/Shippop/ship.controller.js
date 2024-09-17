@@ -868,7 +868,7 @@ priceList = async (req, res)=>{
                     // origin_data: req.body, 
                     express_active: express_in,
                     // result: express_active,
-                    data: new_data
+                    new: new_data
                 });
     }catch(err){
         console.log(err)
@@ -1715,33 +1715,76 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
     }
 }
 
-callPickup = async (req, res)=>{ //ใช้ไม่ได้
+callPickup = async (req, res)=>{ 
     try{
-        const courier_tracking_code = req.body.courier_tracking_code
-        console.log(courier_tracking_code)
+        const tracking_code = req.body.tracking_code
         const num_of_parcel = req.body.num_of_parcel
         const datetime_pickup = req.body.datetime_pickup
-        const valueCheck = {
+        const data = {
             api_key: process.env.SHIPPOP_API_KEY,
-            tracking_code: courier_tracking_code,
+            tracking_code: tracking_code,
             num_of_parcel: num_of_parcel,
             datetime_pickup: datetime_pickup
         };
-        const resp = await axios.post(`${process.env.SHIPPOP_URL}/calltopickup/`,valueCheck,
-            {
-                headers: {"Accept-Encoding": "gzip,deflate,compress",
-                    "Content-Type": "application/json"},
-            }
-        )
-        if(resp){
-            return res 
-                    .status(200)
-                    .send({status:true, data: resp.data})
-        }else{
+        
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity, // เพิ่มส่วนนี้เพื่อรองรับข้อมูลขนาดใหญ่
+            url: `${process.env.SHIPPOP_URL}/calltopickup/`,
+            headers: {
+                "Accept-Encoding": "gzip,deflate,compress",
+                "Content-Type": "application/json"
+            },
+            data: data
+        };
+        try {
+            const response = await axios(config);
             return res
-                    .status(400)
-                    .send({status:false, message:"ไม่สามารถเรียกขนส่งเข้ารับได้"})
+                    .status(200)
+                    .send({status:true, data:response.data})
+        } catch (error) {
+            console.error(error);
         }
+       
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+getPickup = async (req, res)=>{ 
+    try{
+        const tracking_code = req.body.tracking_code
+        const page = req.body.page
+        const perpage = req.body.perpage
+        const data = {
+            api_key: process.env.SHIPPOP_API_KEY,
+            tracking_code: tracking_code,
+            page: 1,
+            perpage: 100
+        };
+        
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity, // เพิ่มส่วนนี้เพื่อรองรับข้อมูลขนาดใหญ่
+            url: `${process.env.SHIPPOP_URL}/pickup/`,
+            headers: {
+                "Accept-Encoding": "gzip,deflate,compress",
+                "Content-Type": "application/json"
+            },
+            data: data
+        };
+        try {
+            const response = await axios(config);
+            return res
+                    .status(200)
+                    .send({status:true, data:response.data})
+        } catch (error) {
+            console.error(error);
+        }
+       
     }catch(err){
         console.log(err)
         return res
