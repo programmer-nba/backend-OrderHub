@@ -113,7 +113,10 @@ getShopHistory = async(req, res)=>{
         const day_start = req.body.day_start
         const day_end = req.body.day_end
         let findMe = []
-
+        // สร้าง regex pattern สำหรับช่วงวันที่
+        const dayStartStr = `${day_start} 00:00:01`;
+        const dayEndStr = `${day_end} 23:59:59`;
+        
         if(!day_start && !day_end){
             if(shop_number){    
                 if(!orderer && !type){
@@ -174,10 +177,20 @@ getShopHistory = async(req, res)=>{
                 if(!orderer && !type){
                     findMe = await historyWalletShop.find({
                         shop_number:shop_number, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
                         if(findMe.length == 0){
                             return res
                                     .status(200)
@@ -189,10 +202,20 @@ getShopHistory = async(req, res)=>{
                         shop_number:shop_number, 
                         ID:orderer, 
                         type:type, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
                         if(findMe.length == 0){
                             return res
                                     .status(200)
@@ -203,10 +226,20 @@ getShopHistory = async(req, res)=>{
                     findMe = await historyWalletShop.find({
                         shop_number:shop_number, 
                         ID:orderer, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
                         if(findMe.length == 0){
                             return res
                                     .status(200)
@@ -216,10 +249,20 @@ getShopHistory = async(req, res)=>{
                     findMe = await historyWalletShop.find({
                         shop_number:shop_number, 
                         type:type, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
                         if(findMe.length == 0){
                             return res
                                     .status(200)
@@ -231,10 +274,20 @@ getShopHistory = async(req, res)=>{
                     findMe = await historyWalletShop.find({
                         ID:orderer,
                         type:type, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
                         if(findMe.length == 0){
                             return res
                                     .status(200)
@@ -243,10 +296,20 @@ getShopHistory = async(req, res)=>{
                 }else {
                     findMe = await historyWalletShop.find({
                         ID:orderer, 
-                        day:{
-                            $gte:day_start, 
-                            $lte:day_end
-                        }})
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
                         if(findMe.length == 0){
                             return res
                                     .status(200)
@@ -256,10 +319,20 @@ getShopHistory = async(req, res)=>{
             }else if(type){
                 findMe = await historyWalletShop.find({
                     type:type, 
-                    day:{
-                        $gte:day_start, 
-                        $lte:day_end
-                    }})
+                    $or: [
+                        {
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }
+                        },{
+                            day_cancel:{
+                                $gte:dayStartStr, 
+                                $lte:dayEndStr
+                            }
+                        }
+                    ]
+                })
                     if(findMe.length == 0){
                         return res
                                 .status(200)
@@ -267,10 +340,20 @@ getShopHistory = async(req, res)=>{
                     }
             }else{
                 findMe = await historyWalletShop.find({
-                    day:{
-                        $gte:day_start,
-                        $lte:day_end
-                    },type: { $ne: "เงินเข้า" }
+                    $or: [
+                        {
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }
+                        },{
+                            day_cancel:{
+                                $gte:dayStartStr, 
+                                $lte:dayEndStr
+                            }
+                        }
+                    ]
+                    ,type: { $ne: "เงินเข้า" }
                 })
                     if(findMe.length == 0){
                         return res
