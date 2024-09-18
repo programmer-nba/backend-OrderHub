@@ -19,7 +19,7 @@ const orderAllSchema = new Schema({
         shop_id : {type: String, required : false},
         tracking_code : {type: String, required: false},
         mailno: {type: String, required: false},
-        courier_tracking_code: {type: String, required: false},
+        purchase_id: {type: String, required: false},
         invoice: {type:String, required : false},
         triSortCode: {type: String, required : false},
         from : {type: Object, required : false},
@@ -62,7 +62,7 @@ const orderAllSchema = new Schema({
                 required: false,
                 default: function () {
                     // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
-                    return dayjs().tz('Asia/Bangkok').add(7, 'day').format('YYYY-MM-DD');
+                    return dayjs().tz('Asia/Bangkok').add(14, 'day').format('YYYY-MM-DD');
                 }
         },
         day_sign: {type : String, default: "", required : false},

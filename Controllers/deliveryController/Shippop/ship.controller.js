@@ -23,6 +23,7 @@ const timezone = require('dayjs/plugin/timezone');
 const { Admin } = require('../../../Models/admin');
 const { decrypt } = require('../../../functions/encodeCrypto');
 const { logOrder } = require('../../../Models/logs_order');
+const { pickupOrder } = require('../../../Models/Delivery/pickup_sp');
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -1142,8 +1143,8 @@ booking = async(req, res)=>{
                 shop_id:findShop._id,
                 role:role,
                 tracking_code: new_data.tracking_code,
-                mailno: purchase_id,
-                courier_tracking_code:new_data.courier_tracking_code,
+                mailno: new_data.courier_tracking_code,
+                purchase_id:purchase_id,
                 from:{
                     ...formData.from
                 },
@@ -1690,7 +1691,7 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
             tracking_code: req.body.tracking_code,
             type:"html",
             size: req.body.size,
-            logo: "https://drive.google.com/thumbnail?id=1-ibHHTEzCLaRisxTJa0FKa653kNpQT-L"
+            logo: "https://i.postimg.cc/28Np7d6d/unnamed.jpg"
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/label_tracking_code/`,valueCheck,
             {
@@ -1717,16 +1718,31 @@ labelHtml = async (req, res)=>{ //ใบแปะหน้าโดย purchase(
 
 callPickup = async (req, res)=>{ 
     try{
+        const id = req.decoded.userid
         const tracking_code = req.body.tracking_code
         const num_of_parcel = req.body.num_of_parcel
         const datetime_pickup = req.body.datetime_pickup
+        const origin_name = req.body.origin_name
+        const origin_phone = req.body.origin_phone
+        const origin_address = req.body.origin_address
+        const origin_district = req.body.origin_district
+        const origin_city = req.body.origin_city
+        const origin_province = req.body.origin_province
+        const origin_postcode = req.body.origin_postcode
         const data = {
             api_key: process.env.SHIPPOP_API_KEY,
             tracking_code: tracking_code,
             num_of_parcel: num_of_parcel,
-            datetime_pickup: datetime_pickup
-        };
-        
+            datetime_pickup: datetime_pickup,
+            origin_name : origin_name,
+            origin_phone : origin_phone,
+            origin_address : origin_address,
+            origin_district : origin_district,
+            origin_city : origin_city,
+            origin_province : origin_province,
+            origin_postcode : origin_postcode
+        }
+    
         const config = {
             method: 'post',
             maxBodyLength: Infinity, // เพิ่มส่วนนี้เพื่อรองรับข้อมูลขนาดใหญ่
@@ -1739,11 +1755,49 @@ callPickup = async (req, res)=>{
         };
         try {
             const response = await axios(config);
+                if(response.data.status == false){
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                message:"เรียกรถเข้ารับล้มเหลว กรุณากรอกข้อมูลให้ถูกต้องและครบถ้วน",
+                                data:response.data
+                            })
+                }
+            let v = {
+                partner_id:id,
+                courier_ticket_id:response.data.courier_ticket_id,
+                courier_pickup_id:response.data.courier_pickup_id,
+                tracking_code: tracking_code,
+                num_of_parcel: num_of_parcel,
+                datetime_pickup: datetime_pickup,
+                origin_name : origin_name,
+                origin_phone : origin_phone,
+                origin_address : origin_address,
+                origin_district : origin_district,
+                origin_city : origin_city,
+                origin_province : origin_province,
+                origin_postcode : origin_postcode,
+                status:"กำลังเรียกรถเข้ารับ"
+            }
+            const createPickup = await pickupOrder.create(v)
+                if(!createPickup){
+                    return res  
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลเรียกรถเข้ารับได้"})
+                }
             return res
                     .status(200)
-                    .send({status:true, data:response.data})
+                    .send({
+                        status:true, 
+                        data:createPickup,
+                        response: response.data
+                    })
         } catch (error) {
             console.error(error);
+            return res
+                    .status(400)
+                    .send({status:false, message:error})
         }
        
     }catch(err){
@@ -1756,13 +1810,12 @@ callPickup = async (req, res)=>{
 
 getPickup = async (req, res)=>{ 
     try{
-        const tracking_code = req.body.tracking_code
+        const courier_ticket_pickup_ids = req.body.courier_ticket_pickup_ids
         const page = req.body.page
-        const perpage = req.body.perpage
         const data = {
             api_key: process.env.SHIPPOP_API_KEY,
-            tracking_code: tracking_code,
-            page: 1,
+            courier_ticket_pickup_ids: courier_ticket_pickup_ids,
+            page: page,
             perpage: 100
         };
         
@@ -1780,7 +1833,7 @@ getPickup = async (req, res)=>{
             const response = await axios(config);
             return res
                     .status(200)
-                    .send({status:true, data:response.data})
+                    .send({status:true, data:response.data.data})
         } catch (error) {
             console.error(error);
         }
@@ -1792,6 +1845,71 @@ getPickup = async (req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
+
+cancelPickup = async (req, res)=>{
+    try{
+        const courier_pickup_id = req.body.courier_pickup_id
+        const id = req.params.id
+        const data = {
+            api_key: process.env.SHIPPOP_API_KEY,
+            courier_pickup_id: courier_pickup_id
+        };
+        
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity, // เพิ่มส่วนนี้เพื่อรองรับข้อมูลขนาดใหญ่
+            url: `${process.env.SHIPPOP_URL}/pickup/cancel/`,
+            headers: {
+                "Accept-Encoding": "gzip,deflate,compress",
+                "Content-Type": "application/json"
+            },
+            data: data
+        };
+        try {
+            const response = await axios(config);
+            // console.log(response.data)
+                if(response.data.status == false){
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                message:"ไม่สามารถยกเลิกเรียกรถเข้ารับได้",
+                                data:response.data
+                            })
+                }
+            const update = await pickupOrder.findOneAndUpdate(
+                    {
+                        _id:id,
+                        courier_pickup_id:courier_pickup_id
+                    }, 
+                    {
+                        status:"ยกเลิกเข้ารับ"
+                    }
+                )
+                if(!update){
+                    return res  
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถยกเลิกเรียกรถเข้ารับได้"})
+                }
+            return res
+                    .status(200)
+                    .send({
+                        status:true, 
+                        resp:response.data,
+                        data:update
+                    })
+        }catch(err){
+            console.log(err)
+            return res
+                    .status(400)
+                    .send({status:false, message:err})
+        }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+} 
 
 getAllBooking = async (req, res) => { //Get All Bookin Only Admin
     try {
@@ -2254,4 +2372,4 @@ async function codCalculate(percent,shopLine,express,reqCod,courier_name,courier
 
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
                 , getAllBooking, trackingPurchase, labelHtml, getById, delend, getMeBooking, getMeBooking
-                , getPartnerBooking, getOrderDay, getOrderByTracking, priceListTest}
+                , getPartnerBooking, getOrderDay, getOrderByTracking, priceListTest, getPickup, cancelPickup}
