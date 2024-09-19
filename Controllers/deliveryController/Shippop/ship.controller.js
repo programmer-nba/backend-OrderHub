@@ -298,8 +298,8 @@ priceList = async (req, res)=>{
         }catch(err){
             console.log(err)
         }
-
-        if(weight <= 0 || weight == undefined){
+        let weightCheck = weight / 1000
+        if(weightCheck <= 0 || weightCheck == undefined){
             return res
                     .status(400)
                     .send({status:false, type:"receive", message:`กรุณาระบุน้ำหนัก(kg)`})
@@ -1861,6 +1861,17 @@ cancelPickup = async (req, res)=>{
             courier_pickup_id: courier_pickup_id
         };
         
+        const checkCancel = await pickupOrder.findOne(
+            {
+                _id:id,
+                courier_pickup_id:courier_pickup_id,
+                status:"ยกเลิกเข้ารับ"
+            })
+            if(checkCancel){
+                return res  
+                        .status(400)
+                        .send({status:false, message:`หมายเลข ${courier_pickup_id} ได้ถูกยกเลิกเรียกรถเข้ารับแล้ว`})
+            }
         const config = {
             method: 'post',
             maxBodyLength: Infinity, // เพิ่มส่วนนี้เพื่อรองรับข้อมูลขนาดใหญ่
@@ -1901,7 +1912,7 @@ cancelPickup = async (req, res)=>{
                     .status(200)
                     .send({
                         status:true, 
-                        resp:response.data,
+                        // resp:response.data,
                         data:update
                     })
         }catch(err){

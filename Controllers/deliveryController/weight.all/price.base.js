@@ -61,7 +61,7 @@ editPrice = async(req, res)=>{
 
 getAll = async(req, res)=>{
     try{
-        const get = await priceBase.find()
+        const get = await priceBase.find({},{weight:0})
             if(!get){
                 return res
                         .status(400)

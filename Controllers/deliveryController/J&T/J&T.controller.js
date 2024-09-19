@@ -98,9 +98,9 @@ createOrder = async (req, res)=>{
                     .status(400)
                     .send({status:false, message:`Credits ปัจจุบันของร้านค้า ${findCredit.shop_name} ไม่เพียงพอต่อการส่งสินค้า`})
         }
-        const txlogisticid = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
+        const txlogisticid = await invoiceNumber(currentTime); //เข้า function gen หมายเลขรายการ
             console.log('invoice : '+txlogisticid);
-        const invoice = await invoiceJNT(dayjsTimestamp)
+        const invoice = await invoiceJNT(currentTime)
         const fromData = {
             "logistics_interface" :{
                 "actiontype": "add",
