@@ -471,7 +471,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -550,7 +550,7 @@ trackingOrder = async (req, res)=>{
             }else{
                 if(latestDetails.scantype == 'Picked Up'){
                     scantype = 'รับพัสดุแล้ว'
-                }else if(['On Delivery', 'Departure', 'Arrival'].includes(latestDetails.scantype)){
+                }else if(['On Delivery', 'Departure', 'Arrival', 'Unbagging'].includes(latestDetails.scantype)){
                     scantype = 'ระหว่างการจัดส่ง'
                 }else if(latestDetails.scantype == 'Signature'){
 
@@ -653,7 +653,7 @@ trackingOrderOne = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -785,7 +785,7 @@ trackingOrderAuto = async (req, res)=>{
             }else{
                 if(latestDetails.scantype == 'Picked Up'){
                     scantype = 'รับพัสดุแล้ว'
-                }else if(['On Delivery', 'Departure', 'Arrival'].includes(latestDetails.scantype)){
+                }else if(['On Delivery', 'Departure', 'Arrival', 'Unbagging'].includes(latestDetails.scantype)){
                     scantype = 'ระหว่างการจัดส่ง'
                 }else if(latestDetails.scantype == 'Signature'){
 

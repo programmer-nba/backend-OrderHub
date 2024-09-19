@@ -802,12 +802,19 @@ priceList = async (req, res)=>{
                     // console.log(cost_hub)
                 }
                 // console.log(profit)
+                let price_fuel_surcharge = ob.price_fuel_surcharge || 0; //ตรวจสอบว่ามีตัวแปร price_fuel_surcharge หรือไม่ ถ้าไม่มีให้เท่ากับ 0
+                let price_remote_area = ob.price_remote_area || 0;
+                let price_travel_area = ob.price_travel_area || 0;
+                let price_island_area = ob.price_island_area || 0;
                 v = {
                     ...req.body,
                     courier_code: ob.courier_code,
                     express: ob.express,
                     available: true,
-                    price_remote_area: 0,
+                    price_remote_area: price_remote_area,
+                    price_travel_area: price_travel_area,
+                    price_island_area: price_island_area,
+                    price_fuel_surcharge: price_fuel_surcharge,
                     cost_hub: cost_hub,
                     cost_base: cost_base,
                     fee_cod: 0,
@@ -828,32 +835,25 @@ priceList = async (req, res)=>{
                 }
 
                 let formattedFee = parseFloat(cod_cal.fee_cod_total.toFixed(2));
-                        let total = price + formattedFee + insuranceFee + packing_price + ob.price_cod
-                            v.fee_cod = formattedFee + ob.price_cod
-                            v.fee_cod_orderhub = formattedFee
-                                if(ob.hasOwnProperty("price_remote_area")){
-                                    let total1 = total + ob.price_remote_area
-                                        v.total = parseFloat(total1.toFixed(2))
-                                        let cut = cut_partner + ob.price_remote_area + insuranceFee + formattedFee + ob.price_cod
-                                        v.cut_partner = parseFloat(cut.toFixed(2))
-                                        v.price_remote_area = ob.price_remote_area
-                                }else{
-                                    let cut = cut_partner + insuranceFee + formattedFee + ob.price_cod
-                                    v.cut_partner = parseFloat(cut.toFixed(2))
-                                    v.total = parseFloat(total.toFixed(2))
-                                }
+                let total = price + formattedFee + insuranceFee + packing_price + ob.price_cod + price_fuel_surcharge + price_remote_area + price_travel_area + price_island_area
+                    v.fee_cod = formattedFee + ob.price_cod
+                    v.fee_cod_orderhub = formattedFee
+
+                let cut = cut_partner + insuranceFee + formattedFee + ob.price_cod + price_fuel_surcharge + price_remote_area + price_travel_area + price_island_area
+                    v.cut_partner = parseFloat(cut.toFixed(2))
+                    v.total = parseFloat(total.toFixed(2))
                     
-                    try {
-                        await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
-                        if (findForCost.credit < v.cut_partner) {
-                            v.status = 'จำนวนเงินของท่านไม่เพียงพอ';
-                            v.available = false
-                        } else {
-                            v.status = 'พร้อมใช้บริการ';
-                        }
-                    } catch (error) {
-                        console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                try {
+                    await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
+                    if (findForCost.credit < v.cut_partner) {
+                        v.status = 'จำนวนเงินของท่านไม่เพียงพอ';
+                        v.available = false
+                    } else {
+                        v.status = 'พร้อมใช้บริการ';
                     }
+                } catch (error) {
+                    console.error('เกิดข้อผิดพลาดในการรอรับค่า');
+                }
                     new_data.push(v);
             }else{
                 if(!express){
@@ -866,7 +866,7 @@ priceList = async (req, res)=>{
                 .status(200)
                 .send({ 
                     status: true, 
-                    // origin_data: req.body, 
+                    origin_data: resp.data, 
                     express_active: express_in,
                     // result: express_active,
                     new: new_data
@@ -900,6 +900,9 @@ booking = async(req, res)=>{
         const print_code = req.body.print_code
         const express = req.body.express
         const price_remote_area = req.body.price_remote_area //ราคาพื้นที่ห่างไกล J&T ไม่มีบอกน้าา
+        const price_travel_area = req.body.price_travel_area
+        const price_island_area = req.body.price_island_area
+        const price_fuel_surcharge = req.body.price_fuel_surcharge
         let cut = req.body.cut_partner
         const cut_partner = parseFloat(cut.toFixed(2))
         const shop = req.body.shop_number
@@ -1167,6 +1170,9 @@ booking = async(req, res)=>{
                 cut_partner: cut_partner,
                 packing_price: packing_price,
                 price_remote_area: price_remote_area,
+                price_travel_area: price_travel_area,
+                price_island_area: price_island_area,
+                price_fuel_surcharge: price_fuel_surcharge,
                 price: price,
                 print_code: print_code,
                 declared_value: declared_value,
@@ -1188,7 +1194,7 @@ booking = async(req, res)=>{
                     role: role,
                     shop_number: shop,
                     type: 'COD(SENDER)',
-                    'template.partner_number': purchase_id,
+                    'template.partner_number': new_data.courier_tracking_code,
                     'template.account_name':updatedDocument.flash_pay.name,
                     'template.account_number':updatedDocument.flash_pay.card_number,
                     'template.bank':updatedDocument.flash_pay.aka,
@@ -1214,7 +1220,7 @@ booking = async(req, res)=>{
                     // res: resp.data,
                     order: createOrderAll,
                     // shop: findShop,
-                    // profitAll: allProfit,
+                    profitAll: allProfit,
                 })
     }catch(err){
         console.log(err)
