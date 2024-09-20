@@ -1561,10 +1561,10 @@ cancelOrder = async(req, res)=>{
 
 tracking = async (req, res)=>{
     try{
-        const tracking = req.params.id
+        const tracking_code = req.body.tracking_code
         const valueCheck = {
             api_key: process.env.SHIPPOP_API_KEY,
-            tracking_code: tracking,
+            tracking_code: tracking_code,
         };
         const resp = await axios.post(`${process.env.SHIPPOP_URL}/tracking/`,valueCheck,
             {
@@ -2304,28 +2304,95 @@ updateStatusWebhook = async(req, res)=>{
         const orderStatus = req.body.order_status;
         const courierTrackingCode = req.body.courier_tracking_code;
         const datetime = req.body['data[datetime]'];
-        let scantype
-        let day_sign
-        let day_pay
+        let detailBulk = []
+        let codBulk = []
+        let scanUpdate = {
+            scantype:"",
+            day_sign:"",
+            day_pay:"",
+        }
         if(orderStatus == 'shipping'){
-            scantype = 'รับพัสดุแล้ว'
-        }else if(orderStatus == 'arrived'){
-            scantype = 'ระหว่างการจัดส่ง'
+            scanUpdate.scantype = 'ระหว่างการจัดส่ง'
         }else if(orderStatus == 'complete'){
 
-            scantype = 'เซ็นรับแล้ว'
+            scanUpdate.scantype = 'เซ็นรับแล้ว'
 
             let datePart = datetime.substring(0, 10);
             let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
-            day_sign = datePart
-            day_pay = newDate
+            scanUpdate.day_sign = datePart
+            scanUpdate.day_pay = newDate
 
         }else if(orderStatus == 'return'){
-            scantype = 'พัสดุตีกลับ'
-        }else if(orderStatus == 'problem'){
-            scantype = 'พัสดุมีปัญหา'
-        }
 
+            scanUpdate.scantype = 'เซ็นรับพัสดุตีกลับ'
+
+            let datePart = datetime.substring(0, 10);
+            scanUpdate.day_sign = datePart
+
+        }else if(orderStatus == 'problem'){
+            scanUpdate.scantype = 'พัสดุมีปัญหา'
+        }else{
+            return res
+                    .status(200)
+                    .send({status:true, message:"No scan update!"})
+        }
+        const findStatus = await orderAll.findOne({tracking_code: trackingCode},{tracking_code:1, order_status:1})
+            if(!findStatus){
+                return res
+                        .status(400)
+                        .send({status:false, message:`ไม่พบ Tracking code ${trackingCode} อยู่ในระบบ`})
+            }
+        if(findStatus.order_status == 'booking' && orderStatus == 'shipping'){
+            scanUpdate.day_pick = datetime
+            scanUpdate.scantype = 'รับพัสดุแล้ว'
+        }
+        console.log("scanUpdate:",scanUpdate)
+        let changStatus = {
+            updateOne: {
+                filter: { tracking_code: trackingCode },
+                update: {
+                    $set: scanUpdate
+                }
+            }
+        }
+        let changStatusCod 
+            if(scanUpdate.scantype == 'เซ็นรับพัสดุตีกลับ'){
+                changStatusCod = {
+                    updateOne: {
+                        filter: { orderid: trackingCode },
+                        update: {
+                            $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
+                                status:scanUpdate.scantype,
+                                day_pick:findStatus.day_pick
+                            }
+                        }
+                    }
+                }
+            }else{
+                changStatusCod = {
+                    updateOne: {
+                        filter: { orderid: trackingCode },
+                        update: {
+                            $set: scanUpdate
+                        }
+                    }
+                }
+            }
+        detailBulk.push(changStatus)
+        codBulk.push(changStatusCod)
+
+        const [bulkDetail, bulkCod] = await Promise.all([
+            orderAll.bulkWrite(detailBulk),
+            profitTemplate.bulkWrite(codBulk)
+        ]);
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    // data: response.data,
+                    detailBulk: bulkDetail,
+                    codBulk:bulkCod
+                })
     }catch(err){
         return res
                 .status(500)
