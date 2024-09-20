@@ -24,12 +24,15 @@ const { Admin } = require('../../../Models/admin');
 const { decrypt } = require('../../../functions/encodeCrypto');
 const { logOrder } = require('../../../Models/logs_order');
 const { pickupOrder } = require('../../../Models/Delivery/pickup_sp');
+const multer = require('multer');
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
+
+exports.upload = multer();
 
 priceList = async (req, res)=>{
     try{
@@ -1236,14 +1239,13 @@ cancelOrder = async(req, res)=>{
         const role = req.decoded.role
         const firstname = req.decoded.firstname
         const lastname = req.decoded.lastname
-        const txlogisticid = req.body.txlogisticid
         const ip_address = req.decoded.ip_address
         const latitude = req.decoded.latitude
         const longtitude = req.decoded.longtitude
         const IP = await decrypt(ip_address)
         const LT = await decrypt(latitude)
         const LG = await decrypt(longtitude)
-        const tracking_code = req.params.tracking_code
+        const tracking_code = req.body.tracking_code
         const valueCheck = {
             api_key: process.env.SHIPPOP_API_KEY,
             tracking_code: tracking_code,
@@ -1327,7 +1329,7 @@ cancelOrder = async(req, res)=>{
                             amount: findPno.cut_partner,
                             before: before,
                             after: after,
-                            type: 'J&T',
+                            type: findCancel.express,
                             remark: "ยกเลิกขนส่งสินค้า",
                             day_cancel: createLog.day,
                             user_cancel: `${firstname} ${lastname}`
@@ -2295,6 +2297,42 @@ priceListTest = async(req, res)=>{
     }
 }
 
+updateStatusWebhook = async(req, res)=>{
+    try{
+        // ข้อมูลจาก form-data จะอยู่ใน req.body
+        const trackingCode = req.body.tracking_code;
+        const orderStatus = req.body.order_status;
+        const courierTrackingCode = req.body.courier_tracking_code;
+        const datetime = req.body['data[datetime]'];
+        let scantype
+        let day_sign
+        let day_pay
+        if(orderStatus == 'shipping'){
+            scantype = 'รับพัสดุแล้ว'
+        }else if(orderStatus == 'arrived'){
+            scantype = 'ระหว่างการจัดส่ง'
+        }else if(orderStatus == 'complete'){
+
+            scantype = 'เซ็นรับแล้ว'
+
+            let datePart = datetime.substring(0, 10);
+            let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+            day_sign = datePart
+            day_pay = newDate
+
+        }else if(orderStatus == 'return'){
+            scantype = 'พัสดุตีกลับ'
+        }else if(orderStatus == 'problem'){
+            scantype = 'พัสดุมีปัญหา'
+        }
+
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
 async function invoiceNumber(day) {
     day = `${dayjs(day).format("YYYYMMDD")}`
     let data = `ODHSP`
@@ -2412,4 +2450,4 @@ async function codCalculate(percent,shopLine,express,reqCod,courier_name,courier
 
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
                 , getAllBooking, trackingPurchase, labelHtml, getById, delend, getMeBooking, getMeBooking
-                , getPartnerBooking, getOrderDay, getOrderByTracking, priceListTest, getPickup, cancelPickup}
+                , getPartnerBooking, getOrderDay, getOrderByTracking, priceListTest, getPickup, cancelPickup, updateStatusWebhook}

@@ -91,7 +91,7 @@ router.route('/orderhub/shippop/getPartner/:id').get( authAdmin.checkToken, ship
 //shippop
 router.route('/orderhub/shippop/pricelist').post( auth.checkToken, ship.priceList )
 router.route('/orderhub/shippop/booking').post( auth.checkToken, ship.booking )
-router.route('/orderhub/shippop/cancel/:tracking_code').delete( auth.checkToken, ship.cancelOrder )
+router.route('/orderhub/shippop/cancel/tracking_code').delete( auth.checkToken, ship.cancelOrder )
 router.route('/orderhub/shippop/tracking/:id').get( auth.checkToken, ship.tracking )
 router.route('/orderhub/shippop/confirm/:purchase_id').post( auth.checkToken, ship.confirmOrder )
 router.route('/orderhub/shippop/callpick/tracking_code').post( auth.checkToken, ship.callPickup )
