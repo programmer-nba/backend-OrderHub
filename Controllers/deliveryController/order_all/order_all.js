@@ -327,6 +327,26 @@ getOrderByDate = async(req, res)=>{
         // console.log(dayStart, dayEnd)
         if(shop_id){
             if(express){
+                if(express == 'SHIPPOP'){
+                    const findOrderID = await orderAll.find(
+                        {
+                            shop_id:shop_id,
+                            express:{ $regex:'SHIPPOP'},
+                            $and: [
+                                { day: { $gte: dayStart } },
+                                { day: { $lte: dayEnd } }
+                            ]
+                        },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
+                        // console.log(findOrderID)
+                        if(findOrderID.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:true, data:[]})
+                        }
+                        return res
+                                .status(200)
+                                .send({status:true, data:findOrderID})
+                }
                 const findOrder = await orderAll.find(
                     {
                         shop_id:shop_id,
@@ -364,6 +384,26 @@ getOrderByDate = async(req, res)=>{
             }
         }else if(partner_id){
             if(express){
+                if(express == 'SHIPPOP'){
+                    const findOrderID = await orderAll.find(
+                        {
+                            owner_id:partner_id,
+                            express:{ $regex:'SHIPPOP'},
+                            $and: [
+                                { day: { $gte: dayStart } },
+                                { day: { $lte: dayEnd } }
+                            ]
+                        },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
+                        // console.log(findOrderID)
+                        if(findOrderID.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:true, data:[]})
+                        }
+                        return res
+                                .status(200)
+                                .send({status:true, data:findOrderID})
+                }
                 const findOrderID = await orderAll.find(
                     {
                         owner_id:partner_id,
@@ -403,6 +443,26 @@ getOrderByDate = async(req, res)=>{
             }
         }else if(orderer){
             if(express){
+                if(express == 'SHIPPOP'){
+                    const findOrderID = await orderAll.find(
+                        {
+                            orderer_id:orderer,
+                            express:{ $regex:'SHIPPOP'},
+                            $and: [
+                                { day: { $gte: dayStart } },
+                                { day: { $lte: dayEnd } }
+                            ]
+                        },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
+                        // console.log(findOrderID)
+                        if(findOrderID.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:true, data:[]})
+                        }
+                        return res
+                                .status(200)
+                                .send({status:true, data:findOrderID})
+                }
                 const findOrderID = await orderAll.find(
                     {
                         orderer_id:orderer,
@@ -441,6 +501,25 @@ getOrderByDate = async(req, res)=>{
                             .send({status:true, data:findOrderID})
             }
         }else if(express){
+            if(express == 'SHIPPOP'){
+                const findOrderID = await orderAll.find(
+                    {
+                        express:{ $regex:'SHIPPOP'},
+                        $and: [
+                            { day: { $gte: dayStart } },
+                            { day: { $lte: dayEnd } }
+                        ]
+                    },{type:0, pdfStream:0, day_sign:0, day_cancel:0, user_cancel:0,profitAll:0, day_end:0, bill_status:0})
+                    // console.log(findOrderID)
+                    if(findOrderID.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, data:[]})
+                    }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findOrderID})
+            }
             const findOrderID = await orderAll.find(
                 {
                     express:express,

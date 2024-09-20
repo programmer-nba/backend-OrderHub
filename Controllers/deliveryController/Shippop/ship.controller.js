@@ -1771,32 +1771,54 @@ callPickup = async (req, res)=>{
                             })
                 }
             let v = {
-                partner_id:id,
-                courier_ticket_id:response.data.courier_ticket_id,
-                courier_pickup_id:response.data.courier_pickup_id,
-                tracking_code: tracking_code,
-                num_of_parcel: num_of_parcel,
-                datetime_pickup: datetime_pickup,
-                origin_name : origin_name,
-                origin_phone : origin_phone,
-                origin_address : origin_address,
-                origin_district : origin_district,
-                origin_city : origin_city,
-                origin_province : origin_province,
-                origin_postcode : origin_postcode,
-                status:"กำลังเรียกรถเข้ารับ"
+                        tracking_code: tracking_code,
+                        num_of_parcel: num_of_parcel,
+                        datetime_pickup: datetime_pickup,
+                        origin_name : origin_name,
+                        origin_phone : origin_phone,
+                        origin_address : origin_address,
+                        origin_district : origin_district,
+                        origin_city : origin_city,
+                        origin_province : origin_province,
+                        origin_postcode : origin_postcode,
+                        status:"เรียกรถเข้ารับ"
+                    }
+            const findCourier_id = await pickupOrder.findOneAndUpdate(
+                {
+                    partner_id:id, 
+                    courier_pickup_id:response.data.courier_pickup_id
+                },v
+                ,{
+                    new:true
+                })
+            if(!findCourier_id){
+                    let createPickupNews = {
+                        partner_id:id,
+                        courier_ticket_id:response.data.courier_ticket_id,
+                        courier_pickup_id:response.data.courier_pickup_id,
+                        ...v
+                    }
+                    const createPickup = await pickupOrder.create(createPickupNews)
+                        if(!createPickup){
+                            return res  
+                                    .status(400)
+                                    .send({status:false, message:"ไม่สามารถสร้างข้อมูลเรียกรถเข้ารับได้"})
+                        }
+                    return res
+                            .status(200)
+                            .send({
+                                status:true,
+                                message:"สร้างข้อมูลเรียกรถเข้ารับสําเร็จ", 
+                                data:createPickup,
+                                response: response.data
+                            })
             }
-            const createPickup = await pickupOrder.create(v)
-                if(!createPickup){
-                    return res  
-                            .status(400)
-                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลเรียกรถเข้ารับได้"})
-                }
             return res
                     .status(200)
                     .send({
-                        status:true, 
-                        data:createPickup,
+                        status:true,
+                        message:"อัพเดทข้อมูลเรียกรถเข้ารับสําเร็จ",  
+                        data:findCourier_id, 
                         response: response.data
                     })
         } catch (error) {
@@ -1870,7 +1892,7 @@ cancelPickup = async (req, res)=>{
             if(checkCancel){
                 return res  
                         .status(400)
-                        .send({status:false, message:`หมายเลข ${courier_pickup_id} ได้ถูกยกเลิกเรียกรถเข้ารับแล้ว`})
+                        .send({status:false, message:`Pickup id หมายเลข ${courier_pickup_id} ได้ถูกยกเลิกเรียกรถเข้ารับแล้ว`})
             }
         const config = {
             method: 'post',
@@ -1901,7 +1923,8 @@ cancelPickup = async (req, res)=>{
                     }, 
                     {
                         status:"ยกเลิกเข้ารับ"
-                    }
+                    },
+                    {new:true}
                 )
                 if(!update){
                     return res  
