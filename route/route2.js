@@ -104,6 +104,7 @@ router.route('/orderhub/shippop/getArray').get( auth.checkToken, ship.getOrderDa
 router.route('/orderhub/shippop/getTracking/:tracking_code').get( auth.checkToken, ship.getOrderByTracking )
 router.route('/orderhub/shippop/pricelist/test').post( auth.checkToken, ship.priceListTest )
 router.route('/orderhub/shippop/update/status').post( ship.updateStatusWebhook )
+router.route('/orderhub/shippop/get/call/pickup').post( auth.checkToken, ship.getCallPicktup )
 
 //percent
 router.route('/orderhub/percent/create').post( authAdmin.checkToken, percent.create )

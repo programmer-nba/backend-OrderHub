@@ -1958,6 +1958,140 @@ getCallPicktup = async (req, res)=>{
         const partner_id = req.body.partner_id
         const day_start = req.body.day_start
         const day_end = req.body.day_end
+        const express = req.body.express
+        if(!day_start || !day_end){
+            if(partner_id){
+                if(express){
+                    const findPickup = await pickupOrder.find(
+                        {
+                            partner_id:partner_id,
+                            express:express
+                        })
+                        if(!findPickup){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูล(1)"})
+                        }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findPickup})
+                }else{
+                    const findPickup = await pickupOrder.find(
+                        {
+                            partner_id:partner_id
+                        })
+                        if(!findPickup){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูล(2)"})
+                        }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findPickup})
+                } 
+            }else{
+                if(express){
+                    const findPickkup = await pickupOrder.find(
+                        {
+                            express:express
+                        })
+                        if(!findPickkup){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูล(3)"})
+                        }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findPickkup})
+                }else{
+                    const findPickkup = await pickupOrder.find()
+                        if(!findPickkup){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูล(4)"})
+                        }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findPickkup})
+                }
+                
+            }
+        }else if(day_start && day_end){
+            if(partner_id){
+                if(express){
+                    const findPickup = await pickupOrder.find(
+                        {
+                            partner_id:partner_id,
+                            express:express,
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }
+                        })
+                        if(!findPickup){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูล(5)"})
+                        }
+                    // console.log(findPickup)
+                    return res
+                            .status(200)
+                            .send({status:true, data:findPickup})
+                }else{
+                    const findPickup = await pickupOrder.find(
+                        {
+                            partner_id:partner_id,
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }
+                        })
+                        if(!findPickup){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูล(6)"})
+                        }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findPickup})
+                }
+            }else {
+                if(express){
+                    const findPickkup = await pickupOrder.find(
+                        {   
+                            express:express,
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }
+                        })
+                        if(!findPickkup){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูล(7)"})
+                        }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findPickkup})
+                }else{
+                    const findPickkup = await pickupOrder.find(
+                        {
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }
+                        })
+                        if(!findPickkup){
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่พบข้อมูล(8)"})
+                        }
+                    return res
+                            .status(200)
+                            .send({status:true, data:findPickkup})
+                }
+            }
+        }
     }catch(err){
         console.log(err)
         return res
@@ -2533,4 +2667,5 @@ async function codCalculate(percent,shopLine,express,reqCod,courier_name,courier
 
 module.exports = {priceList, booking, cancelOrder, tracking, confirmOrder, callPickup
                 , getAllBooking, trackingPurchase, labelHtml, getById, delend, getMeBooking, getMeBooking
-                , getPartnerBooking, getOrderDay, getOrderByTracking, priceListTest, getPickup, cancelPickup, updateStatusWebhook}
+                , getPartnerBooking, getOrderDay, getOrderByTracking, priceListTest, getPickup, cancelPickup, updateStatusWebhook
+                , getCallPicktup}
