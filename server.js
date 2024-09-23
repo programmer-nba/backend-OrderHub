@@ -26,6 +26,9 @@ const io = socketIo(server,{
 
 app.use(bodyParser.json({limit: '50mb', type: 'application/json'}));
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(express.urlencoded({ extended: true }));  // สำหรับการจัดการ urlencoded body
+
 mongoose.set("strictQuery", true);
 mongoose.connect(process.env.DB)
 .then(() => console.log('Connected!'));

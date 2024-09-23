@@ -32,8 +32,6 @@ dayjs.extend(timezone);
 const dayjsTimestamp = dayjs(Date.now());
 const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 
-exports.upload = multer();
-
 priceList = async (req, res)=>{
     try{
         // const percent = await PercentCourier.find();
@@ -1737,6 +1735,7 @@ callPickup = async (req, res)=>{
         const origin_city = req.body.origin_city
         const origin_province = req.body.origin_province
         const origin_postcode = req.body.origin_postcode
+        const express = req.body.express
         const data = {
             api_key: process.env.SHIPPOP_API_KEY,
             tracking_code: tracking_code,
@@ -1783,6 +1782,7 @@ callPickup = async (req, res)=>{
                         origin_city : origin_city,
                         origin_province : origin_province,
                         origin_postcode : origin_postcode,
+                        express: express,
                         status:"เรียกรถเข้ารับ"
                     }
             const findCourier_id = await pickupOrder.findOneAndUpdate(
@@ -1952,6 +1952,19 @@ cancelPickup = async (req, res)=>{
                 .send({status:false, message:err.message})
     }
 } 
+
+getCallPicktup = async (req, res)=>{
+    try{
+        const partner_id = req.body.partner_id
+        const day_start = req.body.day_start
+        const day_end = req.body.day_end
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
 
 getAllBooking = async (req, res) => { //Get All Bookin Only Admin
     try {
@@ -2303,19 +2316,20 @@ updateStatusWebhook = async(req, res)=>{
         const trackingCode = req.body.tracking_code;
         const orderStatus = req.body.order_status;
         const courierTrackingCode = req.body.courier_tracking_code;
-        const datetime = req.body['data[datetime]'];
+        const datetime = req.body.data.datetime;
+        console.log(datetime)
         let detailBulk = []
         let codBulk = []
         let scanUpdate = {
-            scantype:"",
+            order_status:"",
             day_sign:"",
             day_pay:"",
         }
         if(orderStatus == 'shipping'){
-            scanUpdate.scantype = 'ระหว่างการจัดส่ง'
+            scanUpdate.order_status = 'ระหว่างการจัดส่ง'
         }else if(orderStatus == 'complete'){
 
-            scanUpdate.scantype = 'เซ็นรับแล้ว'
+            scanUpdate.order_status = 'เซ็นรับแล้ว'
 
             let datePart = datetime.substring(0, 10);
             let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
@@ -2324,13 +2338,13 @@ updateStatusWebhook = async(req, res)=>{
 
         }else if(orderStatus == 'return'){
 
-            scanUpdate.scantype = 'เซ็นรับพัสดุตีกลับ'
+            scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
 
             let datePart = datetime.substring(0, 10);
             scanUpdate.day_sign = datePart
 
         }else if(orderStatus == 'problem'){
-            scanUpdate.scantype = 'พัสดุมีปัญหา'
+            scanUpdate.order_status = 'พัสดุมีปัญหา'
         }else{
             return res
                     .status(200)
@@ -2344,9 +2358,9 @@ updateStatusWebhook = async(req, res)=>{
             }
         if(findStatus.order_status == 'booking' && orderStatus == 'shipping'){
             scanUpdate.day_pick = datetime
-            scanUpdate.scantype = 'รับพัสดุแล้ว'
+            scanUpdate.order_status = 'รับพัสดุแล้ว'
         }
-        console.log("scanUpdate:",scanUpdate)
+        // console.log("scanUpdate:",scanUpdate)
         let changStatus = {
             updateOne: {
                 filter: { tracking_code: trackingCode },
@@ -2355,14 +2369,16 @@ updateStatusWebhook = async(req, res)=>{
                 }
             }
         }
+        scanUpdate.status = scanUpdate.order_status
+        // console.log("scanUpdate:",scanUpdate)
         let changStatusCod 
-            if(scanUpdate.scantype == 'เซ็นรับพัสดุตีกลับ'){
+            if(scanUpdate.order_status == 'เซ็นรับพัสดุตีกลับ'){
                 changStatusCod = {
                     updateOne: {
                         filter: { orderid: trackingCode },
                         update: {
                             $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
-                                status:scanUpdate.scantype,
+                                status:scanUpdate.order_status,
                                 day_pick:findStatus.day_pick
                             }
                         }
