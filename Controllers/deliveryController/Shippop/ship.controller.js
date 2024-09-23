@@ -2451,7 +2451,7 @@ updateStatusWebhook = async(req, res)=>{
         const orderStatus = req.body.order_status;
         const courierTrackingCode = req.body.courier_tracking_code;
         const datetime = req.body.data.datetime;
-        console.log(datetime)
+        // console.log(datetime)
         let detailBulk = []
         let codBulk = []
         let scanUpdate = {
