@@ -1763,13 +1763,45 @@ callPickup = async (req, res)=>{
         try {
             const response = await axios(config);
                 if(response.data.status == false){
-                    return res
-                            .status(400)
-                            .send({
-                                status:false, 
-                                message:"เรียกรถเข้ารับล้มเหลว กรุณากรอกข้อมูลให้ถูกต้องและครบถ้วน",
-                                data:response.data
-                            })
+                    if(response.data.message == "Error call to pickup fail (tel duplicate.)"){
+                        const find = await pickupOrder.findOne({
+                            // tracking_code:tracking_code,
+                            origin_name:origin_name,
+                            origin_phone:origin_phone,
+                            status:"เรียกรถเข้ารับ"
+                        })
+                        if(!find){
+                            return res
+                                    .status(404)
+                                    .send({
+                                        status:false, 
+                                        message:"ไม่พบข้อมูลชื่อและเบอร์โทรผู้แจ้งให้เข้ารับในระบบ",
+                                        data:response.data
+                                    })
+                        }
+                        return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    message:`เรียกรถเข้ารับล้มเหลว เนื่องจากคุณใช้ ชื่อผู้แจ้งให้เข้ารับ และ เบอร์โทรศัพท์(${find.origin_phone}) นี้แล้ว กรุณายกเลิกเรียกรถเข้ารับหมายเลข Pickup id(${find.courier_pickup_id}) ที่ทำการสร้างเมื่อวันที่ (${find.day}) หากต้องการใช้เบอร์โทรศัพท์และชื่อนี้ในการเรียกรถเข้ารับอีกครั้ง`,
+                                    data:response.data
+                                })
+                    }else if(response.data.message == "Error not found order"){
+                        return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    message:`ไม่มีหมายเลข Tracking order (${tracking_code}) ที่ท่านกรอก`,
+                                    data:response.data
+                                })
+                    }else{
+                        return res
+                                .status(400)
+                                .send({status:false, 
+                                    message:"เรียกรถเข้ารับล้มเหลว กรุณากรอกข้อมูลให้ถูกต้อง",
+                                    data:response.data
+                                })
+                    }
                 }
             let v = {
                         tracking_code: tracking_code,
