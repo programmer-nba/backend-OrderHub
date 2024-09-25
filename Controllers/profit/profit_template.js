@@ -839,11 +839,13 @@ getDayPay = async(req, res)=>{
     try{
         const day = req.body.day
         const partner_id = req.body.partner_id
-        if(partner_id){
+        const express = req.body.express
+        if(express == "J&T"){
+            if(partner_id){
                 const data = await profitTemplate.find({
                     owner_id: partner_id,
                     day_sign: { $regex: new RegExp('^' + day) },
-                    express:{ $ne:"BEST" }
+                    express:"J&T"
                 })
                     if(data.length == 0){
                         return res
@@ -853,10 +855,10 @@ getDayPay = async(req, res)=>{
                 return res
                         .status(200)
                         .send({status:true, data: data})
-        }else{
+            }else{
                 const data = await profitTemplate.find({ 
-                    day_sign: { $regex: new RegExp('^' + day) },
-                    express:{ $ne:"BEST" }
+                        day_sign: { $regex: new RegExp('^' + day) },
+                        express:"J&T"
                 })
                     if(data.length == 0){
                         return res
@@ -866,7 +868,42 @@ getDayPay = async(req, res)=>{
                 return res
                         .status(200)
                         .send({status:true, data: data})
+            }
+        }else if(express == "SHIPPOP"){
+            if(partner_id){
+                const data = await profitTemplate.find({
+                    owner_id: partner_id,
+                    day_sign: { $regex: new RegExp('^' + day) },
+                    express:{ $regex:"SHIPPOP" }
+                })
+                    if(data.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, message:[]})
+                    }
+                return res
+                        .status(200)
+                        .send({status:true, data: data})
+            }else{
+                const data = await profitTemplate.find({ 
+                        day_sign: { $regex: new RegExp('^' + day) },
+                        express:{ $regex:"SHIPPOP" }
+                })
+                    if(data.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, message:[]})
+                    }
+                return res
+                        .status(200)
+                        .send({status:true, data: data})
+            }
+        }else{
+            return res
+                    .status(200)
+                    .send({status:true, message:[]})
         }
+        
     }catch(err){
         return res  
                 .status(500)

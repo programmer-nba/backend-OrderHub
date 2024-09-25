@@ -494,7 +494,7 @@ priceList = async (req, res)=>{
             if(express_active.length == 0){ //shippop ไม่มีขนส่งไหนอนุมัติให้ใช้เลย
                 return res
                         .status(400)
-                        .send({status:false, message:`ขนส่งของ ORDERHUB PACKAGE(${express}) ไม่รองรับออเดอร์ของท่าน`})
+                        .send({status:false,type:"receive", message:`ขนส่งของ ORDERHUB PACKAGE(${express}) ไม่รองรับออเดอร์ของท่าน`})
             }
         }else{
             if(express_active.length == 0){ //shippop ไม่มีขนส่งไหนอนุมัติให้ใช้เลย
@@ -1766,6 +1766,7 @@ callPickup = async (req, res)=>{
                     if(response.data.message == "Error call to pickup fail (tel duplicate.)"){
                         const find = await pickupOrder.findOne({
                             // tracking_code:tracking_code,
+                            partner_id:id,
                             origin_name:origin_name,
                             origin_phone:origin_phone,
                             status:"เรียกรถเข้ารับ"
