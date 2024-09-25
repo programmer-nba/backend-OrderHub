@@ -755,7 +755,9 @@ pickOrder = async(req, res)=>{
                     day:1,
                     day_pick:1,
                     day_sign:1,
-                    express:1
+                    express:1,
+                    parcel:1,
+                    remark:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -790,7 +792,9 @@ pickOrder = async(req, res)=>{
                     day:1,
                     day_pick:1,
                     day_sign:1,
-                    express:1
+                    express:1,
+                    parcel:1,
+                    remark:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -823,7 +827,9 @@ pickOrder = async(req, res)=>{
                     day:1,
                     day_pick:1,
                     day_sign:1,
-                    express:1
+                    express:1,
+                    parcel:1,
+                    remark:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -856,7 +862,9 @@ pickOrder = async(req, res)=>{
                     day:1,
                     day_pick:1,
                     day_sign:1,
-                    express:1
+                    express:1,
+                    parcel:1,
+                    remark:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -889,7 +897,9 @@ pickOrder = async(req, res)=>{
                     day:1,
                     day_pick:1,
                     day_sign:1,
-                    express:1
+                    express:1,
+                    parcel:1,
+                    remark:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -923,7 +933,9 @@ pickOrder = async(req, res)=>{
                     day:1,
                     day_pick:1,
                     day_sign:1,
-                    express:1
+                    express:1,
+                    parcel:1,
+                    remark:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -955,7 +967,9 @@ pickOrder = async(req, res)=>{
                     day:1,
                     day_pick:1,
                     day_sign:1,
-                    express:1
+                    express:1,
+                    parcel:1,
+                    remark:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
@@ -987,7 +1001,9 @@ pickOrder = async(req, res)=>{
                     day:1,
                     day_pick:1,
                     day_sign:1,
-                    express:1
+                    express:1,
+                    parcel:1,
+                    remark:1
                 }).exec()
                     if(findPartner.length == 0){
                         return res
