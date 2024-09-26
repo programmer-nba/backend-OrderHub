@@ -128,6 +128,7 @@ router.route('/orderhub/historyShop/getAll').get( historyShop.getAll )
 router.route('/orderhub/historyShop/getOne/:shop_id').get( historyShop.getOne )
 router.route('/orderhub/historyShop/getId/:id').get( auth.checkToken, historyShop.getById )
 router.route('/orderhub/historyShop/get/shop/history').post( auth.checkToken, historyShop.getShopHistory )
+router.route('/orderhub/historyShop/get/shipop/history').post( auth.checkToken, historyShop.getShopHistoryShippop )
 
 //J&T
 const genKey = require('../Controllers/deliveryController/J&T/generate.signJ&T')

@@ -271,6 +271,7 @@ getShopHistory = async(req, res)=>{
                 }
             }else if(orderer){
                 if(type){
+                    
                     findMe = await historyWalletShop.find({
                         ID:orderer,
                         type:type, 
@@ -373,6 +374,220 @@ getShopHistory = async(req, res)=>{
     }
 }
 
+getShopHistoryShippop = async(req, res)=>{
+    try{
+        const shop_number = req.body.shop_number
+        const orderer = req.body.orderer
+        const type = req.body.type
+        const day_start = req.body.day_start
+        const day_end = req.body.day_end
+        let findMe = []
+        // สร้าง regex pattern สำหรับช่วงวันที่
+        const dayStartStr = `${day_start} 00:00:01`;
+        const dayEndStr = `${day_end} 23:59:59`;
+
+        if(day_start && day_end){
+            if(shop_number){
+                if(!orderer && !type){
+                    findMe = await historyWalletShop.find({
+                        shop_number:shop_number, 
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(8)"})
+                        }
+                }else if(orderer && type){
+                    // console.log("11")
+                    findMe = await historyWalletShop.find({
+                        shop_number:shop_number, 
+                        ID:orderer, 
+                        type:{ $regex: type }, 
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(9)"})
+                        }
+                }else if(orderer){
+                    // console.log("9")
+                    findMe = await historyWalletShop.find({
+                        shop_number:shop_number, 
+                        ID:orderer, 
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(10)"})
+                        }
+                }else if(type){
+                    findMe = await historyWalletShop.find({
+                        shop_number:shop_number, 
+                        type:{ $regex: type },
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(11)"})
+                        }
+                }
+            }else if(orderer){
+                if(type){
+                    
+                    findMe = await historyWalletShop.find({
+                        ID:orderer,
+                        type:{ $regex: type }, 
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(12)"})
+                        }
+                }else {
+                    findMe = await historyWalletShop.find({
+                        ID:orderer, 
+                        $or: [
+                            {
+                                day:{
+                                    $gte:day_start, 
+                                    $lte:day_end
+                                }
+                            },{
+                                day_cancel:{
+                                    $gte:dayStartStr, 
+                                    $lte:dayEndStr
+                                }
+                            }
+                        ]
+                    })
+                        if(findMe.length == 0){
+                            return res
+                                    .status(200)
+                                    .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(13)"})
+                        }
+                }
+            }else if(type){
+                findMe = await historyWalletShop.find({
+                    type:{ $regex: type }, 
+                    $or: [
+                        {
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }
+                        },{
+                            day_cancel:{
+                                $gte:dayStartStr, 
+                                $lte:dayEndStr
+                            }
+                        }
+                    ]
+                })
+                    if(findMe.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(14)"})
+                    }
+            }else{
+                findMe = await historyWalletShop.find({
+                    $or: [
+                        {
+                            day:{
+                                $gte:day_start, 
+                                $lte:day_end
+                            }
+                        },{
+                            day_cancel:{
+                                $gte:dayStartStr, 
+                                $lte:dayEndStr
+                            }
+                        }
+                    ]
+                    ,type: { $ne: "เงินเข้า" }
+                })
+                    if(findMe.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:false, data:[], message:"ไม่มีข้อมูลนี้ในระบบ(15)"})
+                    }
+            }
+        }
+        return res
+                .status(200)
+                .send({status:true,data:findMe})
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 getShopCancel = async(req, res)=>{
     try{
 
@@ -383,4 +598,4 @@ getShopCancel = async(req, res)=>{
     }
 }
 
-module.exports = { getAll, getOne, getById, getCreditDis, getShopHistory }
+module.exports = { getAll, getOne, getById, getCreditDis, getShopHistory, getShopHistoryShippop }
