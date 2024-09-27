@@ -1030,7 +1030,7 @@ selectOrder = async(req, res)=>{
                  tracking_code: { $in: orderid }
             },{
                 user_cancel:0, day_cancel:0, owner_id:0, orderer_id:0, role:0, bill_status:0,
-                profitAll:0, day_end:0, day_pick:0, day_sign:0
+                profitAll:0, day_end:0, day_pick:0, day_sign:0, pdfStream:0
             })
             if(findMe.length == 0){
                 return res
