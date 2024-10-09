@@ -535,7 +535,7 @@ trackingOrder = async (req, res)=>{
                     scantype = 'เซ็นรับแล้ว'
 
                     let datePart = latestDetails.scantime.substring(0, 10);
-                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    let newDate = dayjs(datePart).add(5, 'day').format('YYYY-MM-DD');
                     day_sign = datePart
                     day_pay = newDate
                     
@@ -557,7 +557,7 @@ trackingOrder = async (req, res)=>{
                     scantype = 'เซ็นรับแล้ว'
 
                     let datePart = latestDetails.scantime.substring(0, 10);
-                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    let newDate = dayjs(datePart).add(5, 'day').format('YYYY-MM-DD');
                     day_sign = datePart
                     day_pay = newDate
 
@@ -770,7 +770,7 @@ trackingOrderAuto = async (req, res)=>{
                     scantype = 'เซ็นรับแล้ว'
 
                     let datePart = latestDetails.scantime.substring(0, 10);
-                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    let newDate = dayjs(datePart).add(5, 'day').format('YYYY-MM-DD');
                     day_sign = datePart
                     day_pay = newDate
                     
@@ -792,7 +792,7 @@ trackingOrderAuto = async (req, res)=>{
                     scantype = 'เซ็นรับแล้ว'
 
                     let datePart = latestDetails.scantime.substring(0, 10);
-                    let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+                    let newDate = dayjs(datePart).add(5, 'day').format('YYYY-MM-DD');
                     day_sign = datePart
                     day_pay = newDate
 

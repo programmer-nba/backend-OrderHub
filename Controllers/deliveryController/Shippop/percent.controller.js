@@ -268,4 +268,23 @@ delend = async(req, res)=>{
     }
 }
 
-module.exports = { create, getAll, getById, update, delend }
+checkPass = async(req, res)=>{
+    try{
+        const pass = req.body.password
+        if(pass == process.env.PS_ADD_EXPRESS){
+            return res
+                    .status(200)
+                    .send({status: true})
+        }else{
+            return res
+                    .status(400)
+                    .send({status: false, message: "รหัสผ่านไม่ถูกต้อง"})
+        }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status: false, message: err.message})
+    }
+}
+
+module.exports = { create, getAll, getById, update, delend, checkPass }

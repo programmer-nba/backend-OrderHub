@@ -112,6 +112,7 @@ router.route('/orderhub/percent/getAll').get( authAdmin.checkToken, percent.getA
 router.route('/orderhub/percent/getid/:id').get( authAdmin.checkToken, percent.getById )
 router.route('/orderhub/percent/update/:id').put( authAdmin.checkToken, percent.update )
 router.route('/orderhub/percent/del/:id').delete( authAdmin.checkToken, percent.delend )
+router.route('/orderhub/percent/pass').post( authAdmin.checkToken, percent.checkPass )
 
 //flash_pay
 router.route('/orderhub/flashpay/qrcreate').post( auth.checkToken, FP.QRCreate )

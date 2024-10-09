@@ -27,6 +27,7 @@ const pickupOrderSchema = new Schema({
     origin_postcode : {type:String, require: false},
     status: {type:String, require: false},
     express: {type:String, require: false},
+    completed_at: {type:String, default:"", require: false},
     day:{
         type: String,
         required: false,

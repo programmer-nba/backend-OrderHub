@@ -911,6 +911,88 @@ getDayPay = async(req, res)=>{
     }
 }
 
+getDayPayActive = async(req, res)=>{
+    try{
+        const day = req.body.day
+        const partner_id = req.body.partner_id
+        const express = req.body.express
+        if(express == "J&T"){
+            if(partner_id){
+                const data = await profitTemplate.find({
+                    owner_id: partner_id,
+                    day_sign: { $regex: new RegExp('^' + day) },
+                    express:"J&T",
+                    day_pick: {
+                        $not: {
+                            $gte: "2024-10-03 00:00:00",
+                            $lte: "2024-10-08 23:59:59"
+                        }
+                    }
+                })
+                    if(data.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, message:[]})
+                    }
+                return res
+                        .status(200)
+                        .send({status:true, data: data})
+            }else{
+                const data = await profitTemplate.find({ 
+                        day_sign: { $regex: new RegExp('^' + day) },
+                        express:"J&T"
+                })
+                    if(data.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, message:[]})
+                    }
+                return res
+                        .status(200)
+                        .send({status:true, data: data})
+            }
+        }else if(express == "SHIPPOP"){
+            if(partner_id){
+                const data = await profitTemplate.find({
+                    owner_id: partner_id,
+                    day_sign: { $regex: new RegExp('^' + day) },
+                    express:{ $regex:"SHIPPOP" }
+                })
+                    if(data.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, message:[]})
+                    }
+                return res
+                        .status(200)
+                        .send({status:true, data: data})
+            }else{
+                const data = await profitTemplate.find({ 
+                        day_sign: { $regex: new RegExp('^' + day) },
+                        express:{ $regex:"SHIPPOP" }
+                })
+                    if(data.length == 0){
+                        return res
+                                .status(200)
+                                .send({status:true, message:[]})
+                    }
+                return res
+                        .status(200)
+                        .send({status:true, data: data})
+            }
+        }else{
+            return res
+                    .status(200)
+                    .send({status:true, message:[]})
+        }
+        
+    }catch(err){
+        return res  
+                .status(500)
+                .send({status:false, message:err})
+    }
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 1000000)

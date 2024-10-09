@@ -1873,11 +1873,11 @@ callPickup = async (req, res)=>{
 
 getPickup = async (req, res)=>{ 
     try{
-        const courier_ticket_pickup_ids = req.body.courier_ticket_pickup_ids
+        const courier_pickup_ids = req.body.courier_pickup_ids
         const page = req.body.page
         const data = {
             api_key: process.env.SHIPPOP_API_KEY,
-            courier_ticket_pickup_ids: courier_ticket_pickup_ids,
+            courier_pickup_ids: courier_pickup_ids,
             page: page,
             perpage: 100
         };
@@ -1896,11 +1896,82 @@ getPickup = async (req, res)=>{
             const response = await axios(config);
             return res
                     .status(200)
-                    .send({status:true, data:response.data.data})
+                    .send({status:true, data:response.data.data.items})
         } catch (error) {
             console.error(error);
         }
        
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+getPickupAuto = async (req, res)=>{ 
+    try{
+        const courier_pickup_ids = req.body.courier_pickup_ids
+        const page = req.body.page
+        const data = {
+            api_key: process.env.SHIPPOP_API_KEY,
+            courier_pickup_ids: courier_pickup_ids,
+            page: page,
+            perpage: 100
+        };
+        
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity, // เพิ่มส่วนนี้เพื่อรองรับข้อมูลขนาดใหญ่
+            url: `${process.env.SHIPPOP_URL}/pickup/`,
+            headers: {
+                "Accept-Encoding": "gzip,deflate,compress",
+                "Content-Type": "application/json"
+            },
+            data: data
+        };
+        try {
+            const response = await axios(config);
+            const arr = response.data.data.items
+            const arrUpdate = arr.map((item)=>{
+                if(item.status == "picked_up"){
+                    let v = {
+                        updateOne: {
+                            filter: { courier_pickup_id: item.id },
+                            update: { 
+                                $set: {
+                                    status:"รับของแล้ว",
+                                    completed_at:item.completed_at
+                                }
+                            }
+                        }
+                    }
+                    return v
+                }else if(item.status == "transferred"){
+                    let v = {
+                        updateOne: {
+                            filter: { courier_pickup_id: item.id },
+                            update: { 
+                                $set: {
+                                    status:"ถูกโอนงาน",
+                                    // completed_at:item.completed_at
+                                }
+                            }
+                        }
+                    }
+                    return v
+                }else{
+                    return
+                }
+            }).filter(item => item !== undefined); // ลบ undefined ออก
+            // console.log(arrUpdate)
+            return res
+                    .status(200)
+                    .send({status:true, data:arrUpdate})
+           
+        } catch (error) {
+            console.error(error);
+        }
     }catch(err){
         console.log(err)
         return res
@@ -2582,6 +2653,76 @@ updateStatusWebhook = async(req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
+
+function chunkArray(array, size){
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+}
+
+async function updatePickup() {
+    try{
+
+        const findOrder = await pickupOrder.find({
+            $or: [
+                { status: "เรียกรถเข้ารับ" },
+                { status: "ถูกโอนงาน" }
+            ],
+            express:{$regex:"SHIPPOP"}
+        }, { courier_pickup_id: 1, _id:1}).sort({ day: -1 });
+            if(findOrder.length == 0){
+                return {message:"ไม่มีรายการเรียกรถเข้ารับที่ต้องอัพเดท", status:true, data:[]}
+            }
+        const mailnoCode = findOrder.map(order => order.courier_pickup_id);
+        const chunks = chunkArray(mailnoCode, 20);
+
+        const order = { body: { courier_pickup_ids: mailnoCode } }; // สร้าง request mock object
+        console.log("รายการเรียกรถเข้ารับทั้งหมดที่ต้องอัพเดท:",order.body.courier_pickup_ids.length)
+        for (const chunk of chunks) {
+            // console.log(`Updating status for chunk: ${chunk}`);
+            const req = { body: { courier_pickup_ids: chunk } }; // สร้าง request mock object สำหรับแต่ละกลุ่ม
+            const res = {
+                status: (code) => ({
+                    send: (response) => console.log('Response:', response)
+                })
+            }; // สร้าง response mock object
+        
+            await getPickupAuto(req, res); // เรียกใช้ฟังก์ชันทีละกลุ่ม
+        }
+        console.log(`Complate update เรียกรถเข้ารับ SHIPPOP: ${order.body.courier_pickup_ids.length}`)
+    }catch(err){
+        console.log(err)
+    }
+}
+
+// updatePickup()
+
+async function calCOD(){
+    try{
+        const findOrder = await profitTemplate.find({
+            day_sign:"2024-10-04",
+            day:"2024-10-03",
+            express:"J&T"
+        },{"template.amount":1});
+        if (findOrder && findOrder.length > 0) {
+            // นำ template.amount ทั้งหมดมาบวกกัน
+            const totalAmount = findOrder.reduce((total, order) => {
+              // ตรวจสอบว่า order.template.amount มีค่าและเป็นตัวเลขหรือไม่
+              const amount = order.template?.amount || 0;
+              return total + amount;
+            }, 0);
+            console.log("Total amount:", totalAmount);
+        }
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+// calCOD()
 
 async function invoiceNumber(day) {
     day = `${dayjs(day).format("YYYYMMDD")}`

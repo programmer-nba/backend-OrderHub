@@ -82,18 +82,27 @@ editWeight = async (req, res)=>{
             const p = weightShop[0].weight.find((item) => item.weightEnd == data.weightEnd)
             const base = findWeightBase.weight.find((itme) => itme.weightEnd == data.weightEnd)
             // console.log(p,data)
+            const decimalRegex = /^[0-9]+(\.[0-9]{1,2})?$/;
             if(data.weightEnd <= weightShop[0].weightMax){
                 // console.log(data.costBangkok_metropolitan, base.salesBangkok_metropolitan)
-                if (!Number.isInteger(data.costUpcountry) ||
-                    !Number.isInteger(data.costBangkok_metropolitan) ||
-                    !Number.isInteger(data.salesBangkok_metropolitan) ||
-                    !Number.isInteger(data.salesUpcountry)) {
+                // if (!Number.isInteger(data.costUpcountry) ||
+                //     !Number.isInteger(data.costBangkok_metropolitan) ||
+                //     !Number.isInteger(data.salesBangkok_metropolitan) ||
+                //     !Number.isInteger(data.salesUpcountry)) {
+                //     return res.status(400).send({
+                //         status: false,
+                //         message: `ช่วงน้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} กรุณาระบุเป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`
+                //     });
+                // }
+                if (!decimalRegex.test(data.costUpcountry) ||
+                    !decimalRegex.test(data.costBangkok_metropolitan) ||
+                    !decimalRegex.test(data.salesBangkok_metropolitan) ||
+                    !decimalRegex.test(data.salesUpcountry)) {
                     return res.status(400).send({
                         status: false,
-                        message: `ช่วงน้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} กรุณาระบุเป็นจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม`
+                        message: `ช่วงน้ำหนัก ${data.weightStart} ถึง ${data.weightEnd} กรุณาระบุเป็นทศนิยมไม่เกิน 2 ตำแหน่งและห้ามใส่จำนวนตัวเลขติดลบหรือตัวอักษร`
                     });
                 }
-
                 if(data.costUpcountry < p.costUpcountry){
                     return res
                             .status(400)
