@@ -2702,11 +2702,12 @@ async function updatePickup() {
 async function calCOD(){
     try{
         const findOrder = await profitTemplate.find({
-            day_sign:"2024-10-04",
-            day:"2024-10-03",
+            day_sign:"2024-10-08",
+            // day:"2024-10-03",
             express:"J&T"
         },{"template.amount":1});
         if (findOrder && findOrder.length > 0) {
+            console.log("Total", findOrder.length);
             // นำ template.amount ทั้งหมดมาบวกกัน
             const totalAmount = findOrder.reduce((total, order) => {
               // ตรวจสอบว่า order.template.amount มีค่าและเป็นตัวเลขหรือไม่
@@ -2722,7 +2723,7 @@ async function calCOD(){
     }
 }
 
-// calCOD()
+calCOD()
 
 async function invoiceNumber(day) {
     day = `${dayjs(day).format("YYYYMMDD")}`

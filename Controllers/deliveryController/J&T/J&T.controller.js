@@ -99,7 +99,7 @@ createOrder = async (req, res)=>{
                     .send({status:false, message:`Credits ปัจจุบันของร้านค้า ${findCredit.shop_name} ไม่เพียงพอต่อการส่งสินค้า`})
         }
         const txlogisticid = await invoiceNumber(currentTime); //เข้า function gen หมายเลขรายการ
-            console.log('invoice : '+txlogisticid);
+            // console.log('invoice : '+txlogisticid);
         const invoice = await invoiceJNT(currentTime)
         const fromData = {
             "logistics_interface" :{
@@ -142,7 +142,7 @@ createOrder = async (req, res)=>{
         }
         if(cod_amount > 0){
             fromData.logistics_interface.itemsvalue = cod_amount
-            console.log(cod_amount)
+            // console.log(cod_amount)
         }
 
          //ผู้ส่ง
@@ -443,7 +443,7 @@ createOrder = async (req, res)=>{
         count_number = 0
         return res
                 .status(500)
-                .send({status:false, message:err.message})
+                .send({status:false, message:err})
     }
 }
 
@@ -2986,7 +2986,7 @@ async function invoiceNumber(date) {
                 findInvoice = await orderAll.find({tracking_code: combinedData});
             }
 
-        console.log(combinedData);
+        // console.log(combinedData);
         return combinedData;
     }catch(err){
         console.log(err)
@@ -3009,7 +3009,7 @@ async function invoiceJNT(day) {
         findInvoice = await orderAll.find({invoice: combinedData});
     }
 
-    console.log(combinedData);
+    // console.log(combinedData);
     return combinedData;
 }
 
