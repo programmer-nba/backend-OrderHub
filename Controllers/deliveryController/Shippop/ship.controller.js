@@ -2723,7 +2723,7 @@ async function calCOD(){
     }
 }
 
-calCOD()
+// calCOD()
 
 async function invoiceNumber(day) {
     day = `${dayjs(day).format("YYYYMMDD")}`
