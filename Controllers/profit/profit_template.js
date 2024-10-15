@@ -993,6 +993,48 @@ getDayPayActive = async(req, res)=>{
     }
 }
 
+updateCancelCod = async(req, res)=>{
+    try{
+        const orderId = req.body.orderId
+        let count = orderId.map(item => ({
+            updateOne: {
+                filter: { orderid: item },
+                update: { 
+                    $set: {
+                        status:"ระงับการโอน"
+                    }
+                }
+            }
+        }))
+
+        const chunks = chunkArray(count, 10);
+        let pushArr = []
+        for (const chunk of chunks) {
+            // ทำ bulkWrite สำหรับแต่ละ chunk และรอจนทำเสร็จ
+            let ggez = await profitTemplate.bulkWrite(chunk);
+            pushArr.push(ggez)
+        }
+
+        return res
+                .status(200)
+                .send({status:true,message:"อัพเดทระงับการโอนเรียบร้อย",data:pushArr})
+
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+// ฟังก์ชันสำหรับแบ่ง array ออกเป็นกลุ่ม (chunk)
+function chunkArray(array, size){
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+}
+
 async function invoiceNumber(date) {
     data = `${dayjs(date).format("YYYYMMDD")}`
     let random = Math.floor(Math.random() * 1000000)
@@ -1012,4 +1054,4 @@ async function invoiceNumber(date) {
     return combinedData;
 }
 
-module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay, sendEmail, uploadFileExcel, getProfitPartner }
+module.exports = { getAll, getSignDay, calCod, getSumForMe, Withdrawal, changStatus, getCod, calCod, getDayPay, sendEmail, uploadFileExcel, getProfitPartner, updateCancelCod }
