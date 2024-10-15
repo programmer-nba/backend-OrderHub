@@ -144,6 +144,13 @@ router.route('/orderhub/JT/getme').get( auth.checkToken, JT.getMeBooking )
 router.route('/orderhub/JT/getById/:txlogisticid').get( auth.checkToken, JT.getById )
 router.route('/orderhub/JT/tracking/test').post( auth.checkToken,JT.trackingOrderTest )
 
+//J&T(B)
+const JT_B = require('../Controllers/deliveryController/J&T/J&T.controller(B)')
+router.route('/orderhub/JT_B/create').post( auth.checkToken, JT_B.createOrder )
+router.route('/orderhub/JT_B/cancel').delete( auth.checkToken, JT_B.cancelOrder )
+router.route('/orderhub/JT_B/price').post( auth.checkToken, JT_B.priceList )
+router.route('/orderhub/JT_B/label').post( auth.checkToken, JT_B.label )
+router.route('/orderhub/JT_B/one/tracking').post( auth.checkToken,JT_B.trackingOrderOne )
 
 //J&T Admin
 router.route('/orderhub/JT/getAll').get( authAdmin.checkToken, JT.getAll )
