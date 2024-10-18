@@ -122,7 +122,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         // console.log(updatedDocument)
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-            console.log(querystring.stringify(formDataOnly))
+            // console.log(querystring.stringify(formDataOnly))
             
         const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formDataOnly),{
             headers: {
