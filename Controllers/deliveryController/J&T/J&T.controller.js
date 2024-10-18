@@ -443,7 +443,7 @@ createOrder = async (req, res)=>{
         count_number = 0
         return res
                 .status(500)
-                .send({status:false, message:err})
+                .send({status:false, message:err.message})
     }
 }
 
@@ -471,7 +471,7 @@ trackingOrder = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -653,7 +653,7 @@ trackingOrderOne = async (req, res)=>{
         // console.log(apiUrlQuery)
         const newData = await generateJT(formData)
             // console.log(newData)
-        const response = await axios.post(`${apiUrl}/track/trackForJson`,newData,{
+        const response = await axios.post(`${apiUrlQuery}/track/trackForJson`,newData,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -2131,7 +2131,7 @@ priceList = async (req, res)=>{
                     if(!findPartner){
                         return res
                                 .status(404)
-                                .send({status:false, message:"ไม่มีข้อมูลของท่านในระบบ"})
+                                .send({status:false, message:"ไม่มีข้อมูลการเป็น Partner ของท่านในระบบ"})
                     }
                 let findRole = findPartner.sub_role.find(item => item.role == 'ONLINE-SELLER')
                     if(!findRole){

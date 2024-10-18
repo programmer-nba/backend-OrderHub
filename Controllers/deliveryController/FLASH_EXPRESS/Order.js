@@ -33,18 +33,18 @@ const { Admin } = require('../../../Models/admin');
 createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash express
     try{
         const apiUrl = process.env.TRAINING_URL
+        const mchId = process.env.MCH_ID
         const dataForm = req.body
         const id = req.decoded.userid
         const role = req.decoded.role
-        const mchId = process.env.MCH_ID
         const packing_price = req.body.packing_price
-        const profitSaleMartket = req.body.profitSaleMartket
         const weight = dataForm.parcel.weight * 1000
         const cost_hub = req.body.cost_hub
         const fee_cod = req.body.fee_cod
+        const fee_cod_orderhub = req.body.fee_cod_orderhub
+        const fee_cod_sp = req.body.fee_cod_sp
         const total = req.body.total
         const cost_base = req.body.cost_base
-        const cut_partner = req.body.cut_partner
         const price_remote_area = req.body.price_remote_area
         const profitAll = req.body.profitAll
         const declared_value = req.body.declared_value
@@ -53,16 +53,18 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const price = req.body.price
         const remark = req.body.remark
         const shop = req.body.shop_number
+        let cut = req.body.cut_partner
+        const cut_partner = parseFloat(cut.toFixed(2))
         let cod_amount = Math.ceil(codForPrice)*100 //ทำ cod_amount เป็นหน่วย สตางค์ และปัดเศษขึ้น เพื่อให้ยิง flash ได้(flash ไม่รับ COD AMOUNT เป็น ทศนิยม)
         let cod_integer = cod_amount / 100 //ทำ cod_amount เป็นหน่วย บาท เพื่อบันทึกลง database(จะได้ดูง่าย)
-        let declared_valueStang = declared_value*100//มูลค่าประกัน
+        let declared_valueStang = declared_value * 100//มูลค่าประกัน
 
         const invoice = await invoiceNumber()
         // console.log(cod_integer, codForPrice)
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
-            outTradeNo: `${nonceStr}`,
+            outTradeNo: `${invoice}`,
             expressCategory: 1,
             srcName: dataForm.from.name, //** src = ผู้ส่ง
             srcPhone: dataForm.from.tel ,//**
@@ -85,20 +87,28 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             codEnabled:0,
             insured:0,
             articleCategory:2,
+            remark: "remark",
+        
             // เพิ่ม key-value pairs ตามต้องการ
           };
         if(codForPrice > 0){
             formData.codEnabled = 1
             formData.codAmount = cod_amount;
-            // console.log(cod_amount)
+            formData.subItemTypes = [
+                {
+                    itemName: dataForm.parcel.name,
+                    itemWeightSize: `${dataForm.parcel.width}x${dataForm.parcel.length}x${dataForm.parcel.height} ${dataForm.parcel.weight}kg`,
+                    itemColor: dataForm.parcel.itemColor,
+                    itemQuantity: dataForm.parcel.itemQuantity
+                }
+            ]
+            // console.log(formData)
         }
         if(declared_value > 0){
             formData.insured = 1
             formData.insureDeclareValue = declared_valueStang
         }
-        if(remark != undefined && remark != ""){
-            formData.remark = remark
-        }
+        // console.log(formData)
         //ผู้ส่ง
         const senderTel = req.body.from.tel;
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -112,7 +122,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         // console.log(updatedDocument)
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-            // console.log(formDataOnly)
+            console.log(querystring.stringify(formDataOnly))
+            
         const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formDataOnly),{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -126,7 +137,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         }
 
           //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
-       let allProfit = []
+        let allProfit = []
         let profit_ice
         let profit_p
         let profitP
@@ -315,7 +326,6 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 total: total,
                 cut_partner: cut_partner,
                 packing_price: packing_price,
-                profitSaleMartket: profitSaleMartket,
                 price_remote_area: price_remote_area,
                 price: price,
                 declared_value: declared_value,
@@ -942,6 +952,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         const apiUrl = process.env.TRAINING_URL
         const mchId = process.env.MCH_ID
         const id = req.decoded.userid
+        const role = req.decoded.role
         const formData = req.body
         const shop = req.body.shop_number
         const declared_valueStang = req.body.declared_value * 100 //เปลี่ยนจากบาทเป็นสตางค์
@@ -953,7 +964,8 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         const send_number = formData.from.send_number
         const send_type = formData.from.send_type
         const packing_price = req.body.packing_price
-        let reqCod = req.body.cod_amount
+        const cod_amount = req.body.cod_amount * 100 //เปลี่ยนจากบาทเป็นสตางค์
+        let reqCod = req.body.cod_amount 
         
         if(send_behalf != "บริษัท" && send_behalf != "บุคคล"){
             return res
@@ -977,15 +989,71 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     .send({status:false, type:"sender", message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
             }
         }
-
         //ตรวจสอบข้อมูลผู้ส่ง จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
-         try{
+        try{
+            if(!formData.from.name){
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message:"กรุณากรอกชื่อผู้ส่ง"});
+            }else if(!formData.from.tel){
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message:"กรุณากรอกเบอร์โทรผู้ส่ง"});
+            }
+            let dataSenderFail = `ผู้ส่ง(${formData.from.name}) กรุณากรอก: `
+            if(!formData.from.province || !formData.from.district || !formData.from.state || !formData.from.postcode){
+                if(!formData.from.province){
+                    dataSenderFail += 'จังหวัด/ '
+                }
+                if(!formData.from.state){
+                    dataSenderFail += 'อำเภอ/ '
+                }
+                if(!formData.from.district){
+                    dataSenderFail += 'ตำบล/ '
+                }
+                if(!formData.from.postcode){
+                    dataSenderFail += 'รหัสไปรษณีย์/ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false, type:"sender",message: dataSenderFail});
+            }
+
             const data = await postalThailand.find({postcode: formData.from.postcode})
                 if (!data || data.length == 0) {
                     return res
                             .status(404)
-                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
+                            .send({status:false, type:"sender", message:"ไม่พบรหัสไปรษณีย์ที่ผู้ส่งระบุ"})
                 }
+
+            const tel = formData.from.tel;
+
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
+
+                // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+                if (!regexWord.test(tel)) {
+                    return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"sender",
+                                    message:"กรุณาอย่ากรอกเบอร์โทร ผู้ส่ง โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+                }
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
+                
+                if (regex.test(tel) || tel.length != 10) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"sender",
+                                message:"กรุณากรอกเบอร์โทร ผู้ส่ง ให้ครบ 10 หลัก(อย่าเกิน)และอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
+
             // console.log(data)
             let isValid = false;
             let errorMessage = 'ผู้ส่ง:';
@@ -1028,7 +1096,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
             if (!isValid) {
                 return res
                         .status(400)
-                        .send({staus:false, type:"sender", message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+                        .send({staus:false, type:"sender",message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
             } 
         }catch(err){
             console.log(err)
@@ -1036,12 +1104,69 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
 
         //ตรวจสอบข้อมูลผู้รับ จังหวัด อำเภอ ตำบล ที่ส่งเข้ามาว่าถูกต้องหรือไม่
         try{
+            if(!formData.to.name){
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message:"กรุณากรอกชื่อผู้รับ"});
+            }else if(!formData.to.tel){
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message:"กรุณากรอกเบอร์โทรผู้รับ"});
+            }
+            let dataReceiveFail = `กรุณากรอก: `
+            if(!formData.to.province || !formData.to.district || !formData.to.state || !formData.to.postcode){
+                if(!formData.to.province){
+                    dataReceiveFail += 'จังหวัด/ '
+                }
+                if(!formData.to.state){
+                    dataReceiveFail += 'อำเภอ/ '
+                }
+                if(!formData.to.district){
+                    dataReceiveFail += 'ตำบล/ '
+                }
+                if(!formData.to.postcode){
+                    dataReceiveFail += 'รหัสไปรษณีย์/ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false, type:"receive",message: dataReceiveFail});
+            }
+        
             const data = await postalThailand.find({postcode: formData.to.postcode})
                 if (!data || data.length == 0) {
                     return res
                             .status(404)
-                            .send({status:false, message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
+                            .send({status:false, type:"receive", message:"ไม่พบรหัสไปรษณีย์ที่ผู้รับระบุ"})
                 }
+
+            const telTo = formData.to.tel;
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+            const regexWord = /^\d+$/;
+
+                // ตรวจสอบว่า tel เป็นตัวเลขเท่านั้น
+                if (!regexWord.test(telTo)) {
+                    return res
+                                .status(400)
+                                .send({
+                                    status:false, 
+                                    type:"receive",
+                                    message:"กรุณาอย่ากรอกเบอร์โทร ผู้รับ โดยใช้ตัวอักษร หรือ อักษรพิเศษ เช่น ก-ฮ, A-Z หรือ * / - + ! ๑ ๒"})
+                }
+            
+            // สร้าง regular expression เพื่อตรวจสอบว่า tel ขึ้นต้นด้วย "00" หรือ "01"
+            const regex = /^(00|01)/;
+                
+                if (regex.test(telTo) || telTo.length != 10) {
+                    // ถ้า tel ขึ้นต้นด้วย "00" หรือ "01" return err
+                    return res
+                            .status(400)
+                            .send({
+                                status:false, 
+                                type:"receive",
+                                message:"กรุณากรอกเบอร์โทร ผู้รับ ให้ครบ 10 หลัก(อย่าเกิน)และอย่าขึ้นต้นเบอร์ด้วย 00 หรือ 01"})
+                }
+
             // console.log(data)
             let isValid = false;
             let errorMessage = 'ผู้รับ:';
@@ -1085,7 +1210,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
             if (!isValid) {
                 return res
                         .status(400)
-                        .send({staus:false, message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
+                        .send({staus:false, type:"receive", message: errorMessage.trim() || 'ข้อมูลไม่ตรงกับที่ระบุ'});
             } 
         }catch(err){
             console.log(err)
@@ -1189,10 +1314,15 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 pricingTable: 1,
                 insureDeclareValue: 0,
                 insured: 0,
-          };
+                codEnabled: 0
+          }
           if(declared_value > 0){
             fromData.insured = 1
             fromData.insureDeclareValue = declared_valueStang
+          }
+          if(reqCod > 0){
+            fromData.codEnabled = 1
+            fromData.codAmount = cod_amount
           }
         // console.log(fromData)
         const newData = await generateSign(fromData)
@@ -1218,8 +1348,8 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         if(response.data.code == 1002){ //Error เกี่ยวกับการใส่ข้อมูล ผู้รับ ผู้ส่ง ไม่ครบจึงเกิด "การเซ็นลายมือล้มเหลว"
             return res
                     .status(400)
-                    .send({status:false, message:"กรุณากรอกข้อมูล ผู้รับ/ผู้ส่ง ให้ถูกต้อง"})
-        }else if(response.data.code == 1000){ //Error เกี่ยวกับน้ำหนักที่มากเกินไป
+                    .send({status:false, message:"กรุณากรอกข้อมูล ผู้รับ/ผู้ส่ง ให้ครบถ้วน"})
+        }else if(response.data.code == 1000){ //Error
             return res
                     .status(400)
                     .send({status:false, message:combinedString})
@@ -1397,16 +1527,28 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                                 .status(400)
                                 .send({status:false, message:`กรุณารอการตั้งราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม`})
                     }
-
-                    if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
-                        return res
-                                .status(400)
-                                .send({status:false, message:`ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
-                    }else if(resultP.costUpcountry > resultBase.salesUpcountry){
-                        return res
-                                .status(400)
-                                .send({status:false, message:`ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                let idReal
+                    if(role == 'partner'){
+                        idReal = id
+                    }else if(role == 'shop_member'){
+                        idReal = req.decoded.id_ownerShop
+                        // console.log(idReal)
                     }
+                const findPartner = await Partner.findById(idReal)
+                    if(!findPartner){
+                        return res
+                                .status(404)
+                                .send({status:false, message:"ไม่มีข้อมูลการเป็น Partner ของท่านในระบบ"})
+                    }
+                    // if(resultP.costBangkok_metropolitan > resultBase.salesBangkok_metropolitan){ //ใช้เช็คกรณีที่คุณไอซ์แก้ราคา มาตรฐาน แล้วราคาต้นทุนที่ partner คนก่อนตั้งไว้มากกว่าราคามาตรฐาน จึงต้องเช็ค
+                    //     return res
+                    //             .status(400)
+                    //             .send({status:false, message:`ราคาขาย(กรุงเทพ/ปริมณฑล) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(กรุงเทพ/ปริมณฑล) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                    // }else if(resultP.costUpcountry > resultBase.salesUpcountry){
+                    //     return res
+                    //             .status(400)
+                    //             .send({status:false, message:`ราคาขาย(ต่างจังหวัด) น้ำหนัก ${resultBase.weightStart} ถึง ${resultBase.weightEnd} กิโลกรัม ของท่าน มากกว่า ราคาขายหน้าร้านแบบมาตรฐาน(ต่างจังหวัด) กรุณาให้พาร์ทเนอร์ที่แนะนำท่านแก้ไข`})
+                    // }
                 // คำนวนต้นทุนของร้านค้า
                 let cost_hub
                 let price
@@ -1543,14 +1685,20 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     cost_hub -= profitTwo
                     // console.log(cost_hub)
                 }
+                const resultRes = response.data.data
+                const upCountry = (parseFloat(resultRes.upCountryAmount)/100)
+                const codPoundageAmount = (resultRes.codPoundageAmount)/100
+
                 // console.log(profit)
                     v = {
                         ...req.body,
                         express: "FLASH",
-                        price_remote_area: 0,
+                        price_remote_area: upCountry,
                         cost_hub: cost_hub,
                         cost_base: cost_base,
                         fee_cod: 0,
+                        fee_cod_orderhub: 0,
+                        fee_cod_sp: codPoundageAmount,
                         price: Number(price.toFixed()),
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,
@@ -1562,23 +1710,29 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         profitAll: profit
                     };
                     // console.log(v)
-                    // if (cod !== undefined) {
+
                         let formattedFee = parseFloat(fee_cod_total.toFixed(2));
-                        let total = price + formattedFee + packing_price + insuranceFee
-                            v.fee_cod = formattedFee
-                            // v.profitPartner = profitPartner
-                                if(response.data.data.upCountry == true){
-                                    let upCountry = (parseFloat(response.data.data.upCountryAmount)/100) //เปลี่ยนจาก สตางค์เป็นบาท 
-                                    // console.log(upCountry)
-                                    let total1 = total + upCountry
-                                        v.total = total1
-                                        v.cut_partner = cut_partner + upCountry + insuranceFee + formattedFee
-                                        v.price_remote_area = upCountry
-                                }else{
-                                    v.cut_partner = cut_partner + formattedFee + insuranceFee
-                                    v.total = total 
-                                }
-                            new_data.push(v);
+                        let total = price + formattedFee + packing_price + insuranceFee + upCountry + codPoundageAmount
+                            v.fee_cod = formattedFee + codPoundageAmount
+                            v.fee_cod_orderhub = formattedFee
+        
+                        let cut = cut_partner + insuranceFee + formattedFee + upCountry + codPoundageAmount
+                            v.cut_partner = parseFloat(cut.toFixed(2))
+                            v.total = parseFloat(total.toFixed(2))
+                            // v.fee_cod = formattedFee
+                            // // v.profitPartner = profitPartner
+                            //     if(response.data.data.upCountry == true){
+                            //         let upCountry = (parseFloat(response.data.data.upCountryAmount)/100) //เปลี่ยนจาก สตางค์เป็นบาท 
+                            //         // console.log(upCountry)
+                            //         let total1 = total + upCountry
+                            //             v.total = total1
+                            //             v.cut_partner = cut_partner + upCountry + insuranceFee + formattedFee
+                            //             v.price_remote_area = upCountry
+                            //     }else{
+                            //         v.cut_partner = cut_partner + formattedFee + insuranceFee
+                            //         v.total = total 
+                            //     }
+                        new_data.push(v);
                     
                     try {
                         await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
@@ -1595,7 +1749,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                  .status(200)
                  .send({
                     status:true, 
-                    // data:response.data, 
+                    data:response.data,
                     new:new_data})
         
     }catch(err){
