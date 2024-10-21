@@ -1386,9 +1386,9 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
           }
         // console.log(fromData)
         const newData = await generateSign(fromData)
-        const formDataOnly = newData.formData
+        const formDataOnly = newData.queryString
             // console.log(formDataOnly)
-        const response = await axios.post(`${apiUrl}/open/v1/orders/estimate_rate`,querystring.stringify(formDataOnly),{
+        const response = await axios.post(`${apiUrl}/open/v1/orders/estimate_rate`,formDataOnly,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -1810,7 +1810,9 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                  .send({
                     status:true, 
                     data:response.data,
-                    new:new_data})
+                    new:new_data[0],
+                    sender:infoSender
+                })
         
     }catch(err){
         console.log(err)

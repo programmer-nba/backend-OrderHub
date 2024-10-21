@@ -25,7 +25,7 @@ generateSign = async(formData)=>{
         const stringSignTemp = asciiSortedSignature +`&key=${key}` //นำไปรวมกับ secret_key
         const hash = crypto.createHash('sha256'); //ใช้สร้างอ็อบเจ็กต์ Hash สำหรับการใช้ SHA-256.
         await hash.update(stringSignTemp);//ใช้เพิ่มข้อมูลที่ต้องการแฮช.
-        console.log(stringSignTemp)
+        // console.log(stringSignTemp)
         const sign = await hash.digest('hex').toUpperCase();//ให้ค่าแฮชเป็น string ในรูปแบบ hex (16 ฐาน)และเป็นตัวพิมพ์ใหญ่ทั้งหมด.
         // console.log("generate :",sign);
         const asciiSorted = asciiSortedSignature + `&sign=${sign}`
