@@ -23,14 +23,25 @@ const { priceBase } = require('../../../Models/Delivery/weight/priceBase.express
 const { Admin } = require('../../../Models/admin');
 const { decrypt } = require('../../../functions/encodeCrypto');
 const { logOrder } = require('../../../Models/logs_order');
-
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
  const dayTime = dayjsTimestamp.format('YYYY-MM-DD HH:mm:ss')
 
- const dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
- const milliseconds = String(dayjsObject.valueOf()); // แปลงเป็น timestamp ในรูปแบบมิลลิวินาที
- const nonceStr = milliseconds
+//  let dayjsObject = dayjs(dayTime); // สร้าง object dayjs จาก string
+ let currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+ let dayjsObject  = dayjs(currentTime)
+ let nonceStr = String(dayjsObject.valueOf()); // Initialize nonceStr with the current timestamp
+function updateRealTime (){
+    currentTime = dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+    dayjsObject = dayjs(currentTime)
+    nonceStr = String(dayjsObject.valueOf()); // Initialize nonceStr with the current timestamp
+}
+setInterval(updateRealTime, 60000);
+
 
 createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash express
     try{
@@ -62,7 +73,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         let cod_integer = cod_amount / 100 //ทำ cod_amount เป็นหน่วย บาท เพื่อบันทึกลง database(จะได้ดูง่าย)
         let declared_valueStang = declared_value * 100//มูลค่าประกัน
 
-        const invoice = await invoiceNumber()
+        const invoice = await invoiceNumber(currentTime)
         // console.log(cod_integer, codForPrice)
         const formData = {
             mchId: mchId,
@@ -325,13 +336,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 tracking_code: new_data.pno,
                 mailno: new_data.pno,
                 from:{
-                    ...data.from
+                    ...dataForm.from
                 },
                 to:{
-                    ...data.to
+                    ...dataForm.to
                 },
                 parcel:{
-                    ...data.parcel
+                    ...dataForm.parcel
                 },
                 invoice: invoice,
                 status:'booking',
@@ -491,7 +502,7 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
             // เพิ่ม key-value pairs ตามต้องการ
           };
           const newData = await generateSign(formData)
-          const formDataOnly = newData.formData
+          const formDataOnly = newData.queryString
         //   console.log(formDataOnly)
         try{
             const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/pre_print`,formDataOnly,{
@@ -1912,22 +1923,23 @@ getPartnerBooking = async (req, res)=>{
     }
 }
 
-async function invoiceNumber() {
-    data = `ODHFLE`
-    let random = Math.floor(Math.random() * 10000000000)
-    const combinedData = data + random;
-    const findInvoice = await flashOrder.find({'response.invoice':combinedData})
+async function invoiceNumber(day) {
+    day = `${dayjs(day).format("YYYYMMDD")}`
+    let data = `ODHFLE`
+    let random = Math.floor(Math.random() * 10000000)
+    const combinedData = data + day + random;
+    const findInvoice = await orderAll.find({tracking_code:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
-        random = Math.floor(Math.random() * 10000000000);
-        combinedData = data + random;
+        random = Math.floor(Math.random() * 10000000);
+        combinedData = data + day + random;
 
         // เช็คใหม่
-        findInvoice = await flashOrder.find({'response.invoice': combinedData});
+        findInvoice = await orderAll.find({tracking_code: combinedData});
     }
 
-    console.log(combinedData);
+    // console.log(combinedData);
     return combinedData;
 }
 

@@ -33,7 +33,7 @@ const orderAllSchema = new Schema({
         cod_amount : {type: Number ,required : false},
         fee_cod: {type: Number , required: false},
         fee_cod_orderhub: {type: Number , required: false},
-        fee_cod_sp : {type: Number , required: false},
+        fee_cod_sp : {type: Number ,default: 0, required: false},
         cod_vat : {type: Number , required: false},
         cost_hub : {type: Number, required : false},
         cost : {type: Number ,required : false},
