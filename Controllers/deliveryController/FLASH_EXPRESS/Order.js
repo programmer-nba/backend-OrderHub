@@ -507,7 +507,7 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
             // console.log(base64String);
             return res
                     .status(200)
-                    // .setHeader('Content-Type', 'application/pdf')
+                    .setHeader('Content-Type', 'application/pdf')
                     .send(response.data);
         }catch(error){
             console.error('Error fetching or processing PDF:', error)
