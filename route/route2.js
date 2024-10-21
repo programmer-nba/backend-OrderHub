@@ -56,7 +56,7 @@ router.route('/orderhub/flash/getPartner/:id').get( authAdmin.checkToken, flash.
 
 //Flash express
 router.route('/orderhub/flash/create').post( auth.checkToken, flash.createOrder )
-router.route('/orderhub/flash/status').get( auth.checkToken, flash.statusOrder )
+router.route('/orderhub/flash/status').post( auth.checkToken, flash.statusOrder )
 router.route('/orderhub/flash/getware').get( auth.checkToken, flash.getWareHouse )
 router.route('/orderhub/flash/print180').post( auth.checkToken,flash.print100x180 )
 router.route('/orderhub/flash/print75').post( auth.checkToken, flash.print100x75 )

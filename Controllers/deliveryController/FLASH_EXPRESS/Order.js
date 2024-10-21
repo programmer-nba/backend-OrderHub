@@ -3,7 +3,7 @@ const { generateSign } = require('./generate.sign')
 const querystring = require('querystring');
 const dayjs = require('dayjs')
 const fs = require('fs');
-
+const qs = require('qs');
 const { Partner } = require('../../../Models/partner');
 const { shopPartner } = require('../../../Models/shop/shop_partner');
 const { PercentCourier } = require('../../../Models/Delivery/ship_pop/percent');
@@ -21,6 +21,8 @@ const { weightAll } = require('../../../Models/Delivery/weight/weight.all.expres
 const { bangkokMetropolitan } = require('../../../Models/postcal_bangkok/postcal.bangkok');
 const { priceBase } = require('../../../Models/Delivery/weight/priceBase.express');
 const { Admin } = require('../../../Models/admin');
+const { decrypt } = require('../../../functions/encodeCrypto');
+const { logOrder } = require('../../../Models/logs_order');
 
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
  const dayjsTimestamp = dayjs(Date.now());
@@ -43,6 +45,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const fee_cod = req.body.fee_cod
         const fee_cod_orderhub = req.body.fee_cod_orderhub
         const fee_cod_sp = req.body.fee_cod_sp
+        const print_code = req.body.print_code
         const total = req.body.total
         const cost_base = req.body.cost_base
         const price_remote_area = req.body.price_remote_area
@@ -96,10 +99,10 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             formData.codAmount = cod_amount;
             formData.subItemTypes = [
                 {
-                    itemName: dataForm.parcel.name,
-                    itemWeightSize: `${dataForm.parcel.width}x${dataForm.parcel.length}x${dataForm.parcel.height} ${dataForm.parcel.weight}kg`,
-                    itemColor: dataForm.parcel.itemColor,
-                    itemQuantity: dataForm.parcel.itemQuantity
+                    "itemName": dataForm.parcel.name,
+                    "itemWeightSize": `${dataForm.parcel.width}x${dataForm.parcel.length}x${dataForm.parcel.height} ${dataForm.parcel.weight}kg`,
+                    "itemColor": dataForm.parcel.itemColor,
+                    "itemQuantity": dataForm.parcel.itemQuantity
                 }
             ]
             // console.log(formData)
@@ -122,9 +125,9 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         // console.log(updatedDocument)
         const newData = await generateSign(formData)
         const formDataOnly = newData.formData
-            // console.log(querystring.stringify(formDataOnly))
-            
-        const response = await axios.post(`${apiUrl}/open/v3/orders`,querystring.stringify(formDataOnly),{
+        const asciiSorted = newData.queryString
+        // console.log(asciiSorted)
+        const response = await axios.post(`${apiUrl}/open/v3/orders`,asciiSorted,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -135,8 +138,9 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     .status(400)
                     .send({status:false, data:response.data})
         }
+        const new_data = response.data.data
 
-          //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
+        //priceOne คือราคาที่พาร์ทเนอร์คนแรกได้ เพราะงั้น ถ้ามี priceOne แสดงว่าคนสั่ง order มี upline ของตนเอง
         let allProfit = []
         let profit_ice
         let profit_p
@@ -154,20 +158,21 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                             .send({status:false, message:"ไม่สามารถค้นหาร้านเจอ"})
                 }
 
-            console.log(findShop.credit)
-
-            const plus = findShop.credit + cut_partner
+            let credit = parseFloat(findShop.credit.toFixed(2))
+            const plus = credit + cut_partner
+            let plusFloat = parseFloat(plus.toFixed(2))
             const history = {
-                    shop_id: findShop._id,
-                    ID: id,
-                    role: role,
-                    shop_number: shop,
-                    orderid: response.data.data.pno,
-                    amount: cut_partner,
-                    before: plus,
-                    after: findShop.credit,
-                    type: 'FLASH',
-                    remark: "ขนส่งสินค้า(FLASH)"
+                        shop_id: findShop._id,
+                        ID: id,
+                        role: role,
+                        shop_number: shop,
+                        orderid: new_data.pno,
+                        mailno: new_data.pno,
+                        amount: cut_partner,
+                        before: plusFloat,
+                        after: credit,
+                        type: 'FLASH',
+                        remark: "ขนส่งสินค้า"
                 }
             // console.log(history)
             const historyShop = await historyWalletShop.create(history)
@@ -180,7 +185,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     Orderer: id,
                     role: role,
                     shop_number: shop,
-                    orderid: response.data.data.pno,
+                    orderid: new_data.pno,
+                    mailno: new_data.pno,
                     cost_price: profitAll[0].cost_price,
                     cost: profitAll[0].cost,
                     profitCost: profitAll[0].profit,
@@ -202,9 +208,16 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 }
             // console.log(id)
             // console.log(profitAll)
-            let profitTotal = profitAll[0].total + packing_price
+            let profitTotalAll = profitAll[0].total + packing_price
+            let profitTotal = parseFloat(profitTotalAll.toFixed(2))
+            let idReal
+                if(role == 'partner'){
+                    idReal = id
+                }else if(role == 'shop_member'){
+                    idReal = req.decoded.id_ownerShop
+                }
             let profitOne = await Partner.findOneAndUpdate(
-                    { _id: id },
+                    { _id: idReal },
                     { $inc: { 
                             profit: +profitTotal,
                         } 
@@ -226,7 +239,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                         Orderer: id,
                                         role: role,
                                         shop_number: shop,
-                                        orderid: response.data.data.pno,
+                                        orderid: new_data.pno,
+                                        mailno: new_data.pno,
                                         cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
                                         profitCost: profitAll[i].profit,
@@ -262,7 +276,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                         Orderer: id,
                                         role: role,
                                         shop_number: shop,
-                                        orderid: response.data.data.pno,
+                                        orderid: new_data.pno,
+                                        mailno: new_data.pno,
                                         cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
                                         profitCost: profitAll[i].profit,
@@ -307,7 +322,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 orderer_id:id,
                 shop_id:findShop._id,
                 role:role,
-                tracking_code: response.data.data.pno,
+                tracking_code: new_data.pno,
+                mailno: new_data.pno,
                 from:{
                     ...data.from
                 },
@@ -323,11 +339,14 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 cost_base: cost_base,
                 cod_amount:cod_integer,
                 fee_cod: fee_cod,
+                fee_cod_sp: fee_cod_sp,
+                fee_code_orderhub: fee_cod_orderhub,
                 total: total,
                 cut_partner: cut_partner,
                 packing_price: packing_price,
                 price_remote_area: price_remote_area,
                 price: price,
+                print_code: print_code,
                 declared_value: declared_value,
                 insuranceFee: insuranceFee,
                 profitAll: profitAll,
@@ -341,13 +360,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             }
         if(cod_amount != 0){
             const pfSenderTemplate = {
-                    orderid: response.data.data.pno,
+                    orderid: new_data.pno,
                     owner_id: findShop.partnerID,
                     Orderer: id,
                     role: role,
                     shop_number: shop,
                     type: 'COD(SENDER)',
-                    'template.partner_number': response.data.data.pno,
+                    'template.partner_number': new_data.pno,
                     'template.account_name':updatedDocument.flash_pay.name,
                     'template.account_number':updatedDocument.flash_pay.card_number,
                     'template.bank':updatedDocument.flash_pay.aka,
@@ -373,7 +392,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     res: response.data,
                     order: createOrderAll,
                     // shop: findShop,
-                    profitAll: allProfit
+                    // profitAll: allProfit
                 })
 
     }catch(err){
@@ -395,9 +414,9 @@ statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
             // เพิ่ม key-value pairs ตามต้องการ
           }
         const newData = await generateSign(formData)
-        const formDataOnly = newData.formData
+        const formDataOnly = newData.queryString
         // console.log(formDataOnly)
-        const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/routes`,querystring.stringify(formDataOnly),{
+        const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/routes`,formDataOnly,{
                 headers: {
                   'Content-Type': 'application/x-www-form-urlencoded',
                   'Accept': 'application/json',
@@ -407,40 +426,11 @@ statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
             return res
                     .status(400)
                     .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
-        }else{
-            // let detailBulk = []
-            // const detail = response.data.responseitems[0].tracesList
-            // const detailMap = detail.map(item =>{
-            //     const latestDetails = item.details[item.details.length - 1];
-            //     let scantype
-            //         if(latestDetails.scantype == 'Receipting' || latestDetails.scantype == 'Picked Up'){
-            //             scantype = 'รับพัสดุแล้ว'
-            //         }else if(latestDetails.scantype == 'On Delivery'){
-            //             scantype = 'ระหว่างการจัดส่ง'
-            //         }else if(latestDetails.scantype == 'Signature'){
-            //             scantype = 'เซ็นรับแล้ว'
-            //         }else if(latestDetails.scantype == 'Return'){
-            //             scantype = 'พัสดุตีกลับ'
-            //         }else{
-            //             return;
-            //         }
-            //     let changStatus = {
-            //         updateOne: {
-            //             filter: { mailno: item.billcode },
-            //             update: { 
-            //                 $set: {
-            //                     order_status:scantype
-            //                 }
-            //             }
-            //         }
-            //     }
-            //     detailBulk.push(changStatus)
-            // })
-            // const bulkDetail = await orderAll.bulkWrite(detailBulk)
+        }
             return res
                     .status(200)
                     .send({status:true, data: response.data})
-            }
+        
     }catch(err){
         console.log(err)
         return res
@@ -507,12 +497,17 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
             const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/pre_print`,formDataOnly,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
+                // 'Accept': 'application/pdf,*/*',
                 },
             responseType: 'arraybuffer', // ระบุให้ axios รับ binary data ในรูปแบบ array buffer
             })
+            // แปลง array buffer เป็น base64
+            // const base64String = Buffer.from(response.data, 'binary').toString('base64');
+
+            // console.log(base64String);
             return res
                     .status(200)
-                    .setHeader('Content-Type', 'application/pdf')
+                    // .setHeader('Content-Type', 'application/pdf')
                     .send(response.data);
         }catch(error){
             console.error('Error fetching or processing PDF:', error)
@@ -689,8 +684,17 @@ statusOrderPack = async (req, res)=>{ //ตรวจสอบข้อมูล�
 
 cancelOrder = async (req, res)=>{ //cancel order
     try{
-        const role = req.decoded.role
         const id = req.decoded.userid
+        const role = req.decoded.role
+        const firstname = req.decoded.firstname
+        const lastname = req.decoded.lastname
+        const ip_address = req.decoded.ip_address
+        const latitude = req.decoded.latitude
+        const longtitude = req.decoded.longtitude
+        const IP = await decrypt(ip_address)
+        const LT = await decrypt(latitude)
+        const LG = await decrypt(longtitude)
+
         const apiUrl = process.env.TRAINING_URL
         const mchId = process.env.MCH_ID
         const pno = req.body.pno
@@ -700,21 +704,22 @@ cancelOrder = async (req, res)=>{ //cancel order
             // เพิ่ม key-value pairs ตามต้องการ
           };
 
-        const findStatus = await orderAll.findOne({tracking_code:pno});
-          if (!findStatus) {
+        const findCancel = await orderAll.findOne({tracking_code:pno});
+          if (!findCancel) {
               return res
                       .status(400)
-                      .send({ status: false, message: "ไม่มีหมายเลขที่ท่านกรอก" });
-          }else if(findStatus.order_status == 'cancel'){
+                      .send({ status: false, message: "ไม่สามารถค้นหาหมายเลข pno ได้" });
+          }else if(findCancel.order_status == 'cancel'){
               return res
                       .status(404)
-                      .send({status: false, message:"หมายเลขสินค้านี้ถูก cancel ไปแล้ว"})
+                      .send({status: false, message:"ออเดอร์นี้ถูก Cancel ไปแล้ว"})
           }
-        console.log(findStatus)
+        
+        // console.log(findStatus)
         const newData = await generateSign(formData)
-        const formDataOnly = newData.formData
+        const formDataOnly = newData.queryString
         // console.log(formDataOnly)  
-        const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/cancel`,querystring.stringify(formDataOnly),{
+        const response = await axios.post(`${apiUrl}/open/v1/orders/${pno}/cancel`,formDataOnly,{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
@@ -726,10 +731,34 @@ cancelOrder = async (req, res)=>{ //cancel order
                     .send({status:false, message:"ไม่สามารถทำการยกเลิกออเดอร์นี้ได้"})
         }else{
             let refundAll = []
+            let formData = {
+                            ip_address: IP,
+                            id: id,
+                            role: role,
+                            type: 'CANCEL ORDER',
+                            orderer:`${firstname} ${lastname}`,
+                            description: "ยูสเซอร์ยกเลิกสินค้า",
+                            order:[{
+                                orderid:findCancel.mailno,
+                                express:"J&T"
+                            }],
+                            latitude: LT,
+                            longtitude: LG
+                    }
+            const createLog = await logOrder.create(formData)
+                if(!createLog){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถสร้าง Logs ได้"})
+                }
             const findPno = await orderAll.findOneAndUpdate(
-                {tracking_code:pno},
-                {order_status:"cancel"},
-                {new:true})
+                    {tracking_code:pno},
+                    {
+                        order_status:"cancel",
+                        day_cancel: createLog.day,
+                        user_cancel:`${firstname} ${lastname}`
+                    },
+                    {new:true})
                 if(!findPno){
                     return res
                             .status(400)
@@ -747,24 +776,33 @@ cancelOrder = async (req, res)=>{ //cancel order
                                     .send({status:false,message:"ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้"})
                             }
                 let diff = findShop.credit - findPno.cut_partner
+                let before = parseFloat(diff.toFixed(2));
+                let after = findShop.credit.toFixed(2)
                 let history = {
-                            ID: id,
-                            role: role,
-                            shop_number: findPno.shop_number,
-                            orderid: pno,
                             amount: findPno.cut_partner,
-                            before: diff,
-                            after: findShop.credit,
+                            before: before,
+                            after: after,
                             type: 'FLASH',
-                            remark: "ยกเลิกขนส่งสินค้า(FLASH)"
+                            remark: "ยกเลิกขนส่งสินค้า",
+                            day_cancel: createLog.day,
+                            user_cancel: `${firstname} ${lastname}`
                     }
-            const historyShop = await historyWalletShop.create(history)
+            const historyShop = await historyWalletShop.findOneAndUpdate(
+                    {
+                        orderid:pno,
+                    },{
+                        ...history
+                    },{
+                        new:true
+                    })
                         if(!historyShop){
-                            console.log("ไม่สามารถสร้างประวัติการเงินของร้านค้าได้")
+                            return res
+                                    .status(404)
+                                    .send({status:false, message:"ไม่มีหมายเลข PNO ที่ท่านต้องการยกเลิก"})
                         }
 
             //REFUND PARTNER//
-            let profitRefundTotal = findPno.profitAll[0].total+ findPno.profitSaleMartket+ findPno.packing_price
+            let profitRefundTotal = findPno.profitAll[0].total+ findPno.packing_price
             const profitOne = await Partner.findOneAndUpdate(
                     { _id: findShop.partnerID },
                     { $inc: { 
@@ -792,9 +830,9 @@ cancelOrder = async (req, res)=>{ //cancel order
                             .status(400)
                             .send({status:false, message:"ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ"})
                 }
-            let findTemplate
-                if(findTracking.profitCOD != 0){
-                    findTemplate = await profitTemplate.findOneAndUpdate(
+
+                if(findPno.cod_amount != 0){
+                    let findTemplate = await profitTemplate.findOneAndUpdate(
                         { orderid : pno},
                         {
                             status:"ยกเลิกออเดอร์"
@@ -804,8 +842,9 @@ cancelOrder = async (req, res)=>{ //cancel order
                                     .status(400)
                                     .send({status:false, message:"ไม่สามารถหารายการโอนเงิน COD ได้"})
                         }
+                    refundAll.push(findTemplate)
                 }
-            refundAll = refundAll.concat(findPno, historyShop, profitOne, findTracking, findTemplate);
+            refundAll = refundAll.concat(findPno, historyShop, profitOne, findTracking);
 
                 for(const element of findPno.profitAll.slice(1)){//คืนเงินให้พาร์ทเนอร์ที่ทำการกระจาย(ไม่รวมตัวเอง)
                     if(element.id == 'ICE'){
@@ -818,7 +857,17 @@ cancelOrder = async (req, res)=>{ //cancel order
                                             .status(400)
                                             .send({status:false,message:"ไม่สามารถบันทึกกำไรคุณไอซ์ได้"})
                             }
+                        const changStatusAdmin = await profitIce.findOneAndUpdate(
+                            {orderid: pno},
+                            {type:"ยกเลิกออเดอร์"},
+                            {new:true})
+                            if(!changStatusAdmin){
+                                return res
+                                        .status(404)
+                                        .send({status:false, message:"ไม่สามารถค้นหาประวัติกำไรคุณไอซ์"})
+                            }
                         refundAll.push(refundAdmin)
+                        refundAll.push(changStatusAdmin)
                     }else{
                         const refund = await Partner.findOneAndUpdate(
                             { _id: element.id },
