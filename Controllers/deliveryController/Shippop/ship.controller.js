@@ -870,7 +870,7 @@ priceList = async (req, res)=>{
                     // origin_data: resp.data, 
                     express_active: express_in,
                     // result: express_active,
-                    new: new_data[0],
+                    new: new_data,
                     sender:infoSender
                 });
     }catch(err){
