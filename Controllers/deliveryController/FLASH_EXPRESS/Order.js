@@ -25,6 +25,7 @@ const { decrypt } = require('../../../functions/encodeCrypto');
 const { logOrder } = require('../../../Models/logs_order');
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
+const { pickupOrder } = require('../../../Models/Delivery/pickup_sp');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
@@ -101,8 +102,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             codEnabled:0,
             insured:0,
             articleCategory:2,
-            remark: "remark",
-        
+            remark:remark,
             // เพิ่ม key-value pairs ตามต้องการ
           };
         if(codForPrice > 0){
@@ -116,7 +116,6 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     "itemQuantity": dataForm.parcel.itemQuantity
                 }
             ]
-            // console.log(formData)
         }
         if(declared_value > 0){
             formData.insured = 1
@@ -135,7 +134,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             }
         // console.log(updatedDocument)
         const newData = await generateSign(formData)
-        const formDataOnly = newData.formData
+        // const formDataOnly = newData.formData
         const asciiSorted = newData.queryString
         // console.log(asciiSorted)
         const response = await axios.post(`${apiUrl}/open/v3/orders`,asciiSorted,{
@@ -928,6 +927,7 @@ notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พ�
     try{
         const apiUrl = process.env.TRAINING_URL
         const mchId = process.env.MCH_ID
+        const id = req.decoded.userid
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
@@ -944,7 +944,7 @@ notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พ�
             //เพิ่ม key-value pairs ตามต้องการ
           };
         const newData = await generateSign(formData)
-        const formDataOnly = newData.formData
+        const formDataOnly = newData.queryString
         // console.log(formDataOnly)  
 
         const response = await axios.post(`${apiUrl}/open/v1/notify`,formDataOnly,{
@@ -953,14 +953,51 @@ notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พ�
                 'Accept': 'application/json',
             },
         })
-        if(!response){
+        if(response.data.code != 1){
+            let mes = response.data.message
+            if(response.data.code == 1000){
+                mes = "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบ ตำบล/อำเภอ/จังหวัด และ รหัสไปรณีย์"
+            }
             return res
                     .status(400)
-                    .send({status:false, message:"ไม่สามารถเชื่อมต่อได้"})
+                    .send({
+                        status:false, 
+                        code:response.data.code,
+                        message:mes
+                    })
         }else{
-            return res
-                    .status(200)
-                    .send({status:true, message:"เชื่อมต่อสำเร็จ", data:response.data})
+            let v = {
+                        // tracking_code: tracking_code,
+                        courier_ticket_id:response.data.data.staffInfoId,
+                        courier_pickup_id:response.data.data.ticketPickupId,
+                        num_of_parcel: req.body.estimateParcelNumber,
+                        datetime_pickup: response.data.data.ticketMessage,
+                        origin_name : req.body.srcName,
+                        origin_phone : req.body.srcPhone,
+                        origin_address : req.body.srcDetailAddress,
+                        origin_district : req.body.srcDistrictName,
+                        origin_city : req.body.srcCityName,
+                        origin_province : req.body.srcProvinceName,
+                        origin_postcode : req.body.srcPostalCode,
+                        express: "FLASH",
+                        status:"เรียกรถเข้ารับ"
+                    }
+                
+            const createPickup = await pickupOrder.create(v)
+                if(!createPickup){
+                    return res  
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลเรียกรถเข้ารับได้"})
+                }
+                return res
+                        .status(200)
+                        .send({
+                                status:true,
+                                message:"สร้างข้อมูลเรียกรถเข้ารับสําเร็จ", 
+                                data:createPickup,
+                                response: response.data
+                        })
+
         }
     }catch(err){
         console.log(err)
@@ -998,6 +1035,51 @@ nontification = async (req, res)=>{ //เรียกดูงานรับใ
             return res
                     .status(200)
                     .send({status:true, message:"เชื่อมต่อสำเร็จ", data:response.data})
+        }
+    }catch(err){
+        console.log(err)
+        return res
+                .status(500)
+                .send({status:false, message:"มีบางอย่างผิดพลาด"})
+    }
+}
+
+cancelNontification = async (req, res)=>{ //ยกเลิกงานรับในวัน
+    try{
+        const id = req.body.id
+        const apiUrl = process.env.TRAINING_URL
+        const mchId = process.env.MCH_ID
+        const formData = {
+            mchId: mchId,
+            nonceStr: nonceStr,
+            // เพิ่ม key-value pairs ตามต้องการ
+          };
+        const newData = await generateSign(formData)
+        const formDataOnly = newData.queryString
+        //   console.log(formDataOnly)  
+        const response = await axios.post(`${apiUrl}/open/v1/notify/${id}/cancel`,formDataOnly,{
+              headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Accept': 'application/json',
+              }
+          })
+        if(response.data.code != 1){
+            return res
+                    .status(400)
+                    .send({status:false,code:response.data.code, message:response.data.message})
+        }else{
+            const update = await pickupOrder.findOneAndUpdate(
+                {courier_pickup_id:id},
+                {status:"ยกเลิกเข้ารับ"},
+                {new:true})
+                if(!update){
+                    return res  
+                            .status(400)
+                            .send({status:false, message:"ไม่สามารถยกเลิกงานรับได้"})
+                }
+            return res
+                    .status(200)
+                    .send({status:true, message:"ยกเลิกสำเร็จ", data:update})
         }
     }catch(err){
         console.log(err)
@@ -1276,34 +1358,35 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
             console.log(err)
         }
 
-        if(weight == 0 || weight == undefined){
+        if(weight <= 0 || weight == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณาระบุน้ำหนัก(kg)`})
+                    .send({status:false, type:"receive", message:`กรุณาระบุน้ำหนัก(kg)`})
         }
         if(formData.parcel.width == 0 || formData.parcel.width == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกความกว้าง(cm)`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกความกว้าง(cm)`})
         }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกความยาว(cm)`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกความยาว(cm)`})
         }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกความสูง(cm)`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกความสูง(cm)`})
         }
 
         if(!Number.isInteger(packing_price)){
             return res
                     .status(400)
-                    .send({status:false, message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
+                    .send({status:false, type:"receive", message:`กรุณากรอกค่าบรรจุภัณฑ์เป็นเป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`})
         }
         if (!Number.isInteger(reqCod)||
             !Number.isInteger(declared_value)) {
                     return res.status(400).send({
                         status: false,
+                        type:"receive",
                         message: `กรุณาระบุค่า COD หรือ มูลค่าสินค้า(ประกัน) เป็นตัวเลขจำนวนเต็มเท่านั้นห้ามใส่ทศนิยม,ตัวอักษร หรือค่าว่าง`
                     });
                 }
@@ -1383,6 +1466,21 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
           if(reqCod > 0){
             fromData.codEnabled = 1
             fromData.codAmount = cod_amount
+            if(!formData.parcel.name || !formData.parcel.itemColor || !formData.parcel.itemQuantity){
+                let errCod = 'กรณีสั่งแบบ COD กรุณากรอก '
+                if(!formData.parcel.name){
+                    errCod = errCod + '/ ชื่อสินค้า '
+                }
+                if(!formData.parcel.itemColor){
+                    errCod = errCod + '/ สีพัสดุ '
+                }
+                if(!formData.parcel.itemQuantity){
+                    errCod = errCod + '/ จำนวนพัสดุ '
+                }
+                return res
+                        .status(400)
+                        .send({status:false,type:"receive", message:errCod})
+            }
           }
         // console.log(fromData)
         const newData = await generateSign(fromData)
@@ -1408,11 +1506,11 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         if(response.data.code == 1002){ //Error เกี่ยวกับการใส่ข้อมูล ผู้รับ ผู้ส่ง ไม่ครบจึงเกิด "การเซ็นลายมือล้มเหลว"
             return res
                     .status(400)
-                    .send({status:false, message:"กรุณากรอกข้อมูล ผู้รับ/ผู้ส่ง ให้ครบถ้วน"})
-        }else if(response.data.code == 1000){ //Error
+                    .send({status:false, type:"receive", message:"กรุณากรอกข้อมูล ผู้รับ/ผู้ส่ง ให้ครบถ้วน"})
+        }else if(response.data.code != 1){ //Error
             return res
                     .status(400)
-                    .send({status:false, message:combinedString})
+                    .send({status:false, type:"receive", message:combinedString})
         }
         const estimatedPrice = parseFloat(response.data.data.estimatePrice)
         const estimatedPriceInBaht = estimatedPrice / 100; //เปลี่ยนจาก สตางค์เป็นบาท
@@ -1947,4 +2045,5 @@ async function invoiceNumber(day) {
 
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
                     ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
-                    estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking }
+                    estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking, 
+                    cancelNontification }

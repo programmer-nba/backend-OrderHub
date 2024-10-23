@@ -78,38 +78,67 @@ create = async(req, res)=>{
 
                 //ในแต่ละ object เราใช้ Object Destructuring เพื่อดึง _id ออกและใช้ Spread Operator (...rest) เพื่อรวม key ที่เหลืออยู่ใน object ทั้งหมดเข้าไปในตัวแปร rest
                 const newWeightData = updatePriceBase.weight.map(({ _id, ...rest }) => rest);
+
+                const weightMap = new Map();
+                for (const weight of findShopWeight) {
+                    weightMap.set(`${weight.shop_id}-${weight.express}`, weight);
+                }
+
                 let new_data = []
                 for(const shop of findShop){
                         if(shop.status == "รอแอดมินอนุมัติ"){
                             continue;
                         }
-                        let found = false;
-                        for (const weight of findShopWeight) {
-                            if (weight.shop_id == shop._id && weight.express == percent.express) {
-                                found = true;
-                                break;
-                            }
-                        }
+                        // let found = false;
 
-                        if(!found){
+                        // const find = findShopWeight.find((item) => item.shop_id == shop._id && item.express == percent.express)
+                        // if(find){
+                        //     found = true;
+                        // }
+                        // for (const weight of findShopWeight) {
+                        //     if (weight.shop_id == shop._id && weight.express == percent.express) {
+                        //         found = true;
+                        //         break;
+                        //     }
+                        // }
+
+                        // if(!found){
+                        //     let v = {
+                        //         shop_id:shop._id,
+                        //         owner_id:shop.partnerID,
+                        //         head_line:shop.upline.head_line,
+                        //         shop_line:shop.upline.shop_line,
+                        //         express: percent.express,
+                        //         level:shop.upline.level,
+                        //         weight: newWeightData
+                        //     }
+                        //     const createWeight = await weightAll.create(v)
+                        //         if(!createWeight){
+                        //             return res
+                        //                     .status(400)
+                        //                     .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
+                        //         }
+                        //     new_data.push(createWeight)
+                        // }
+                        const key = `${shop._id}-${percent.express}`;
+                        if (!weightMap.has(key)) {
                             let v = {
-                                shop_id:shop._id,
-                                owner_id:shop.partnerID,
-                                head_line:shop.upline.head_line,
-                                shop_line:shop.upline.shop_line,
+                                shop_id: shop._id,
+                                owner_id: shop.partnerID,
+                                head_line: shop.upline.head_line,
+                                shop_line: shop.upline.shop_line,
                                 express: percent.express,
-                                level:shop.upline.level,
+                                level: shop.upline.level,
                                 weight: newWeightData
+                            };
+                            const createWeight = await weightAll.create(v);
+                            if (!createWeight) {
+                                return res.status(400).send({ status: false, message: "ไม่สามารถสร้างข้อมูลได้" });
                             }
-                            const createWeight = await weightAll.create(v)
-                                if(!createWeight){
-                                    return res
-                                            .status(400)
-                                            .send({status:false, message:"ไม่สามารถสร้างข้อมูลได้"})
-                                }
-                            new_data.push(createWeight)
+                            new_data.push(createWeight);
                         }
                 }
+                const lengthData = new_data.length;
                 return res
                         .status(201)
                         .send({status:true, 
@@ -118,7 +147,7 @@ create = async(req, res)=>{
                             update: update,
                             pricebase: updatePriceBase,
                             updateCod: updateCod,
-                            new: new_data
+                            new: lengthData
                         });
             }else{
                 return res
