@@ -148,6 +148,7 @@ router.route('/orderhub/JT/tracking/test').post( auth.checkToken,JT.trackingOrde
 //J&T(B)
 const JT_B = require('../Controllers/deliveryController/J&T/J&T.controller(B)')
 router.route('/orderhub/JT_B/create').post( auth.checkToken, JT_B.createOrder )
+router.route('/orderhub/JT_B/tracking').post( auth.checkToken,JT_B.trackingOrder )
 router.route('/orderhub/JT_B/cancel').delete( auth.checkToken, JT_B.cancelOrder )
 router.route('/orderhub/JT_B/price').post( auth.checkToken, JT_B.priceList )
 router.route('/orderhub/JT_B/label').post( auth.checkToken, JT_B.label )

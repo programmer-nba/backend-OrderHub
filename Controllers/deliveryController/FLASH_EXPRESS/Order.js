@@ -26,6 +26,7 @@ const { logOrder } = require('../../../Models/logs_order');
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
 const { pickupOrder } = require('../../../Models/Delivery/pickup_sp');
+const { set } = require('mongoose');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
@@ -74,12 +75,13 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         let cod_integer = cod_amount / 100 //ทำ cod_amount เป็นหน่วย บาท เพื่อบันทึกลง database(จะได้ดูง่าย)
         let declared_valueStang = declared_value * 100//มูลค่าประกัน
 
-        const invoice = await invoiceNumber(currentTime)
+        const invoice = await invoiceInvoice(currentTime)
+        const numberTracking = await invoiceNumber(currentTime)
         // console.log(cod_integer, codForPrice)
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
-            outTradeNo: `${invoice}`,
+            outTradeNo: `${numberTracking}`,
             expressCategory: 1,
             srcName: dataForm.from.name, //** src = ผู้ส่ง
             srcPhone: dataForm.from.tel ,//**
@@ -102,7 +104,6 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             codEnabled:0,
             insured:0,
             articleCategory:2,
-            remark:remark,
             // เพิ่ม key-value pairs ตามต้องการ
           };
         if(codForPrice > 0){
@@ -120,6 +121,9 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         if(declared_value > 0){
             formData.insured = 1
             formData.insureDeclareValue = declared_valueStang
+        }
+        if(remark){
+            formData.remark = remark
         }
         // console.log(formData)
         //ผู้ส่ง
@@ -176,7 +180,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         ID: id,
                         role: role,
                         shop_number: shop,
-                        orderid: new_data.pno,
+                        orderid: numberTracking,
                         mailno: new_data.pno,
                         amount: cut_partner,
                         before: plusFloat,
@@ -195,7 +199,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     Orderer: id,
                     role: role,
                     shop_number: shop,
-                    orderid: new_data.pno,
+                    orderid: numberTracking,
                     mailno: new_data.pno,
                     cost_price: profitAll[0].cost_price,
                     cost: profitAll[0].cost,
@@ -249,7 +253,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                         Orderer: id,
                                         role: role,
                                         shop_number: shop,
-                                        orderid: new_data.pno,
+                                        orderid: numberTracking,
                                         mailno: new_data.pno,
                                         cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
@@ -286,7 +290,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                         Orderer: id,
                                         role: role,
                                         shop_number: shop,
-                                        orderid: new_data.pno,
+                                        orderid: numberTracking,
                                         mailno: new_data.pno,
                                         cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
@@ -332,7 +336,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 orderer_id:id,
                 shop_id:findShop._id,
                 role:role,
-                tracking_code: new_data.pno,
+                tracking_code: numberTracking,
                 mailno: new_data.pno,
                 from:{
                     ...dataForm.from
@@ -370,7 +374,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
             }
         if(cod_amount != 0){
             const pfSenderTemplate = {
-                    orderid: new_data.pno,
+                    orderid: numberTracking,
                     owner_id: findShop.partnerID,
                     Orderer: id,
                     role: role,
@@ -714,7 +718,7 @@ cancelOrder = async (req, res)=>{ //cancel order
             // เพิ่ม key-value pairs ตามต้องการ
           };
 
-        const findCancel = await orderAll.findOne({tracking_code:pno});
+        const findCancel = await orderAll.findOne({mailno:pno});
           if (!findCancel) {
               return res
                       .status(400)
@@ -750,7 +754,7 @@ cancelOrder = async (req, res)=>{ //cancel order
                             description: "ยูสเซอร์ยกเลิกสินค้า",
                             order:[{
                                 orderid:findCancel.mailno,
-                                express:"J&T"
+                                express:"FLASH"
                             }],
                             latitude: LT,
                             longtitude: LG
@@ -762,7 +766,7 @@ cancelOrder = async (req, res)=>{ //cancel order
                             .send({status:false, message:"ไม่สามารถสร้าง Logs ได้"})
                 }
             const findPno = await orderAll.findOneAndUpdate(
-                    {tracking_code:pno},
+                    {mailno:pno},
                     {
                         order_status:"cancel",
                         day_cancel: createLog.day,
@@ -799,7 +803,7 @@ cancelOrder = async (req, res)=>{ //cancel order
                     }
             const historyShop = await historyWalletShop.findOneAndUpdate(
                     {
-                        orderid:pno,
+                        orderid:findPno.tracking_code,
                     },{
                         ...history
                     },{
@@ -829,7 +833,7 @@ cancelOrder = async (req, res)=>{ //cancel order
             const findTracking = await profitPartner.findOneAndUpdate(
                 {
                     wallet_owner : findShop.partnerID,
-                    orderid : pno
+                    orderid : findPno.tracking_code
                 },
                 {
                     status:"ยกเลิกออเดอร์"
@@ -843,7 +847,7 @@ cancelOrder = async (req, res)=>{ //cancel order
 
                 if(findPno.cod_amount != 0){
                     let findTemplate = await profitTemplate.findOneAndUpdate(
-                        { orderid : pno},
+                        { orderid : findPno.tracking_code},
                         {
                             status:"ยกเลิกออเดอร์"
                         },{new:true, projection: { status: 1}})
@@ -868,7 +872,7 @@ cancelOrder = async (req, res)=>{ //cancel order
                                             .send({status:false,message:"ไม่สามารถบันทึกกำไรคุณไอซ์ได้"})
                             }
                         const changStatusAdmin = await profitIce.findOneAndUpdate(
-                            {orderid: pno},
+                            {orderid: findPno.tracking_code},
                             {type:"ยกเลิกออเดอร์"},
                             {new:true})
                             if(!changStatusAdmin){
@@ -894,7 +898,7 @@ cancelOrder = async (req, res)=>{ //cancel order
                         const findTracking = await profitPartner.findOneAndUpdate(
                             {
                                 wallet_owner : element.id,
-                                orderid : pno
+                                orderid : findPno.tracking_code
                             },
                             {
                                 status:"ยกเลิกออเดอร์"
@@ -942,7 +946,7 @@ notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พ�
             estimateParcelNumber: req.body.estimateParcelNumber, //จำนวนพัสดุโดยประมาณ (เพื่อให้ทางสาขาจัดสรรจำนวนรถ)
             remark: req.body.remark
             //เพิ่ม key-value pairs ตามต้องการ
-          };
+        };
         const newData = await generateSign(formData)
         const formDataOnly = newData.queryString
         // console.log(formDataOnly)  
@@ -2023,12 +2027,211 @@ getPartnerBooking = async (req, res)=>{
     }
 }
 
-async function invoiceNumber(day) {
+setUrlWebHook = async(req,res)=>{
+    try{
+
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
+
+updateStatusWebhookFlash = async(req, res)=>{
+    try{
+        // ข้อมูลจาก form-data จะอยู่ใน req.body
+        const outTradeNo = req.body.data.outTradeNo;
+        const state = req.body.data.state;
+        const returned = req.body.data.returned
+        const stateDate = req.body.data.stateDate
+
+        // แปลง timestamp เป็นรูปแบบ YYYY-MM-DD HH:mm:ss
+        const formatDateTime = dayjs.unix(stateDate).tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+        // console.log(formattedDateTime); // Output: 2021-02-08 18:15:53
+ 
+        let detailBulk = []
+        let codBulk = []
+        let scanUpdate = {
+            order_status:"",
+            day_sign:"",
+            day_pay:"",
+        }
+        if(returned == 1){
+            if(state == 5){
+
+                scanUpdate.order_status = 'เซ็นรับแล้ว'
+    
+                let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
+                let newDate = dayjs(formatDateTime).add(1, 'day').format('YYYY-MM-DD');
+                scanUpdate.day_sign = datePart
+                scanUpdate.day_pay = newDate
+    
+            }else if(state == 7){
+    
+                scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
+    
+                let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
+                scanUpdate.day_sign = datePart
+    
+            }else{
+                scanUpdate.order_status = 'พัสดุตีกลับ'
+            }
+        }else{
+            if(state == 1){
+                scanUpdate.order_status = 'รับพัสดุแล้ว'
+                scanUpdate.day_pick = formatDateTime
+            }else if(state == 2 || state == 3){
+                scanUpdate.order_status = 'ระหว่างการจัดส่ง'
+            }else if(state == 5){
+    
+                scanUpdate.order_status = 'เซ็นรับแล้ว'
+    
+                let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
+                let newDate = dayjs(formatDateTime).add(1, 'day').format('YYYY-MM-DD');
+                scanUpdate.day_sign = datePart
+                scanUpdate.day_pay = newDate
+    
+            }else if(state == 7){
+    
+                scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
+    
+                let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
+                scanUpdate.day_sign = datePart
+    
+            }else if(state == 4 || state == 6 || state == 8){
+                scanUpdate.order_status = 'พัสดุมีปัญหา'
+            }else{
+                return res
+                        .status(200)
+                        .send({
+                            status:true,
+                            message:"ไม่มีสถานะที่ต้องการ",
+                            errorCode:1,
+                            state:"success"
+                        })
+            }
+        }
+        
+        // console.log("scanUpdate:",scanUpdate)
+        let changStatus = {
+            updateOne: {
+                filter: { tracking_code: outTradeNo },
+                update: {
+                    $set: scanUpdate
+                }
+            }
+        }
+        scanUpdate.status = scanUpdate.order_status
+        // console.log("scanUpdate:",scanUpdate)
+        let changStatusCod 
+            if(scanUpdate.order_status == 'เซ็นรับพัสดุตีกลับ'){
+                changStatusCod = {
+                    updateOne: {
+                        filter: { orderid: outTradeNo },
+                        update: {
+                            $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
+                                status:scanUpdate.order_status,
+                                // day_pick:findStatus.day_pick
+                            }
+                        }
+                    }
+                }
+            }else{
+                changStatusCod = {
+                    updateOne: {
+                        filter: { orderid: outTradeNo },
+                        update: {
+                            $set: scanUpdate
+                        }
+                    }
+                }
+            }
+        detailBulk.push(changStatus)
+        codBulk.push(changStatusCod)
+
+        const [bulkDetail, bulkCod] = await Promise.all([
+            orderAll.bulkWrite(detailBulk),
+            profitTemplate.bulkWrite(codBulk)
+        ]);
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    // data: response.data,
+                    errorCode:1,
+                    state:"success",
+                    detailBulk: bulkDetail,
+                    codBulk:bulkCod
+                })
+    }catch(err){
+        return res
+                .status(500)
+                .send({
+                    status:false, 
+                    errorCode: 0,
+                    message:err.message
+                })
+    }
+}
+
+updateStatusCourier = async(req, res)=>{
+    try{
+        const state = req.body.data.state
+        const ticketPickupId = req.body.data.ticketPickupId
+        const updateAt = req.body.data.updateAt
+        const updateAtInThai = dayjs(updateAt).tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+        let status
+        if(state == 0){
+            status = 'รอจัดสรร'
+        }else if(state == 1){
+            status = 'รอรับพัสดุ'
+        }else if(state == 2){
+            status = 'รับพัสดุแล้ว'
+        }else if(state == 3){
+            status = 'โอนงานรับ'
+        }else if(state == 4){
+            status = 'ยกเลิกแล้ว'
+        }
+    }catch(err){
+        return res
+                .status(500)
+                .send({
+                    status:false, 
+                    errorCode: 0,
+                    message:err.message
+                })
+    }
+}
+
+async function invoiceNumber(date) {
+    try{
+        data = `${dayjs(date).format("YYYYMMDD")}`
+        let random = Math.floor(Math.random() * 10000000)
+        const combinedData = `FLE` + data + random;
+        const findInvoice = await orderAll.find({tracking_code:combinedData})
+
+            while (findInvoice && findInvoice.length > 0) {
+                // สุ่ม random ใหม่
+                random = Math.floor(Math.random() * 10000000);
+                combinedData = `FLE`+ data + random;
+
+                // เช็คใหม่
+                findInvoice = await orderAll.find({tracking_code: combinedData});
+            }
+
+        // console.log(combinedData);
+        return combinedData;
+    }catch(err){
+        console.log(err)
+    }
+}
+
+async function invoiceInvoice(day) {
     day = `${dayjs(day).format("YYYYMMDD")}`
     let data = `ODHFLE`
     let random = Math.floor(Math.random() * 10000000)
     const combinedData = data + day + random;
-    const findInvoice = await orderAll.find({tracking_code:combinedData})
+    const findInvoice = await orderAll.find({invoice:combinedData})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
@@ -2036,7 +2239,7 @@ async function invoiceNumber(day) {
         combinedData = data + day + random;
 
         // เช็คใหม่
-        findInvoice = await orderAll.find({tracking_code: combinedData});
+        findInvoice = await orderAll.find({invoice: combinedData});
     }
 
     // console.log(combinedData);
