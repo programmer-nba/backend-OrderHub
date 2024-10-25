@@ -972,6 +972,7 @@ notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พ�
         }else{
             let v = {
                         // tracking_code: tracking_code,
+                        partner_id: id,
                         courier_ticket_id:response.data.data.staffInfoId,
                         courier_pickup_id:response.data.data.ticketPickupId,
                         num_of_parcel: req.body.estimateParcelNumber,
