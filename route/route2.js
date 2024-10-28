@@ -69,6 +69,8 @@ router.route('/orderhub/flash/notification').get( auth.checkToken, flash.nontifi
 router.route('/orderhub/flash/estimate').post( auth.checkToken, flash.estimateRate )
 router.route('/orderhub/flash/getme').get( auth.checkToken, flash.getMeBooking )
 router.route('/orderhub/flash/getById/:pno').get( auth.checkToken, flash.getById )
+router.route('/orderhub/flash/webhook/status').post( flash.updateStatusWebhookFlash )
+router.route('/orderhub/flash/webhook/courier').post( flash.updateStatusCourier )
 
 //drop down ประเภทสินค้า flash express
 const typeProduct = require('../Controllers/deliveryController/FLASH_EXPRESS/type.product')

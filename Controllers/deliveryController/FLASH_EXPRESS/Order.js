@@ -2170,6 +2170,7 @@ updateStatusWebhookFlash = async(req, res)=>{
                 .send({
                     status:false, 
                     errorCode: 0,
+                    state:"fail",
                     message:err.message
                 })
     }
@@ -2182,23 +2183,51 @@ updateStatusCourier = async(req, res)=>{
         const updateAt = req.body.data.updateAt
         const updateAtInThai = dayjs(updateAt).tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
         let status
+        let complete = ''
         if(state == 0){
             status = 'รอจัดสรร'
         }else if(state == 1){
             status = 'รอรับพัสดุ'
         }else if(state == 2){
             status = 'รับพัสดุแล้ว'
+            complete = updateAtInThai
         }else if(state == 3){
             status = 'โอนงานรับ'
         }else if(state == 4){
             status = 'ยกเลิกแล้ว'
         }
+        const findStatus = await pickupOrder.findOneAndUpdate(
+            {
+                courier_pickup_id:ticketPickupId
+            },{
+                status:status,
+                complete_at:complete
+            },{new:true})
+            if(!findStatus){
+                return res
+                        .status(200)
+                        .send({
+                            status:true,
+                            message:"ไม่มีหมายเลข Pickup ID นี้",
+                            errorCode:0,
+                            state:"fail"
+                        })
+            }
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    data: findStatus,
+                    errorCode:1,
+                    state:"success"
+                })
     }catch(err){
         return res
                 .status(500)
                 .send({
                     status:false, 
                     errorCode: 0,
+                    state:"fail",
                     message:err.message
                 })
     }
@@ -2250,4 +2279,4 @@ async function invoiceInvoice(day) {
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
                     ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
                     estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking, 
-                    cancelNontification }
+                    cancelNontification, updateStatusWebhookFlash, updateStatusCourier }
