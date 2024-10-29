@@ -2028,16 +2028,6 @@ getPartnerBooking = async (req, res)=>{
     }
 }
 
-setUrlWebHook = async(req,res)=>{
-    try{
-
-    }catch(err){
-        return res
-                .status(500)
-                .send({status:false, message:err.message})
-    }
-}
-
 updateStatusWebhookFlash = async(req, res)=>{
     try{
         // ข้อมูลจาก form-data จะอยู่ใน req.body
@@ -2181,7 +2171,7 @@ updateStatusCourier = async(req, res)=>{
         const state = req.body.data.state
         const ticketPickupId = req.body.data.ticketPickupId
         const updateAt = req.body.data.updateAt
-        const updateAtInThai = dayjs(updateAt).tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
+        const updateAtInThai = dayjs.utc(updateAt).tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
         let status
         let complete = ''
         if(state == 0){
@@ -2196,12 +2186,13 @@ updateStatusCourier = async(req, res)=>{
         }else if(state == 4){
             status = 'ยกเลิกแล้ว'
         }
+        console.log(updateAt)
         const findStatus = await pickupOrder.findOneAndUpdate(
             {
                 courier_pickup_id:ticketPickupId
             },{
                 status:status,
-                complete_at:complete
+                completed_at:complete
             },{new:true})
             if(!findStatus){
                 return res
@@ -2233,6 +2224,91 @@ updateStatusCourier = async(req, res)=>{
     }
 }
 
+setWebHook = async(req, res)=>{
+    try{
+        const apiUrl = process.env.TRAINING_URL
+        const mchId = process.env.MCH_ID
+        const formData = {
+            mchId: mchId,
+            nonceStr: nonceStr,
+            serviceCategory: 1,
+            url: req.body.url,
+            webhookApiCode : req.body.webhookApiCode
+            //body: body,
+            // เพิ่ม key-value pairs ตามต้องการ
+          };
+          const newData = await generateSign(formData)
+          const formDataOnly = newData.queryString
+
+          const response = await axios.post(`${apiUrl}/open/v1/setting/web_hook_service`,formDataOnly,{
+              headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Accept': 'application/json',
+              }
+          })
+        if(response.data.code != 1){
+            return res
+                    .status(400)
+                    .send({status:false, message:response.data.message})
+        }
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    data: response.data,
+                    errorCode:1,
+                    state:"success"
+                })
+    }catch(err){
+        return res
+                .status(500)
+                .send({
+                    status:false, 
+                    errorCode: 0,
+                    state:"fail",
+                    message:err.message
+                })
+    }
+}
+
+checkWebhook = async(req, res)=>{
+    try{
+        const apiUrl = process.env.TRAINING_URL
+        const mchId = process.env.MCH_ID
+        const formData = {
+            mchId: mchId,
+            nonceStr: nonceStr
+            //body: body,
+            // เพิ่ม key-value pairs ตามต้องการ
+          };
+        const newData = await generateSign(formData)
+        const formDataOnly = newData.queryString
+        //   console.log(formDataOnly)  
+        const response = await axios.post(`${apiUrl}/gw/fda/open/standard/webhook/setting/infos`,formDataOnly,{
+              headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Accept': 'application/json',
+              }
+          })
+        if(response.data.code != 1){
+            return res
+                    .status(400)
+                    .send({status:false, message:response.data})
+        }
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    data: response.data,
+                    errorCode:1,
+                    state:"success"
+                })
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err.message})
+    }
+}
 async function invoiceNumber(date) {
     try{
         data = `${dayjs(date).format("YYYYMMDD")}`
@@ -2279,4 +2355,4 @@ async function invoiceInvoice(day) {
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
                     ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
                     estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking, 
-                    cancelNontification, updateStatusWebhookFlash, updateStatusCourier }
+                    cancelNontification, updateStatusWebhookFlash, updateStatusCourier, setWebHook, checkWebhook }
