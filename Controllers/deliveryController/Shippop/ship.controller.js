@@ -837,13 +837,14 @@ priceList = async (req, res)=>{
 
                 let formattedFee = parseFloat(cod_cal.fee_cod_total.toFixed(2));
                 let total = price + formattedFee + insuranceFee + packing_price + ob.price_cod + price_fuel_surcharge + price_remote_area + price_travel_area + price_island_area
-                    v.fee_cod = formattedFee + ob.price_cod
+                let allFee = formattedFee + ob.price_cod
+                    v.fee_cod = parseFloat(allFee.toFixed(2));
                     v.fee_cod_orderhub = formattedFee
 
                 let cut = cut_partner + insuranceFee + formattedFee + ob.price_cod + price_fuel_surcharge + price_remote_area + price_travel_area + price_island_area
                     v.cut_partner = parseFloat(cut.toFixed(2))
                     v.total = parseFloat(total.toFixed(2))
-                    
+                
                 try {
                     await Promise.resolve(); // ใส่ Promise.resolve() เพื่อให้มีตัวแปรที่ await ได้
                     if (findForCost.credit < v.cut_partner) {
@@ -992,7 +993,7 @@ booking = async(req, res)=>{
                     role: role,
                     shop_number: shop,
                     orderid: new_data.tracking_code,
-                    mailno: purchase_id,
+                    mailno: new_data.courier_tracking_code,
                     amount: cut_partner,
                     before: plusFloat,
                     after: credit,
@@ -1011,7 +1012,7 @@ booking = async(req, res)=>{
                     role: role,
                     shop_number: shop,
                     orderid: new_data.tracking_code,
-                    mailno: purchase_id,
+                    mailno: new_data.courier_tracking_code,
                     cost_price: profitAll[0].cost_price,
                     cost: profitAll[0].cost,
                     profitCost: profitAll[0].profit,
@@ -1065,7 +1066,7 @@ booking = async(req, res)=>{
                                         role: role,
                                         shop_number: shop,
                                         orderid: new_data.tracking_code,
-                                        mailno: purchase_id,
+                                        mailno: new_data.courier_tracking_code,
                                         cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
                                         profitCost: profitAll[i].profit,
@@ -1102,7 +1103,7 @@ booking = async(req, res)=>{
                                         role: role,
                                         shop_number: shop,
                                         orderid: new_data.tracking_code,
-                                        mailno: purchase_id,
+                                        mailno: new_data.courier_tracking_code,
                                         cost_price: profitAll[i].cost_price,
                                         cost: profitAll[i].cost,
                                         profitCost: profitAll[i].profit,

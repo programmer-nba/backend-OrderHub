@@ -2112,6 +2112,7 @@ updateStatusWebhookFlash = async(req, res)=>{
                 }
             }
         }
+        
         scanUpdate.status = scanUpdate.order_status
         // console.log("scanUpdate:",scanUpdate)
         let changStatusCod 
