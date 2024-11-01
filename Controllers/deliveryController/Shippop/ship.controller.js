@@ -2588,7 +2588,7 @@ updateStatusWebhook = async(req, res)=>{
         }else{
             return res
                     .status(200)
-                    .send({status:true, message:"No scan update!"})
+                    .send({status:true, success:1, message:"No scan update!"})
         }
         const findStatus = await orderAll.findOne({tracking_code: trackingCode},{tracking_code:1, order_status:1})
             if(!findStatus){
@@ -2598,7 +2598,7 @@ updateStatusWebhook = async(req, res)=>{
             }
         if(findStatus.order_status == 'booking' && orderStatus == 'shipping'){
             scanUpdate.day_pick = datetime
-            scanUpdate.order_status = 'รับพัสดุแล้ว'
+            scanUpdate.order_status = 'ระหว่างการจัดส่ง'
         }
         // console.log("scanUpdate:",scanUpdate)
         let changStatus = {
@@ -2645,6 +2645,7 @@ updateStatusWebhook = async(req, res)=>{
                 .status(200)
                 .send({
                     status:true, 
+                    success:1,
                     // data: response.data,
                     detailBulk: bulkDetail,
                     codBulk:bulkCod
