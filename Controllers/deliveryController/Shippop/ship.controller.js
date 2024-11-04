@@ -2561,9 +2561,7 @@ updateStatusWebhook = async(req, res)=>{
         let detailBulk = []
         let codBulk = []
         let scanUpdate = {
-            order_status:"",
-            day_sign:"",
-            day_pay:"",
+            order_status:""
         }
         if(orderStatus == 'shipping'){
             scanUpdate.order_status = 'ระหว่างการจัดส่ง'
@@ -2572,9 +2570,9 @@ updateStatusWebhook = async(req, res)=>{
             scanUpdate.order_status = 'เซ็นรับแล้ว'
 
             let datePart = datetime.substring(0, 10);
-            let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
+            // let newDate = dayjs(datePart).add(1, 'day').format('YYYY-MM-DD');
             scanUpdate.day_sign = datePart
-            scanUpdate.day_pay = newDate
+            // scanUpdate.day_pay = newDate
 
         }else if(orderStatus == 'return'){
 
@@ -2585,6 +2583,10 @@ updateStatusWebhook = async(req, res)=>{
 
         }else if(orderStatus == 'problem'){
             scanUpdate.order_status = 'พัสดุมีปัญหา'
+        }else if(orderStatus == 'transferred'){
+            scanUpdate.order_status = 'เซ็นรับแล้ว'
+            let datePart = datetime.substring(0, 10);
+            scanUpdate.day_pay = datePart
         }else{
             return res
                     .status(200)
@@ -2619,7 +2621,9 @@ updateStatusWebhook = async(req, res)=>{
                         update: {
                             $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
                                 status:scanUpdate.order_status,
-                                day_pick:findStatus.day_pick
+                                day_pick:findStatus.day_pick,
+                                day_sign:"",
+                                day_pay:""
                             }
                         }
                     }
