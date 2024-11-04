@@ -841,10 +841,12 @@ getDayPay = async(req, res)=>{
         const partner_id = req.body.partner_id
         const express = req.body.express
         if(express == "SHIPPOP"){
+            const lastDayOfLastMonth = dayjs(day + "-01").subtract(1, 'month').endOf('month').format('YYYY-MM-DD'); //เลือกวันสุดท้ายของเดือนที่แล้ว
+            // console.log(lastDayOfLastMonth)
             if(partner_id){
                 const data = await profitTemplate.find({
                     owner_id: partner_id,
-                    day_sign: { $regex: new RegExp('^' + day) },
+                    day_pay: { $regex: new RegExp('^' + day) },
                     express:{ $regex:"SHIPPOP" }
                 })
                     if(data.length == 0){
@@ -857,7 +859,7 @@ getDayPay = async(req, res)=>{
                         .send({status:true, data: data})
             }else{
                 const data = await profitTemplate.find({ 
-                        day_sign: { $regex: new RegExp('^' + day) },
+                        day_pay: { $regex: new RegExp('^' + day) },
                         express:{ $regex:"SHIPPOP" }
                 })
                     if(data.length == 0){
