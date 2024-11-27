@@ -61,15 +61,50 @@ getAll = async (req, res)=>{
 update = async (req, res)=>{
     try{
         const id = req.params.id
-        const updateDrop = await dropOffs.findByIdAndUpdate(id, {...req.body,
-            $set: {
-                "drop_off.address": req.body.address,
-                "drop_off.street": req.body.street,
-                "drop_off.sub_district": req.body.sub_district,
-                "drop_off.district": req.body.district,
-                "drop_off.province": req.body.province,
-                "drop_off.postcode": req.body.postcode,
-            }}, {new:true})
+        const name = req.body.flash_pay.name
+        const card_flash = req.body.flash_pay.card_number
+        const name_best = req.body.best.name
+        const card_best = req.body.best.card_number
+
+        // Function to check if a string contains only alphabetic characters
+        function isAlphabetic(str) {
+            return /^[A-Za-z\u0E00-\u0E7F\s]+$/.test(str);
+        }
+
+        //เช็คตัวเลขว่ามีตัวอักษรอยู่หรือเปล่า
+        function isNumeric(str) {
+            return /^[0-9]+$/.test(str);
+        }
+        
+        if(name != "" || card_flash != ""){
+            if (!isAlphabetic(name)) {
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณากรอกชื่อบัญชีเป็นตัวอักษร(FlashPay)"});
+                }
+            if(!isNumeric(card_flash)){
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณากรอกหมายเลขบัญชีเป็นตัวเลข(FlashPay)"});
+                }
+        }
+        if(name_best != "" || card_best != ""){
+            if (!isAlphabetic(name_best)) {
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณากรอกชื่อบัญชีเป็นตัวอักษร(BEST)"});
+                }
+            if (!isNumeric(card_best)) {
+                    return res
+                            .status(400)
+                            .send({status:false, message:"กรุณากรอกหมายเลขบัญชีเป็นตัวเลข(BEST)"});
+                }
+        }
+
+        const updateDrop = await dropOffs.findByIdAndUpdate(id, 
+            {
+                ...req.body
+            }, {new:true})
         if(updateDrop){
             return res
                     .status(200)
@@ -85,6 +120,7 @@ update = async (req, res)=>{
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
     }
 }
+
 delend = async (req, res)=>{
     try{
         const id = req.params.id
