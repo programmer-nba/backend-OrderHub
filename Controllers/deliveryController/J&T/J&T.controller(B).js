@@ -1514,7 +1514,7 @@ trackingOrderOne = async (req, res)=>{
                         .status(404)
                         .send({
                             status:false, 
-                            message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T",
+                            message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T(B)",
                             data: response.data
                         })
             }
@@ -1532,7 +1532,7 @@ trackingOrderOne = async (req, res)=>{
     }
 }
 
-trackingOrder = async (req, res)=>{
+trackingOrderJTB = async (req, res)=>{
     try{
         // console.log(count_tracking)
         // if(count_tracking >= 3){
@@ -1589,7 +1589,7 @@ trackingOrder = async (req, res)=>{
             }else if(response.data.responseitems[0].tracesList == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
                 console.log("trackingOrder:null")
                 // เรียกใช้ function trackingOrder อีกครั้งโดยใช้ req.body.txlogisticid เดิม
-                return await trackingOrder(req, res);
+                return await trackingOrderJTB(req, res);
             }
         // console.log(response.data)
         let detailBulk = []
@@ -1831,4 +1831,4 @@ async function invoiceJNT(day) {
     return combinedData;
 }
 
-module.exports = {createOrder,cancelOrder, priceList, label, trackingOrderOne, trackingOrder}
+module.exports = {createOrder,cancelOrder, priceList, label, trackingOrderOne, trackingOrderJTB}
