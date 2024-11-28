@@ -36,6 +36,7 @@ router.route('/orderhub/check/level').post(auth.checkToken, main.checkLevel)
 
 //Login
 router.route('/orderhub/login').post( login.loginController )
+router.route('/orderhub/loginTo/partner').post( login.loginToPartner )
 
 //CALL ME(Partner)
 router.route('/orderhub/me').get( auth.checkToken, main.getPartnerByID )
