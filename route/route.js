@@ -24,7 +24,7 @@ router.route('/orderhub/admin/del/:id').delete(authAdmin.checkToken,admin.delAdm
 router.route('/orderhub/admin/getMe').get(authAdmin.checkToken, admin.getMe)
 router.route('/orderhub/admin/uploadPromotion').post(authAdmin.checkToken, admin.uploadPictureAdmin)
 router.route('/orderhub/admin/deletePromotion/:id').delete(authAdmin.checkToken, admin.deletePictureAdmin)
-router.route('/orderhub/admin/getPromotion').post(authAdmin.checkToken, admin.getPicturePromotion)
+router.route('/orderhub/admin/getPromotion').post(auth.checkToken, admin.getPicturePromotion)
 router.route('/orderhub/admin/edit/status/promotion/:id').put(authAdmin.checkToken, admin.editStatusPicturePromotion)
 
 //Admin Partner
