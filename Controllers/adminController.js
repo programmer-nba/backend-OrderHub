@@ -14,9 +14,22 @@ const { weightAll } = require("../Models/Delivery/weight/weight.all.express");
 const { priceWeight } = require("../Models/Delivery/weight/priceWeight");
 const { codExpress } = require("../Models/COD/cod.model");
 const { codPercent } = require("../Models/COD/cod.shop.model");
+const multer = require("multer");
 const dayjs = require('dayjs')
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
+
+dayjs.extend(require('dayjs/plugin/timezone'));
+dayjs.extend(require('dayjs/plugin/utc'));
+
+const { uploadFileCreate, deleteFile } = require("../functions/uploadfileFree");
+const { picturePromotion } = require("../Models/picturePromotion");
+
+const storage = multer.diskStorage({
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-");
+  },
+});
 
 // เพิ่มปลั๊กอินสำหรับ UTC และ timezone ใน dayjs
 dayjs.extend(utc);
@@ -619,6 +632,7 @@ getMe = async (req, res)=>{
             .send({status:false, message:err})
   }
 }
+
 async function credit(data, creditPartner){
   let Number = data + creditPartner;
   return Number
@@ -988,6 +1002,153 @@ getHistoryRentCredits = async(req, res)=>{
   }
 }
 
+uploadPictureAdmin = async (req, res) => {
+  try{
+      let location = process.env.GOOGLE_DRIVE_PROMOTION
+      let upload = multer({ storage: storage })
+      const fields = [
+        {name: 'picture', maxCount: 3},
+      ]
+      const uploadMiddleware = upload.fields(fields);
+      uploadMiddleware(req, res, async function (err) {
+        const reqFiles = [];
+        const result = [];
+        const name = req.body.name
+        if (!req.files) {
+          return res.status(400).send({ message: 'No files were uploaded.' });
+        }
+        const url = req.protocol + "://" + req.get("host");
+        for (const fieldName in req.files) {
+          const files = req.files[fieldName];
+          for (var i = 0; i < files.length; i++) {
+            const src = await uploadFileCreate(files[i], res, { i, reqFiles }, location);
+            result.push(src);
+          }
+        }
+          // console.log(result[0])
+        const create = await picturePromotion.create({
+          name:name,
+          url:result[0].responseDataId,
+          status:"true"
+        })
+        if (!create) {
+          return res
+                  .status(400)
+                  .send({
+                      message: "ไม่สามารถเพิ่มรูปภาพได้",
+                      status: false,
+                    });
+        }else{
+          return res
+                  .status(200)
+                  .send({
+                      message: "เพิ่มรูปภาพสำเร็จ",
+                      status: true,
+                      data: create
+                  });
+        }
+      });
+  }catch(err){
+      return res
+              .status(500)
+              .send({status:false, message:err.message})
+  }
+}
+
+deletePictureAdmin = async (req, res) => {
+  try{
+    const id = req.params.id
+    const del = await picturePromotion.findOneAndUpdate(
+      {
+        _id:id
+      },
+      {
+        status:"delete",
+        day_delete: dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss')
+      },
+      {new:true})
+    if(del){
+      let resultDel = await deleteFile(del.url)
+      return res
+              .status(200)
+              .send({status:true, data:"ลบสำเร็จ"})
+    }else{
+      return res
+              .status(400)
+              .send({status:false, message:"ไม่สามารถลบรูปภาพได้"})
+    }
+  }catch(err){
+    return res
+            .status(500)
+            .send({status:false, message:err.message})
+  }
+}
+
+getPicturePromotion = async(req, res)=>{
+  try{
+    const status = req.body.status
+    if(status == 'all'){
+      const find = await picturePromotion.find({status:{$ne:"delete"}})
+      if(find.length == 0){
+        return res
+                .status(404)
+                .send({status:false, data:[], message:"ไม่พบข้อมูล"})
+      }
+      return res
+              .status(200)
+              .send({status:true, data:find})
+    }
+
+    const find = await picturePromotion.find({status:status})
+    if(find.length == 0){
+      return res
+              .status(404)
+              .send({status:false, data:[], message:"ไม่พบข้อมูล"})
+    }
+    return res
+            .status(200)
+            .send({status:true, data:find})
+
+  }catch(err){
+    return res
+            .status(500)
+            .send({status:false, message:err.message})
+  }
+}
+
+editStatusPicturePromotion = async(req, res)=>{
+  try{
+    const id = req.params.id
+    const status = req.body.status
+    if(status != "true" && status != "false"){
+      return res
+              .status(400)
+              .send({status:false, message:"สถานะไม่ถูกต้องกรุณาเลือก true or false เท่านั้น"})
+    }
+    const edit = await picturePromotion.findOneAndUpdate(
+      {
+        _id:id
+      },
+      {
+        status:status
+      },
+      {new:true})
+    if(edit){
+      return res
+              .status(200)
+              .send({status:true, message:"แก้ไขสถานะสำเร็จ",data:edit})
+    }else{
+      return res
+              .status(400)
+              .send({status:false, message:"ไม่สามารถแก้ไขสถานะได้"})
+    }
+  }catch(err){
+    return res
+            .status(500)
+            .send({status:false, message:err.message})
+  }
+}
+
 async function invoiceCredit(date) {
   let data = `ATP`
   date = `${dayjs(date).format("YYYYMMDD")}`
@@ -1032,4 +1193,7 @@ module.exports = { createAdmin, confirmContract,
   cancelContract, confirmTopup, confirmShop,
   cancelShop, cancelTopup, findAllAdmin,
   updateAdmin, delAdmin, getMe, tranferCreditToPartner, 
-  getPartnerCutCredit, cutCreditPartner, getHistoryRentCredits }
+  getPartnerCutCredit, cutCreditPartner, getHistoryRentCredits, 
+  uploadPictureAdmin, deletePictureAdmin, getPicturePromotion,
+  editStatusPicturePromotion
+}
