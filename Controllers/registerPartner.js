@@ -643,4 +643,4 @@ getAllPartner, getPartnerByID,
 upPartnerByID, deleteById,
 uploadPicture, approveMemberShop,
 cancelMemberShop, getByID, sendotp, check,
-changePassword, checkLevel };
+changePassword, checkLevel};
