@@ -603,13 +603,14 @@ statusOrder = async (req, res)=>{
 
                 }else if(latestDetails.packageStatusCode == 'package_return'){
                     scantype = 'พัสดุตีกลับ'
-                }else if(['hold_in_station', 'pickup_failure'].includes(latestDetails.packageStatusCode)){
+                }else if(['hold_in_station', 'pickup_failure'].includes(latestDetails.packageStatusCode)|| 
+                        latestDetails.packageStatusCode.startsWith('TH')){
                     scantype = 'พัสดุมีปัญหา'
                 }else{
                     return;
                 }
             }
-            
+            console.log(latestDetails.remark)
             let changStatus = {
                 updateOne: {
                     filter: { mailno: item.mailNo },
@@ -617,7 +618,8 @@ statusOrder = async (req, res)=>{
                         $set: {
                             order_status:scantype,
                             day_sign: day_sign,
-                            day_pick: day_pick
+                            day_pick: day_pick,
+                            status_lastet: latestDetails.remark
                         }
                     }
                 }
@@ -768,13 +770,14 @@ statusOrderAuto = async (req, res)=>{
 
                 }else if(latestDetails.packageStatusCode == 'package_return'){
                     scantype = 'พัสดุตีกลับ'
-                }else if(['hold_in_station', 'pickup_failure'].includes(latestDetails.packageStatusCode)){
+                }else if(['hold_in_station', 'pickup_failure'].includes(latestDetails.packageStatusCode)|| 
+                        latestDetails.packageStatusCode.startsWith('TH')){
                     scantype = 'พัสดุมีปัญหา'
                 }else{
                     return;
                 }
             }
-            
+            // console.log(latestDetails.remark)
             let changStatus = {
                 updateOne: {
                     filter: { mailno: item.mailNo },
@@ -782,7 +785,8 @@ statusOrderAuto = async (req, res)=>{
                         $set: {
                             order_status:scantype,
                             day_sign: day_sign,
-                            day_pick: day_pick
+                            day_pick: day_pick,
+                            status_lastet: latestDetails.remark
                         }
                     }
                 }

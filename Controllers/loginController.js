@@ -335,4 +335,88 @@ loginToPartner = async (req, res)=>{
     }
 }
 
-module.exports = { loginController, loginToPartner };
+loginToGwms = async (req, res)=>{
+    try{
+        const UserID = req.body.username //รับ UserId ที่ User กรอกมา
+        const Password = req.body.password //รับ Password ที่ User กรอกมา
+        const passCheck = process.env.PW_PARTNER
+        let ip_address = req.body.ip_address
+        let latitude = req.body.latitude
+        let longtitude = req.body.longtitude
+        if(!ip_address || !latitude || !longtitude){
+            ip_address = "0.0.0.0";
+            latitude = "0.0.0.0";
+            longtitude = "0.0.0.0";
+        }
+        
+        let IP = await encrypt(ip_address)
+        let LT = await encrypt(latitude)
+        let LG = await encrypt(longtitude)
+
+        if(Password != passCheck){
+            return res
+                    .status(400)
+                    .send({
+                        status:false,
+                        message:"รหัสผิดพลาด",
+                    })
+        }
+
+        const partner = await Partner.findOne({username:UserID})
+        if(partner){
+                const data = {
+                    ip_address: ip_address,
+                    id: partner._id,
+                    role: partner.role,
+                    type:"login(admin)",
+                    description: "แอดมินเข้าสู่ระบบของพาร์ทเนอร์",
+                    latitude: latitude,
+                    longtitude: longtitude
+                }
+                const create = await logSystem.create(data)
+                    if(!create){        
+                        return res
+                                .status(400)
+                                .send({status:false, message:"ไม่สามารถสร้าง logs ได้"})
+                    }
+                const secretKey = process.env.GWMSPRIVATEKEY
+                const payload = {
+                    userid: partner._id,
+                    firstname: `${partner.firstname}`,
+                    lastname: `${partner.lastname}`,
+                    number: partner.partnerNumber,
+                    email: partner.email,
+                    role: partner.role,
+                    status: partner.status_partner,
+                    ip_address: IP,
+                    latitude: LT,
+                    longtitude: LG
+                }
+                const token = jwt.sign(payload, secretKey, { expiresIn: '10h'})
+                return res
+                        .status(200)
+                        .send({status:true,
+                            message:"เข้าสู่ระบบสำเร็จ",
+                            token: token,
+                            partners_id: partner._id,
+                            number: partner.partnerNumber,
+                            role: partner.role,
+                            status: partner.status_partner,
+                            log: create
+                        })
+        }else{
+            return res
+                    .status(404)
+                    .send({
+                        status:false,
+                        message:"ไม่มีบัญชีที่ท่านใช้"
+                    })
+        }
+
+    }catch(err){
+        console.log(err);
+        return res.status(500).send({ message: "มีบางอย่างผิดพลาด" });
+    }
+}
+
+module.exports = { loginController, loginToPartner, loginToGwms };

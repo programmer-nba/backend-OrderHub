@@ -2167,6 +2167,53 @@ updateStatusWebhookFlash = async(req, res)=>{
     }
 }
 
+updateRouteWebhookFlash = async(req, res)=>{
+    try{
+        // ข้อมูลจาก form-data จะอยู่ใน req.body
+        const outTradeNo = req.body.data.outTradeNo;
+        const message = req.body.data.message
+        let detailBulk = []
+
+        let scanUpdate = {
+            status_lastet:message,
+        }
+
+        // console.log("scanUpdate:",scanUpdate)
+        let changStatus = {
+            updateOne: {
+                filter: { tracking_code: outTradeNo },
+                update: {
+                    $set: scanUpdate
+                }
+            }
+        }
+
+        detailBulk.push(changStatus)
+
+        const [bulkDetail] = await Promise.all([
+            orderAll.bulkWrite(detailBulk),
+        ]);
+        return res
+                .status(200)
+                .send({
+                    status:true, 
+                    // data: response.data,
+                    errorCode:1,
+                    state:"success",
+                    detailBulk: bulkDetail,
+                })
+    }catch(err){
+        return res
+                .status(500)
+                .send({
+                    status:false, 
+                    errorCode: 0,
+                    state:"fail",
+                    message:err.message
+                })
+    }
+}
+
 updateStatusCourier = async(req, res)=>{
     try{
         const state = req.body.data.state
@@ -2310,6 +2357,7 @@ checkWebhook = async(req, res)=>{
                 .send({status:false, message:err.message})
     }
 }
+
 async function invoiceNumber(date) {
     try{
         data = `${dayjs(date).format("YYYYMMDD")}`
@@ -2356,4 +2404,4 @@ async function invoiceInvoice(day) {
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75
                     ,statusPOD, statusOrderPack, cancelOrder, notifyFlash, nontification,
                     estimateRate, getAll, getById, delend, getMeBooking, getPartnerBooking, 
-                    cancelNontification, updateStatusWebhookFlash, updateStatusCourier, setWebHook, checkWebhook }
+                    cancelNontification, updateStatusWebhookFlash, updateStatusCourier, setWebHook, checkWebhook, updateRouteWebhookFlash }

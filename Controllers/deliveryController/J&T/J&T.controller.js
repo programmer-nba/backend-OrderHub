@@ -28,6 +28,9 @@ const { decrypt } = require("../../../functions/encodeCrypto");
 const { logSystem } = require("../../../Models/logs");
 const { logOrder } = require("../../../Models/logs_order");
 const cron = require('node-cron');
+const { translateJT } = require("../translate_express/translate");
+const { update } = require("../../sub-roles/sub.role.controller");
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -526,6 +529,7 @@ trackingOrder = async (req, res)=>{
                 }
 
             const latestDetails = item.details[item.details.length - 1];
+
             const findReturn = item.details.find(item => item.scantype == 'Return')
         
             let scantype
@@ -577,16 +581,28 @@ trackingOrder = async (req, res)=>{
                     return;
                 }
             }
-            // console.log("scan:",scantype,"day_sign:",day_sign,"day_pay:",day_pay)
+
+            let updateStatus = {
+                order_status:scantype,
+                day_sign: day_sign,
+                day_pick: day_pick
+            }
+
+
+            if(latestDetails.scantype == 'Problematic'){
+                updateStatus.status_lastet = latestDetails.remark
+            }else{
+                const translated = translateJT(latestDetails.desc); 
+                updateStatus.status_lastet = translated
+                // console.log(translated);
+            }
+            
+            
             let changStatus = {
                 updateOne: {
                     filter: { mailno: item.billcode },
                     update: {
-                        $set: {
-                            order_status:scantype,
-                            day_sign: day_sign,
-                            day_pick: day_pick
-                        }
+                        $set: updateStatus
                     }
                 }
             }
@@ -813,15 +829,27 @@ trackingOrderAuto = async (req, res)=>{
                 }
             }
             // console.log("scan:",scantype,"day_sign:",day_sign,"day_pay:",day_pay)
+            let updateStatus = {
+                order_status:scantype,
+                day_sign: day_sign,
+                day_pick: day_pick
+            }
+
+            if(latestDetails.scantype != '入库交接'){
+                if(latestDetails.scantype == 'Problematic'){
+                    updateStatus.status_lastet = latestDetails.remark
+                }else{
+                    const translated = translateJT(latestDetails.desc); // ใช้ await เพื่อรอผลลัพธ์
+                    updateStatus.status_lastet = translated
+                    // console.log(translated);
+                }
+            }
+
             let changStatus = {
                 updateOne: {
                     filter: { mailno: item.billcode },
                     update: {
-                        $set: {
-                            order_status:scantype,
-                            day_sign: day_sign,
-                            day_pick: day_pick
-                        }
+                        $set: updateStatus
                     }
                 }
             }

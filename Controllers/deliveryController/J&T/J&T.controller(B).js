@@ -27,6 +27,8 @@ const { postalThailand } = require("../../../Models/postal.thailand/postal.thai.
 const { decrypt } = require("../../../functions/encodeCrypto");
 const { logSystem } = require("../../../Models/logs");
 const { logOrder } = require("../../../Models/logs_order");
+const { translateJT } = require("../translate_express/translate");
+
 const cron = require('node-cron');
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -1655,15 +1657,25 @@ trackingOrderJTB = async (req, res)=>{
                 }
             }
             // console.log("scan:",scantype,"day_sign:",day_sign,"day_pay:",day_pay)
+            let updateStatus = {
+                order_status:scantype,
+                day_sign: day_sign,
+                day_pick: day_pick
+            }
+
+            if(latestDetails.scantype == 'Problematic'){
+                updateStatus.status_lastet = latestDetails.remark
+            }else{
+                const translated = translateJT(latestDetails.desc); 
+                updateStatus.status_lastet = translated
+                // console.log(translated);
+            }
+
             let changStatus = {
                 updateOne: {
                     filter: { mailno: item.billcode },
                     update: {
-                        $set: {
-                            order_status:scantype,
-                            day_sign: day_sign,
-                            day_pick: day_pick
-                        }
+                        $set: updateStatus
                     }
                 }
             }

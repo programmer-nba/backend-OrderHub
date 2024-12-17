@@ -15,7 +15,7 @@ exports.getMe = async(req, res)=>{
         const response = await axios.get(`${FB_URL}/me`, {
             params: {
                 access_token: TOKEN,
-                fields: 'id,name,email,picture'
+                fields: 'id,name,email,picture.width(100).height(100)'
             }
         }).catch(error => {
             dataErr = error.response.data
@@ -177,7 +177,7 @@ async function getConversation (id,TOKEN,limit, limit_message, after) {
                 params: {
                     access_token: TOKEN,
                     limit: limit,
-                    fields: `participants,messages.limit(${limit_message})`
+                    fields: `updated_time,unread_count,messages.limit(${limit_message}){message,from,sticker,created_time},snippet`
                 }
         }
         if(after != undefined || after != ''){
@@ -187,8 +187,8 @@ async function getConversation (id,TOKEN,limit, limit_message, after) {
         const response = await axios.get(`${FB_URL}/${id}/conversations`, pams).catch(error => {
             dataErr = error.response.data
             // console.log(dataErr);
-        });
-        // console.log(response)
+        }); 
+        // console.log(response.data)
         if(dataErr){
             return {
                     status:false,

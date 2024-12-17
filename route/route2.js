@@ -70,6 +70,7 @@ router.route('/orderhub/flash/estimate').post( auth.checkToken, flash.estimateRa
 router.route('/orderhub/flash/getme').get( auth.checkToken, flash.getMeBooking )
 router.route('/orderhub/flash/getById/:pno').get( auth.checkToken, flash.getById )
 router.route('/orderhub/flash/webhook/status').post( flash.updateStatusWebhookFlash )
+router.route('/orderhub/flash/webhook/route').post(flash.updateRouteWebhookFlash)
 router.route('/orderhub/flash/webhook/courier').post( flash.updateStatusCourier )
 router.route('/orderhub/flash/set/webhook').post( authAdmin.checkToken, flash.setWebHook )
 router.route('/orderhub/flash/check/webhook').post( authAdmin.checkToken, flash.checkWebhook )

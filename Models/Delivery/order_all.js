@@ -49,6 +49,7 @@ const orderAllSchema = new Schema({
         type: {type : String, required : false},
         pdfStream: {type : String, required : false},
         order_status : {type: String, default: "booking", required: false},
+        status_lastet: {type: String, default: "", required: false},
         remark: {type : String, default: "", required : false},
         print_code : {type : String, default: "", required : false},
         label_print: {type: Number, default: 1, required:false},

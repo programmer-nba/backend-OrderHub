@@ -2557,6 +2557,8 @@ updateStatusWebhook = async(req, res)=>{
         const orderStatus = req.body.order_status;
         const courierTrackingCode = req.body.courier_tracking_code;
         const datetime = req.body.data.datetime;
+        const message = req.body.data.message
+        // console.log(message)
         // console.log(datetime)
         let detailBulk = []
         let codBulk = []
@@ -2583,6 +2585,7 @@ updateStatusWebhook = async(req, res)=>{
 
         }else if(orderStatus == 'problem'){
             scanUpdate.order_status = 'พัสดุมีปัญหา'
+            scanUpdate.status_lastet = message
         }else if(orderStatus == 'transferred'){
             scanUpdate.order_status = 'เซ็นรับแล้ว'
             let datePart = datetime.substring(0, 10);
