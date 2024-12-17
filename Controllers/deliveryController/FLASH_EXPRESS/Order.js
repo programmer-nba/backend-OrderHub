@@ -27,6 +27,7 @@ const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
 const { pickupOrder } = require('../../../Models/Delivery/pickup_sp');
 const { set } = require('mongoose');
+const { translateFlash } = require('../translate_express/translate');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 //เมื่อใช้ dayjs และ ทำการใช้ format จะทำให้ค่าที่ได้เป็น String อัตโนมันติ
@@ -2172,10 +2173,13 @@ updateRouteWebhookFlash = async(req, res)=>{
         // ข้อมูลจาก form-data จะอยู่ใน req.body
         const outTradeNo = req.body.data.outTradeNo;
         const message = req.body.data.message
+        const routedAction = req.body.data.routedAction
+        const translateMessage = translateFlash(message, routedAction)
+        // console.log(translateMessage)
         let detailBulk = []
 
         let scanUpdate = {
-            status_lastet:message,
+            status_lastet:translateMessage,
         }
 
         // console.log("scanUpdate:",scanUpdate)
