@@ -10,8 +10,8 @@ exports.translateJT = (desc)=>{
             ["Parcel has been received, receiver name", "พัสดุถูกจัดส่งสำเร็จ"],
             ["The parcel is Returning by", "พัสดุถูกส่งคืนโดย"],
             ["The returned parcel has been successfully signed", "พัสดุที่ส่งกลับมาได้ถูกเซ็นรับเรียบร้อยแล้ว"],
-            ["is working on【入库交接】scan", "เนื่องจากพัสดุมีปัญหาทางคลังสินค้าจึงแสกนพัสดุส่งใหม่อีกครั้ง"],
-            ["is working on【Storage】scan", "เนื่องจากพัสดุคงคลังจึงแสกนพัสดุส่งใหม่อีกครั้ง"],
+            ["is working on【入库交接】scan", "พัสดุคงคลัง"],
+            ["is working on【Storage】scan", "พัสดุคงคลัง"],
             ["sprinter", "ผู้จัดส่งพัสดุ"],
             ["is sending", "กำลังจัดส่ง"]
         ];
@@ -43,7 +43,7 @@ const translationsMap = new Map([
         ["Your parcel has arrived at", "พัสดุถึงสาขา"]
     ]],
     ['DELIVERY_TICKET_CREATION_SCAN', [
-        ["Your parcel is being delivered by Flash Express", "พัสดุของท่านอยู่ระหว่างการนำส่งโดย Flash express."]
+        ["Your parcel is being delivered by Flash Express", "พัสดุของท่านอยู่ระหว่างการนำส่งโดย Flash express"]
     ]],
     ['DETAIN_WAREHOUSE', [
         ["Your parcel has arrived at", "พัสดุถูกจัดเก็บที่สาขา"],

@@ -2181,7 +2181,7 @@ updateRouteWebhookFlash = async(req, res)=>{
         let scanUpdate = {
             status_lastet:translateMessage,
         }
-
+        
         // console.log("scanUpdate:",scanUpdate)
         let changStatus = {
             updateOne: {
