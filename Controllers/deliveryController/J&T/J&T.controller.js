@@ -575,7 +575,7 @@ trackingOrder = async (req, res)=>{
 
                 }else if(latestDetails.scantype == 'Return'){
                     scantype = 'พัสดุตีกลับ'
-                }else if(['Problematic', 'Storage'].includes(latestDetails.scantype)){
+                }else if(['Problematic', 'Storage','入库交接'].includes(latestDetails.scantype)){
                     scantype = 'พัสดุมีปัญหา'
                 }else{
                     return;
