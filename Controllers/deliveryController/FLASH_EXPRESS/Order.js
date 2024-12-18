@@ -2174,14 +2174,48 @@ updateRouteWebhookFlash = async(req, res)=>{
         const outTradeNo = req.body.data.outTradeNo;
         const message = req.body.data.message
         const routedAction = req.body.data.routedAction
+        const returned = req.body.data.returned
+        const state = req.body.data.state
         const translateMessage = translateFlash(message, routedAction)
         // console.log(translateMessage)
         let detailBulk = []
 
         let scanUpdate = {
+            order_status:"",
             status_lastet:translateMessage,
         }
-        
+
+        if(returned == 1){
+            if(state == 5){
+                scanUpdate.order_status = 'เซ็นรับแล้ว'
+            }else if(state == 7){
+                scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
+            }else{
+                scanUpdate.order_status = 'พัสดุตีกลับ'
+            }
+        }else{
+            if(state == 1){
+                scanUpdate.order_status = 'รับพัสดุแล้ว'
+            }else if(state == 2 || state == 3){
+                scanUpdate.order_status = 'ระหว่างการจัดส่ง'
+            }else if(state == 5){
+                scanUpdate.order_status = 'เซ็นรับแล้ว'
+            }else if(state == 7){
+                scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
+            }else if(state == 4 || state == 6 || state == 8){
+                scanUpdate.order_status = 'พัสดุมีปัญหา'
+            }else{
+                return res
+                        .status(200)
+                        .send({
+                            status:true,
+                            message:"ไม่มีสถานะที่ต้องการ",
+                            errorCode:1,
+                            state:"success"
+                        })
+            }
+        }
+
         // console.log("scanUpdate:",scanUpdate)
         let changStatus = {
             updateOne: {
