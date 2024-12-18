@@ -11,8 +11,8 @@ exports.translateJT = (desc)=>{
             ["The parcel is Returning by", "พัสดุถูกส่งคืนโดย"],
             ["The returned parcel has been successfully signed", "พัสดุที่ส่งกลับมาได้ถูกเซ็นรับเรียบร้อยแล้ว"],
             ["is working on【入库交接】scan", "เนื่องจากพัสดุมีปัญหาทางคลังสินค้าจึงแสกนพัสดุส่งใหม่อีกครั้ง"],
-            ["is working on【Storage】scan", "เนื่องจากพัสดุคงคลังจึงแสกนพัสดุส่งใหม่อีกครั้ง"]
-            ["sprinter","ผู้จัดส่งพัสดุ"],
+            ["is working on【Storage】scan", "เนื่องจากพัสดุคงคลังจึงแสกนพัสดุส่งใหม่อีกครั้ง"],
+            ["sprinter", "ผู้จัดส่งพัสดุ"],
             ["is sending", "กำลังจัดส่ง"]
         ];
     
@@ -23,7 +23,7 @@ exports.translateJT = (desc)=>{
         
         return translatedDesc;
     }catch(err){
-        console.log(err.message);
+        console.log(err);
     }
 }
 
