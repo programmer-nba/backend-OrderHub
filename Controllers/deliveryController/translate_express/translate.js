@@ -49,6 +49,9 @@ const translationsMap = new Map([
         ["Your parcel has arrived at", "พัสดุถูกจัดเก็บที่สาขา"],
         ["and has not been delivered yet.Due to", "เนื่องจาก"],
         ["Unable to contact", "ไม่สามารถติดต่อผู้รับได้"],
+        ["Retain for delivery the next day due to remote area", "เก็บไว้ส่งวันถัดไปเนื่องจากเป็นพื้นที่ห่างไกล"],
+        ["Receiver rescheduled","ผู้รับเลื่อนเวลารับพัสดุ"],
+        ["Consignee rejected the parcel","ผู้รับสินค้าปฏิเสธพัสดุ"],
         ["the shipment has not been delivered yet, we will deliver it again as soon as possible", "เจ้าหน้าที่กำลังเร่งดำเนินการจัดส่งอีกครั้ง"],
         ["and has not been delivered yet.we will deliver it as soon as possible", "เจ้าหน้าที่กำลังเร่งดำเนินการจัดส่งอีกครั้ง"]
     ]],
@@ -60,6 +63,9 @@ const translationsMap = new Map([
         ["Your parcel is already in", "พัสดุถูกจัดเก็บที่สาขา"],
         ["Due to", "เนื่องจาก"],
         ["Unable to contact", "ไม่สามารถติดต่อผู้รับได้"],
+        ["Receiver rescheduled","ผู้รับเลื่อนเวลารับพัสดุ"],
+        ["Consignee rejected the parcel","ผู้รับสินค้าปฏิเสธพัสดุ"],
+        ["Retain for delivery the next day due to remote area", "เก็บไว้ส่งวันถัดไปเนื่องจากเป็นพื้นที่ห่างไกล"],
         ["the parcel was processed as a problem parcel. Flash staff will handle the parcel problem for you as soon as possible. Please be patient", "เจ้าหน้าที่กำลังเร่งดำเนินการตรวจสอบ"],
         ["your parcel was not delivered successfully", "พัสดุของท่านจึงนำส่งไม่สำเร็จ"]
     ]],

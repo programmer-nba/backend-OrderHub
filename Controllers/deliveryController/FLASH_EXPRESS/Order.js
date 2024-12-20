@@ -2036,7 +2036,7 @@ updateStatusWebhookFlash = async(req, res)=>{
         const state = req.body.data.state;
         const returned = req.body.data.returned
         const stateDate = req.body.data.stateDate
-
+        const codRefunded = req.body.data.codRefunded
         // แปลง timestamp เป็นรูปแบบ YYYY-MM-DD HH:mm:ss
         const formatDateTime = dayjs.unix(stateDate).tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
         // console.log(formattedDateTime); // Output: 2021-02-08 18:15:53
@@ -2116,6 +2116,9 @@ updateStatusWebhookFlash = async(req, res)=>{
         
         scanUpdate.status = scanUpdate.order_status
         // console.log("scanUpdate:",scanUpdate)
+        if(codRefunded == 1){
+            scanUpdate.status = 'ระงับการโอน'
+        }
         let changStatusCod 
             if(scanUpdate.order_status == 'เซ็นรับพัสดุตีกลับ'){
                 changStatusCod = {
