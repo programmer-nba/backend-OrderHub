@@ -529,7 +529,8 @@ trackingOrder = async (req, res)=>{
                 }
 
             const latestDetails = item.details[item.details.length - 1];
-
+            const beforeLastest = item.details[item.details.length - 2];
+            // console.log(beforeLastest)
             const findReturn = item.details.find(item => item.scantype == 'Return')
         
             let scantype
@@ -591,6 +592,8 @@ trackingOrder = async (req, res)=>{
 
             if(latestDetails.scantype == 'Problematic'){
                 updateStatus.status_lastet = latestDetails.remark
+            }else if(latestDetails.scantype == '入库交接' && beforeLastest.remark){
+                updateStatus.status_lastet = beforeLastest.remark
             }else{
                 const translated = translateJT(latestDetails.desc); 
                 updateStatus.status_lastet = translated
