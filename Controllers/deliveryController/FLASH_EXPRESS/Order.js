@@ -2040,7 +2040,8 @@ updateStatusWebhookFlash = async(req, res)=>{
         // แปลง timestamp เป็นรูปแบบ YYYY-MM-DD HH:mm:ss
         const formatDateTime = dayjs.unix(stateDate).tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
         // console.log(formattedDateTime); // Output: 2021-02-08 18:15:53
- 
+        const dataFlash = req.body
+
         let detailBulk = []
         let codBulk = []
         let scanUpdate = {
@@ -2109,7 +2110,10 @@ updateStatusWebhookFlash = async(req, res)=>{
             updateOne: {
                 filter: { tracking_code: outTradeNo },
                 update: {
-                    $set: scanUpdate
+                    $set: scanUpdate,
+                    $push: {
+                        dataFlash: dataFlash // เพิ่ม newData ลงใน dataFlash
+                    }
                 }
             }
         }
@@ -2180,6 +2184,7 @@ updateRouteWebhookFlash = async(req, res)=>{
         const returned = req.body.data.returned
         const state = req.body.data.state
         const translateMessage = translateFlash(message, routedAction)
+        const dataRoute = req.body
         // console.log(translateMessage)
         let detailBulk = []
 
@@ -2224,7 +2229,10 @@ updateRouteWebhookFlash = async(req, res)=>{
             updateOne: {
                 filter: { tracking_code: outTradeNo },
                 update: {
-                    $set: scanUpdate
+                    $set: scanUpdate,
+                    $push: {
+                        dataRoute: dataRoute
+                    }
                 }
             }
         }
