@@ -2052,12 +2052,10 @@ updateStatusWebhookFlash = async(req, res)=>{
         if(returned == 1){
             if(state == 5){
 
-                scanUpdate.order_status = 'เซ็นรับแล้ว'
+                scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
     
                 let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
-                let newDate = dayjs(formatDateTime).add(1, 'day').format('YYYY-MM-DD');
                 scanUpdate.day_sign = datePart
-                scanUpdate.day_pay = newDate
     
             }else if(state == 7){
     
