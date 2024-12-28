@@ -115,7 +115,8 @@ createOrder = async (req, res)=>{
                 "sender":{
                     "name": data.from.name,
                     "postcode": data.from.postcode,
-                    "mobile": data.from.tel, //required 
+                    "mobile": data.from.tel, //required
+                    "phone": data.from.tel,
                     "city": data.from.province,
                     "area": data.from.state,
                     "address": data.from.address + " ตำบล " + data.from.district
@@ -124,6 +125,7 @@ createOrder = async (req, res)=>{
                     "name": data.to.name,
                     "postcode": data.to.postcode,
                     "mobile": data.to.tel, //required 
+                    "phone": data.from.tel,
                     "city": data.to.province,
                     "area": data.to.state,
                     "address": data.to.address + " ตำบล " + data.to.district

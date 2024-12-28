@@ -2106,7 +2106,10 @@ updateStatusWebhookFlash = async(req, res)=>{
         // console.log("scanUpdate:",scanUpdate)
         let changStatus = {
             updateOne: {
-                filter: { tracking_code: outTradeNo },
+                filter: { 
+                    tracking_code: outTradeNo,
+                    order_status: { $ne: "เซ็นรับแล้ว" }
+                },
                 update: {
                     $set: scanUpdate,
                     $push: {
@@ -2125,7 +2128,10 @@ updateStatusWebhookFlash = async(req, res)=>{
             if(scanUpdate.order_status == 'เซ็นรับพัสดุตีกลับ'){
                 changStatusCod = {
                     updateOne: {
-                        filter: { orderid: outTradeNo },
+                        filter: { 
+                            orderid: outTradeNo,
+                            status: { $ne: "เซ็นรับแล้ว" }
+                        },
                         update: {
                             $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
                                 status:scanUpdate.order_status,
@@ -2137,7 +2143,10 @@ updateStatusWebhookFlash = async(req, res)=>{
             }else{
                 changStatusCod = {
                     updateOne: {
-                        filter: { orderid: outTradeNo },
+                        filter: { 
+                            orderid: outTradeNo,
+                            status: { $ne: "เซ็นรับแล้ว" }
+                        },
                         update: {
                             $set: scanUpdate
                         }
@@ -2225,7 +2234,10 @@ updateRouteWebhookFlash = async(req, res)=>{
         // console.log("scanUpdate:",scanUpdate)
         let changStatus = {
             updateOne: {
-                filter: { tracking_code: outTradeNo },
+                filter: { 
+                    tracking_code: outTradeNo,
+                    order_status: { $ne: "เซ็นรับแล้ว" }
+                 },
                 update: {
                     $set: scanUpdate,
                     $push: {
