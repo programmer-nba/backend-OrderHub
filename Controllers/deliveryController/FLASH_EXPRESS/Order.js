@@ -2130,7 +2130,7 @@ updateStatusWebhookFlash = async(req, res)=>{
                     updateOne: {
                         filter: { 
                             orderid: outTradeNo,
-                            status: { $ne: "เซ็นรับแล้ว" }
+                            status: { $nin: ["เซ็นรับแล้ว", "โอนสำเร็จ"] }
                         },
                         update: {
                             $set: {//ที่ไม่ใส่ day_sign ของพัสดุตีกลับใน profit_template เพราะเดี๋ยวมันจะไปทับกับ day_sign ของสถานะเซ็นรับแล้ว
@@ -2145,7 +2145,7 @@ updateStatusWebhookFlash = async(req, res)=>{
                     updateOne: {
                         filter: { 
                             orderid: outTradeNo,
-                            status: { $ne: "เซ็นรับแล้ว" }
+                            status: { $nin: ["เซ็นรับแล้ว", "โอนสำเร็จ"] }
                         },
                         update: {
                             $set: scanUpdate
