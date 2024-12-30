@@ -2057,13 +2057,6 @@ updateStatusWebhookFlash = async(req, res)=>{
                 let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
                 scanUpdate.day_sign = datePart
     
-            }else if(state == 7){
-    
-                scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
-    
-                let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
-                scanUpdate.day_sign = datePart
-    
             }else{
                 scanUpdate.order_status = 'พัสดุตีกลับ'
             }
@@ -2083,11 +2076,7 @@ updateStatusWebhookFlash = async(req, res)=>{
                 scanUpdate.day_pay = newDate
     
             }else if(state == 7){
-    
-                scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
-    
-                let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
-                scanUpdate.day_sign = datePart
+                scanUpdate.order_status = 'พัสดุตีกลับ'
     
             }else if(state == 4 || state == 6 || state == 8){
                 scanUpdate.order_status = 'พัสดุมีปัญหา'
@@ -2200,10 +2189,8 @@ updateRouteWebhookFlash = async(req, res)=>{
             status_lastet:translateMessage,
         }
 
-        if(returned == 1){
+        if(returned == true){
             if(state == 5){
-                scanUpdate.order_status = 'เซ็นรับแล้ว'
-            }else if(state == 7){
                 scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
             }else{
                 scanUpdate.order_status = 'พัสดุตีกลับ'
@@ -2216,7 +2203,7 @@ updateRouteWebhookFlash = async(req, res)=>{
             }else if(state == 5){
                 scanUpdate.order_status = 'เซ็นรับแล้ว'
             }else if(state == 7){
-                scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
+                scanUpdate.order_status = 'พัสดุตีกลับ'
             }else if(state == 4 || state == 6 || state == 8){
                 scanUpdate.order_status = 'พัสดุมีปัญหา'
             }else{
