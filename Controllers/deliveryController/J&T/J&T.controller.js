@@ -782,6 +782,7 @@ trackingOrderAuto = async (req, res)=>{
                 }
 
             const latestDetails = item.details[item.details.length - 1];
+            const beforeLastest = item.details[item.details.length - 2];
             const findReturn = item.details.find(item => item.scantype == 'Return')
         
             let scantype
@@ -827,27 +828,27 @@ trackingOrderAuto = async (req, res)=>{
 
                 }else if(latestDetails.scantype == 'Return'){
                     scantype = 'พัสดุตีกลับ'
-                }else if(['Problematic', 'Storage'].includes(latestDetails.scantype)){
+                }else if(['Problematic', 'Storage', '入库交接'].includes(latestDetails.scantype)){
                     scantype = 'พัสดุมีปัญหา'
                 }else{
                     return;
                 }
             }
-            // console.log("scan:",scantype,"day_sign:",day_sign,"day_pay:",day_pay)
+            
             let updateStatus = {
                 order_status:scantype,
                 day_sign: day_sign,
                 day_pick: day_pick
             }
 
-            if(latestDetails.scantype != '入库交接'){
-                if(latestDetails.scantype == 'Problematic'){
-                    updateStatus.status_lastet = latestDetails.remark
-                }else{
-                    const translated = translateJT(latestDetails.desc); // ใช้ await เพื่อรอผลลัพธ์
-                    updateStatus.status_lastet = translated
-                    // console.log(translated);
-                }
+            if(latestDetails.scantype == 'Problematic'){
+                updateStatus.status_lastet = latestDetails.remark
+            }else if(latestDetails.scantype == '入库交接' && beforeLastest.remark){
+                updateStatus.status_lastet = beforeLastest.remark
+            }else{
+                const translated = translateJT(latestDetails.desc); 
+                updateStatus.status_lastet = translated
+                // console.log(translated);
             }
 
             let changStatus = {
@@ -3001,7 +3002,7 @@ async function myTask() {
 
 // myTask()
 
-// cron.schedule('10 0 * * *', myTask, {
+// cron.schedule('51 17 * * *', myTask, {
 //     scheduled: true,
 //     timezone: "Asia/Bangkok"
 // });
@@ -3010,6 +3011,11 @@ async function myTask() {
 //     scheduled: true,
 //     timezone: "Asia/Bangkok"
 // });
+
+cron.schedule('10 0,10 * * *', myTask, {
+    scheduled: true,
+    timezone: "Asia/Bangkok"
+});
 
 async function invoiceNumber(date) {
     try{
