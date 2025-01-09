@@ -28,7 +28,7 @@ const { decrypt } = require("../../../functions/encodeCrypto");
 const { logSystem } = require("../../../Models/logs");
 const { logOrder } = require("../../../Models/logs_order");
 const { translateJT } = require("../translate_express/translate");
-
+const { isValidIDNumber, isValidTaxID, isValidPassport } = require("../../../functions/vertifyNumber");
 const cron = require('node-cron');
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -717,11 +717,32 @@ priceList = async (req, res)=>{
                     .status(400)
                     .send({status:false, type:"sender",message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
             }
+            let result = isValidTaxID(send_number)
+            if(!result){
+                return res
+                    .status(400)
+                    .send({status:false, type:"sender", message:"กรุณากรอกหมายเลขผู้เสียภาษีให้ถูกต้อง"})
+            }
         }else if(send_behalf == "บุคคล"){
             if(send_type != "บัตรประชาชน" && send_type != "passport"){
                 return res
                     .status(400)
-                    .send({status:false, type:"sender",message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
+                    .send({status:false, type:"sender", message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
+            }
+            if(send_type == "บัตรประชาชน"){
+                let result = isValidIDNumber(send_number)
+                if(!result){
+                    return res
+                        .status(400)
+                        .send({status:false, type:"sender", message:"กรุณากรอกหมายเลขบัตรประชาชนให้ถูกต้อง"})
+                }
+            }else if(send_type == "passport"){
+                let result = isValidPassport(send_number)
+                if(!result){
+                    return res
+                        .status(400)
+                        .send({status:false, type:"sender", message:"กรุณากรอกหมายเลข Passport ให้ถูกต้อง"})
+                }
             }
         }
 

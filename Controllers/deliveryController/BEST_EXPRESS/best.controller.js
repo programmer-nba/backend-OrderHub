@@ -22,6 +22,7 @@ const { Admin } = require('../../../Models/admin');
 const { profitTemplate } = require('../../../Models/profit/profit.template');
 const { decrypt } = require("../../../functions/encodeCrypto");
 const { logOrder } = require('../../../Models/logs_order');
+const { isValidIDNumber, isValidTaxID, isValidPassport } = require("../../../functions/vertifyNumber");
 const cron = require('node-cron');
 require('dayjs/plugin/timezone');
 require('dayjs/plugin/utc');
@@ -1343,11 +1344,32 @@ priceList = async (req, res)=>{
                     .status(400)
                     .send({status:false, type:"sender", message:"กรุณากรอกประเภท หมายเลขผู้เสียภาษี เพราะท่านเลือกส่งในนามบริษัท"})
             }
+            let result = isValidTaxID(send_number)
+            if(!result){
+                return res
+                    .status(400)
+                    .send({status:false, type:"sender", message:"กรุณากรอกหมายเลขผู้เสียภาษีให้ถูกต้อง"})
+            }
         }else if(send_behalf == "บุคคล"){
             if(send_type != "บัตรประชาชน" && send_type != "passport"){
                 return res
                     .status(400)
                     .send({status:false, type:"sender", message:"กรุณากรอกประเภท บัตรประชาชน หรือ passport เพราะท่านเลือกส่งในนามบุคคล"})
+            }
+            if(send_type == "บัตรประชาชน"){
+                let result = isValidIDNumber(send_number)
+                if(!result){
+                    return res
+                        .status(400)
+                        .send({status:false, type:"sender", message:"กรุณากรอกหมายเลขบัตรประชาชนให้ถูกต้อง"})
+                }
+            }else if(send_type == "passport"){
+                let result = isValidPassport(send_number)
+                if(!result){
+                    return res
+                        .status(400)
+                        .send({status:false, type:"sender", message:"กรุณากรอกหมายเลข Passport ให้ถูกต้อง"})
+                }
             }
         }
 
