@@ -73,9 +73,9 @@ const orderAllSchema = new Schema({
         day_pick : {type : String, default: "", required : false},
         day_cancel : {type : String, default: "", required : false},
         user_cancel : {type : String, default: "", required : false},
-        profitAll: {type: Array, required: false},
-        dataFlash: {type: Array, required: false},
-        dataRoute: {type: Array, required: false},
+        profitAll: {type: Array, required: false}
+        // dataFlash: {type: Array, required: false},
+        // dataRoute: {type: Array, required: false},
 },{timestamps:true})
 
 const orderAll = mongoose.model("order_all", orderAllSchema);

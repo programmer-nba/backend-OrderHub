@@ -1900,23 +1900,26 @@ priceList = async (req, res)=>{
             console.log(err)
         }
 
-        if(weight <= 0 || weight == undefined){
+        const regexWordCheck = /^[1-9]\d*$/;
+        if (!weight || !regexWordCheck.test(String(weight))) {
             return res
-                    .status(400)
-                    .send({status:false, type:"receive", message:`กรุณาระบุน้ำหนัก(kg)`})
+                .status(400)
+                .send({status: false, type: "receive", message: `กรุณาระบุน้ำหนัก(kg)`});
         }
-        if(formData.parcel.width == 0 || formData.parcel.width == undefined){
+        if (!formData.parcel.width || !regexWordCheck.test(String(formData.parcel.width))) {
             return res
-                    .status(400)
-                    .send({status:false, type:"receive", message:`กรุณากรอกความกว้าง(cm)`})
-        }else if(formData.parcel.length == 0 || formData.parcel.length == undefined){
+                .status(400)
+                .send({status: false, type: "receive", message: `กรุณากรอกความกว้าง(cm)`});
+        }
+        if (!formData.parcel.length || !regexWordCheck.test(String(formData.parcel.length))) {
             return res
-                    .status(400)
-                    .send({status:false,type:"receive", message:`ลำกรุณากรอกความยาว(cm)`})
-        }else if(formData.parcel.height == 0 || formData.parcel.height == undefined){
+                .status(400)
+                .send({status: false, type: "receive", message: `กรุณากรอกความยาว(cm)`});
+        }
+        if (!formData.parcel.height || !regexWordCheck.test(String(formData.parcel.height))) {
             return res
-                    .status(400)
-                    .send({status:false, type:"receive", message:`กรุณากรอกความสูง(cm)`})
+                .status(400)
+                .send({status: false, type: "receive", message: `กรุณากรอกความสูง(cm)`});
         }
 
         if(!Number.isInteger(packing_price)){
