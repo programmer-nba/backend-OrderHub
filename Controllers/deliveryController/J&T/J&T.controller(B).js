@@ -974,25 +974,26 @@ priceList = async (req, res)=>{
         }
 
         const regexWordCheck = /^[1-9]\d*$/;
-        if (!weight || !regexWordCheck.test(String(weight))) {
+        const regexWeight = /^(?:[1-9]\d*|0)(?:\.\d{1,2})?$/;
+        if (!weight || !regexWeight.test(String(weight))) {
             return res
                 .status(400)
-                .send({status: false, type: "receive", message: `กรุณาระบุน้ำหนัก(kg)`});
+                .send({status: false, type: "receive", message: `กรุณาระบุน้ำหนัก(kg)และห้ามใส่ทศนิยมเกิน 2 ตำแหน่ง`});
         }
         if (!formData.parcel.width || !regexWordCheck.test(String(formData.parcel.width))) {
             return res
                 .status(400)
-                .send({status: false, type: "receive", message: `กรุณากรอกความกว้าง(cm)`});
+                .send({status: false, type: "receive", message: `กรุณากรอกความกว้าง(cm)(ห้ามใส่ทศนิยม)`});
         }
         if (!formData.parcel.length || !regexWordCheck.test(String(formData.parcel.length))) {
             return res
                 .status(400)
-                .send({status: false, type: "receive", message: `กรุณากรอกความยาว(cm)`});
+                .send({status: false, type: "receive", message: `กรุณากรอกความยาว(cm)(ห้ามใส่ทศนิยม)`});
         }
         if (!formData.parcel.height || !regexWordCheck.test(String(formData.parcel.height))) {
             return res
                 .status(400)
-                .send({status: false, type: "receive", message: `กรุณากรอกความสูง(cm)`});
+                .send({status: false, type: "receive", message: `กรุณากรอกความสูง(cm)(ห้ามใส่ทศนิยม)`});
         }
 
         if(!Number.isInteger(packing_price)){

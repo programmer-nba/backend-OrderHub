@@ -321,7 +321,6 @@ priceList = async (req, res)=>{
         }catch(err){
             console.log(err)
         }
-        let weightCheck = weight / 1000
         // if(weightCheck <= 0 || weightCheck == undefined){
         //     return res
         //             .status(400)
@@ -340,26 +339,28 @@ priceList = async (req, res)=>{
         //             .status(400)
         //             .send({status:false, type:"receive", message:`กรุณากรอกความสูง(cm)`})
         // }
+        let weightCheck = weight / 1000
         const regexWordCheck = /^[1-9]\d*$/;
-        if (!weightCheck || !regexWordCheck.test(String(weightCheck))) {
+        const regexWeight = /^(?:[1-9]\d*|0)(?:\.\d{1,2})?$/;
+        if (!weight || !regexWeight.test(String(weightCheck))) {
             return res
                 .status(400)
-                .send({status: false, type: "receive", message: `กรุณาระบุน้ำหนัก(kg)`});
+                .send({status: false, type: "receive", message: `กรุณาระบุน้ำหนัก(kg)และห้ามใส่ทศนิยมเกิน 2 ตำแหน่ง`});
         }
         if (!formData.parcel.width || !regexWordCheck.test(String(formData.parcel.width))) {
             return res
                 .status(400)
-                .send({status: false, type: "receive", message: `กรุณากรอกความกว้าง(cm)`});
+                .send({status: false, type: "receive", message: `กรุณากรอกความกว้าง(cm)(ห้ามใส่ทศนิยม)`});
         }
         if (!formData.parcel.length || !regexWordCheck.test(String(formData.parcel.length))) {
             return res
                 .status(400)
-                .send({status: false, type: "receive", message: `กรุณากรอกความยาว(cm)`});
+                .send({status: false, type: "receive", message: `กรุณากรอกความยาว(cm)(ห้ามใส่ทศนิยม)`});
         }
         if (!formData.parcel.height || !regexWordCheck.test(String(formData.parcel.height))) {
             return res
                 .status(400)
-                .send({status: false, type: "receive", message: `กรุณากรอกความสูง(cm)`});
+                .send({status: false, type: "receive", message: `กรุณากรอกความสูง(cm)(ห้ามใส่ทศนิยม)`});
         }
 
         if(!Number.isInteger(packing_price)){
@@ -955,13 +956,15 @@ booking = async(req, res)=>{
         const weight = req.body.parcel.weight * 1000
         const data = [
             {
-                ...formData
+                ...formData,
+                parcel: { ...formData.parcel } // คัดลอก parcel แบบแยกออก
             }
         ] //, courier_code:courierCode
-        data[0].parcel.weight = weight
-        // console.log(data)
+        data[0].parcel.weight = weight //การเปลี่ยนแปลงนี้ ทำให้ค่า formData.parcel.weight เปลี่ยนแปลงไปด้วย เพราะมัน แชร์ reference เดียวกัน ดังนั้นจึงต้องใส่ parcel: { ...formData.parcel } เพื่อคัดลอกค่าที่ถูกส่งไปให้ parcel
+        // console.log("data",data)
+        // console.log("formData",formData.parcel)
         const invoice = await invoiceNumber(dayTime)
-        console.log(invoice)
+        // console.log(invoice)
         const findCredit = await shopPartner.findOne({shop_number:shop})
         if(!findCredit){
             return res
@@ -1000,11 +1003,16 @@ booking = async(req, res)=>{
               headers: {"Accept-Encoding": "gzip,deflate,compress",
                         "Content-Type": "application/json"},
             }
-          );
+        );
             if (!resp.data.status) {
+                // console.log(resp.data)
                 return res
                         .status(400)
-                        .send({status: false, message: resp.data.data[0]});
+                        .send({status: false, message: Array.isArray(resp?.data?.data) && resp.data.data[0]
+                            ? resp.data.data[0]
+                            : 'ไม่สามารถส่งสินค้าได้ กรูณาติดต่อเจ้าหน้าที่ ORDERHUB',
+                            err: resp.data
+                        });
             }
         const purchase_id = resp.data.purchase_id
         const new_data = resp.data.data[0]
