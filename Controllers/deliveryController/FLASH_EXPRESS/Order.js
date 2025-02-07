@@ -61,6 +61,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         const fee_cod_orderhub = req.body.fee_cod_orderhub
         const fee_cod_sp = req.body.fee_cod_sp
         const print_code = req.body.print_code
+        const fee_codOriginal = req.body.fee_codOriginal
+        const vat_cod = req.body.vat_cod
         const total = req.body.total
         const cost_base = req.body.cost_base
         const price_remote_area = req.body.price_remote_area
@@ -354,6 +356,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 cost_hub: cost_hub,
                 cost_base: cost_base,
                 cod_amount:cod_integer,
+                fee_codOriginal: fee_codOriginal,
+                vat_cod: vat_cod,
                 fee_cod: fee_cod,
                 fee_cod_sp: fee_cod_sp,
                 fee_code_orderhub: fee_cod_orderhub,
@@ -1886,10 +1890,12 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         price_remote_area: upCountry,
                         cost_hub: cost_hub,
                         cost_base: cost_base,
-                        fee_cod: 0,
                         fee_cod_orderhub: 0,
                         fee_cod_sp: codPoundageAmount,
-                        price: Number(price.toFixed()),
+                        fee_codOriginal: 0,
+                        vat_cod: 0,
+                        fee_cod: 0,
+                        price: price,
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,
                         packing_price: packing_price,
@@ -1900,17 +1906,23 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         profitAll: profit
                     };
                     // console.log(v)
+                    
+                        let fee_cod_orderhub = parseFloat(fee_cod_total.toFixed(2));
+                        let fee_codOriginal = Math.round((fee_cod_total + codPoundageAmount) * 100) / 100; // 23.57
+                        let vat_cod = Math.round((fee_codOriginal * 7 / 100) * 100) / 100; // 1.65
+                        let formattedFee = Math.round((fee_codOriginal + vat_cod) * 100) / 100; // 25.22
 
-                        let formattedFee = parseFloat(fee_cod_total.toFixed(2));
-                        let total = price + formattedFee + packing_price + insuranceFee + upCountry + codPoundageAmount
-                            v.fee_cod = formattedFee + codPoundageAmount
-                            v.fee_cod_orderhub = formattedFee
-        
-                        let cut = cut_partner + insuranceFee + formattedFee + upCountry + codPoundageAmount
+                        let total = price + formattedFee + packing_price + insuranceFee + upCountry
+                            v.fee_codOriginal = fee_codOriginal
+                            v.vat_cod = vat_cod
+                            v.fee_cod = formattedFee
+                            v.fee_cod_orderhub = fee_cod_orderhub
+
+                        let cut = cut_partner + insuranceFee + formattedFee + upCountry
                             v.cut_partner = parseFloat(cut.toFixed(2))
                             v.total = parseFloat(total.toFixed(2))
                             // v.fee_cod = formattedFee
-                            // // v.profitPartner = profitPartner
+                            // v.profitPartner = profitPartner
                             //     if(response.data.data.upCountry == true){
                             //         let upCountry = (parseFloat(response.data.data.upCountryAmount)/100) //เปลี่ยนจาก สตางค์เป็นบาท 
                             //         // console.log(upCountry)

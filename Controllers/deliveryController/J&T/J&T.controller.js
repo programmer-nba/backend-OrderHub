@@ -77,6 +77,8 @@ createOrder = async (req, res)=>{
         const cost_hub = req.body.cost_hub
         const fee_cod = req.body.fee_cod
         const total = req.body.total
+        const fee_codOriginal = req.body.fee_codOriginal
+        const vat_cod = req.body.vat_cod
         const remark = req.body.remark
         const packing_price = req.body.packing_price
         const declared_value = req.body.declared_value
@@ -387,6 +389,8 @@ createOrder = async (req, res)=>{
                 cost_hub: cost_hub,
                 cost_base: cost_base,
                 cod_amount:cod_amount,
+                fee_codOriginal: fee_codOriginal,
+                vat_cod: vat_cod,
                 fee_cod: fee_cod,
                 total: total,
                 cut_partner: cut_partner,
@@ -2109,7 +2113,7 @@ priceList = async (req, res)=>{
                     }
                 }
             }
-        console.log("price_remote_area: ",price_remote_area)
+        // console.log("price_remote_area: ",price_remote_area)
         
         //เช็คประกัน(ถ้ามี)
         const findinsured = await insuredExpress.findOne({express:"JNT"})
@@ -2358,6 +2362,8 @@ priceList = async (req, res)=>{
                         price_remote_area: 0,
                         cost_hub: cost_hub,
                         cost_base: cost_base,
+                        fee_codOriginal: 0,
+                        vat_cod: 0,
                         fee_cod: 0,
                         price: Number(price.toFixed()),
                         declared_value: declared_value,
@@ -2371,7 +2377,12 @@ priceList = async (req, res)=>{
                     };
                     // console.log(v)
                     // if (cod !== undefined) {
-                        let formattedFee = parseFloat(fee_cod_total.toFixed(2));
+                        let fee_codOriginal = Math.round(fee_cod_total * 100) / 100; // 23.57
+                        let vat_cod = Math.round((fee_codOriginal * 7 / 100) * 100) / 100; // 1.65
+                        let formattedFee = Math.round((fee_codOriginal + vat_cod) * 100) / 100; // 25.22
+                        // let formattedFee = parseFloat(fee_cod_total.toFixed(2));
+                            v.fee_codOriginal = fee_codOriginal
+                            v.vat_cod = vat_cod
                         let total = price + formattedFee + insuranceFee + packing_price
                             v.fee_cod = formattedFee
                             // v.profitPartner = profitPartner
@@ -2394,7 +2405,7 @@ priceList = async (req, res)=>{
                             new_data[0].status = 'จำนวนเงินของท่านไม่เพียงพอ';
                         } else {
                             new_data[0].status = 'พร้อมใช้บริการ';
-                        }
+                         }
                     } catch (error) {
                         console.error('เกิดข้อผิดพลาดในการรอรับค่า');
                     }
@@ -2817,7 +2828,7 @@ priceListOne = async (req, res)=>{
                         cost_hub: cost_hub,
                         cost_base: cost_base,
                         fee_cod: 0,
-                        price: Number(price.toFixed()),
+                        price: price,
                         profitSaleMartket: profitSaleMartket,
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,

@@ -77,6 +77,8 @@ createPDFOrder = async(req, res)=>{
         const fee_cod = req.body.fee_cod
         const total = req.body.total
         const remark = req.body.remark
+        const fee_codOriginal = req.body.fee_codOriginal
+        const vat_cod = req.body.vat_cod
         const packing_price = req.body.packing_price
         const insuranceFee = req.body.insuranceFee
         const declared_value = req.body.declared_value
@@ -405,6 +407,8 @@ createPDFOrder = async(req, res)=>{
                     cost_base: cost_base,
                     print_code: print_code,
                     cod_amount:cod_amount,
+                    fee_codOriginal: fee_codOriginal,
+                    vat_cod: vat_cod,
                     fee_cod: fee_cod,
                     total: total,
                     cut_partner: cut_partner,
@@ -2048,25 +2052,32 @@ priceList = async (req, res)=>{
                     }
                 // console.log(profit)
                 v = {
-                        ...req.body,
-                        express: "BEST",
-                        price_remote_area: 0,
-                        cost_hub: cost_hub,
-                        cost_base: cost_base,
-                        fee_cod: 0,
-                        price: Number(price.toFixed()),
-                        declared_value: declared_value,
-                        insuranceFee: insuranceFee,
-                        packing_price: packing_price,
-                        total: 0,
-                        cut_partner: 0,
-                        status: status,
-                        remark: remark,
-                        profitAll: profit
-                };
+                    ...req.body,
+                    express: "BEST",
+                    price_remote_area: 0,
+                    cost_hub: cost_hub,
+                    cost_base: cost_base,
+                    fee_codOriginal: 0,
+                    vat_cod: 0,
+                    fee_cod: 0,
+                    price: price,
+                    declared_value: declared_value,
+                    insuranceFee: insuranceFee,
+                    packing_price: packing_price,
+                    total: 0,
+                    cut_partner: 0,
+                    status: status,
+                    remark: remark,
+                    profitAll: profit
+                }
                     // console.log(v)
                     // if (cod !== undefined) {
-                    let formattedFee = parseFloat(fee_cod_total.toFixed(2));
+                    let fee_codOriginal = Math.round(fee_cod_total * 100) / 100; // 23.57
+                    let vat_cod = Math.round((fee_codOriginal * 7 / 100) * 100) / 100; // 1.65
+                    let formattedFee = Math.round((fee_codOriginal + vat_cod) * 100) / 100; // 25.22
+                    // let formattedFee = parseFloat(fee_cod_total.toFixed(2));
+                        v.fee_codOriginal = fee_codOriginal
+                        v.vat_cod = vat_cod
                     let total = price + formattedFee  + packing_price + insuranceFee
                         v.fee_cod = formattedFee
                             // v.profitPartner = profitPartner

@@ -862,10 +862,12 @@ priceList = async (req, res)=>{
                     price_fuel_surcharge: price_fuel_surcharge,
                     cost_hub: cost_hub,
                     cost_base: cost_base,
-                    fee_cod: 0,
                     fee_cod_orderhub: 0,
                     fee_cod_sp: ob.price_cod,
-                    price: Number(price.toFixed()),
+                    fee_codOriginal: 0,
+                    vat_cod: 0,
+                    fee_cod: 0,
+                    price: price,
                     declared_value: declared_value,
                     insuranceFee: insuranceFee,
                     packing_price: packing_price,
@@ -879,13 +881,19 @@ priceList = async (req, res)=>{
                     v.insurance_code = "DHPY"
                 }
 
-                let formattedFee = parseFloat(cod_cal.fee_cod_total.toFixed(2));
-                let total = price + formattedFee + insuranceFee + packing_price + ob.price_cod + price_fuel_surcharge + price_remote_area + price_travel_area + price_island_area
-                let allFee = formattedFee + ob.price_cod
-                    v.fee_cod = parseFloat(allFee.toFixed(2));
-                    v.fee_cod_orderhub = formattedFee
+                let fee_cod_orderhub = parseFloat(cod_cal.fee_cod_total.toFixed(2));
+                let fee_codOriginal = Math.round((cod_cal.fee_cod_total + ob.price_cod) * 100) / 100; // 23.57
+                let vat_cod = Math.round((fee_codOriginal * 7 / 100) * 100) / 100; // 1.65
+                let formattedFee = Math.round((fee_codOriginal + vat_cod) * 100) / 100; // 25.22
 
-                let cut = cut_partner + insuranceFee + formattedFee + ob.price_cod + price_fuel_surcharge + price_remote_area + price_travel_area + price_island_area
+                let total = price + formattedFee + insuranceFee + packing_price + price_fuel_surcharge + price_remote_area + price_travel_area + price_island_area
+                // let allFee = formattedFee + ob.price_cod
+                    v.fee_codOriginal = fee_codOriginal
+                    v.vat_cod = vat_cod
+                    v.fee_cod = formattedFee
+                    v.fee_cod_orderhub = fee_cod_orderhub
+
+                let cut = cut_partner + insuranceFee + formattedFee + price_fuel_surcharge + price_remote_area + price_travel_area + price_island_area
                     v.cut_partner = parseFloat(cut.toFixed(2))
                     v.total = parseFloat(total.toFixed(2))
                 
@@ -941,6 +949,8 @@ booking = async(req, res)=>{
         const declared_value = req.body.declared_value
         const insuranceFee = req.body.insuranceFee
         const cost_base = req.body.cost_base
+        const fee_codOriginal = req.body.fee_codOriginal
+        const vat_cod = req.body.vat_cod
         const fee_cod_orderhub = req.body.fee_cod_orderhub
         const fee_cod_sp = req.body.fee_cod_sp
         const profitAll = req.body.profitAll
@@ -1216,6 +1226,8 @@ booking = async(req, res)=>{
                 cost_hub: cost_hub,
                 cost_base: cost_base,
                 cod_amount:cod_amount,
+                fee_codOriginal: fee_codOriginal,
+                vat_cod: vat_cod,
                 fee_cod: fee_cod,
                 fee_cod_orderhub: fee_cod_orderhub,
                 fee_cod_sp: fee_cod_sp,
