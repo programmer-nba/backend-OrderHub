@@ -2365,7 +2365,7 @@ priceList = async (req, res)=>{
                         fee_codOriginal: 0,
                         vat_cod: 0,
                         fee_cod: 0,
-                        price: Number(price.toFixed()),
+                        price: price,
                         declared_value: declared_value,
                         insuranceFee: insuranceFee,
                         packing_price: packing_price,
@@ -2839,7 +2839,7 @@ priceListOne = async (req, res)=>{
                         remark: remark,
                         profitAll: profit
                     };
-                    // console.log(v)
+                    // console.log(v.price)
                     // if (cod !== undefined) {
                         let formattedFee = parseFloat(fee_cod_total.toFixed(2));
                         let total = price + formattedFee + insuranceFee + packing_price
