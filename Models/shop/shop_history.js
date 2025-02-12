@@ -17,22 +17,23 @@ function updateRealTime (){
 setInterval(updateRealTime, 5000);
 
 const historySchema = new Schema({
-    shop_id:{type:String, require: false},
-    ID:{type:String, require: false},
+    shop_id:{type:String, require: false, index: true},
+    ID:{type:String, require: false, index: true},
     role:{type:String, require: false},
-    shop_number:{type:String, require: false},
-    orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
-    mailno:{type:String, require: false},
+    shop_number:{type:String, require: false, index: true},
+    orderid:{type:String, require: false, index: true},//เลขที่ทำรายการ(invoice)
+    mailno:{type:String, require: false, index: true},
     amount:{type:Number, require: false},
     before:{type:String, require: false},
     after:{type:String, require: false, default: ""},
     type:{type:String, require: false, default: "none"},
     remark:{type:String, require:false},
-    day_cancel:{type:String, require:false, default: ""},
+    day_cancel:{type:String, require:false, default: "", index: true},
     user_cancel:{type:String, require:false, default: ""},
     day: {
         type: String,
         required: false,
+        index: true,
         default: function () {
             // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
             return currentTime;

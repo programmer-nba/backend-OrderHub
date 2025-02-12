@@ -103,9 +103,11 @@ createOrder = async (req, res)=>{
                     .status(400)
                     .send({status:false, message:`Credits ปัจจุบันของร้านค้า ${findCredit.shop_name} ไม่เพียงพอต่อการส่งสินค้า`})
         }
-        const txlogisticid = await invoiceNumber(currentTime); //เข้า function gen หมายเลขรายการ
+        // const txlogisticid = await invoiceNumber(currentTime); //เข้า function gen หมายเลขรายการ
             // console.log('invoice : '+txlogisticid);
-        const invoice = await invoiceJNT(currentTime)
+        // const invoice = await invoiceJNT(currentTime)
+        const {txlogisticid, invoice} = await generateUniqueCodes(currentTime)
+
         const fromData = {
             "logistics_interface" :{
                 "actiontype": "add",
@@ -1960,9 +1962,9 @@ priceList = async (req, res)=>{
         
         const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
             if (resultSender.upsertedCount > 0) {
-                console.log('สร้างข้อมูลผู้ส่งคนใหม่');
+                // console.log('สร้างข้อมูลผู้ส่งคนใหม่');
             } else {
-                console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+                // console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
             }
         
         const infoSender = await dropOffs.findOne(filterSender)
@@ -2993,7 +2995,7 @@ function chunkArray(array, size){
 let count_update = 1
 async function myTask() {
     try{
-        console.log(currentTime)
+        // console.log(currentTime)
         const findOrder = await orderAll.find({
             $or: [
                 { order_status: "booking" },
@@ -3011,10 +3013,10 @@ async function myTask() {
         const chunks = chunkArray(txlogisticid, 19);
         // console.log("chunks:",chunks)
         const order = { body: { txlogisticid: txlogisticid } }; // สร้าง request mock object
-        console.log("จำนวนพัสดุ J&T ทั้งหมดที่ต้องอัพเดท:",order.body.txlogisticid.length)
+        // console.log("จำนวนพัสดุ J&T ทั้งหมดที่ต้องอัพเดท:",order.body.txlogisticid.length)
         for (const chunk of chunks) {
             // console.log(`Updating status for chunk: ${chunk}`);
-            console.log(count_update)
+            // console.log(count_update)
             const req = { body: { txlogisticid: chunk } }; // สร้าง request mock object สำหรับแต่ละกลุ่ม
             const res = {
                 status: (code) => ({
@@ -3094,6 +3096,42 @@ async function invoiceJNT(day) {
 
     // console.log(combinedData);
     return combinedData;
+}
+
+async function generateUniqueCodes(day) {
+    try {
+        const formattedDay = dayjs(day).format("YYYYMMDD");
+        const searchDay = dayjs(day).format("YYYY-MM-DD"); // ใช้ค้นหาใน database
+
+        let txlogisticid = '';
+        let invoice = '';
+        let trackingRandom, invoiceRandom;
+
+        while (true) {
+            // สุ่มเลขสำหรับ tracking และ invoice แยกกัน
+            trackingRandom = Math.floor(Math.random() * 10000000);
+            invoiceRandom = Math.floor(Math.random() * 10000000);
+
+            txlogisticid = `JNT${formattedDay}${trackingRandom}`;
+            invoice = `ODHJNT${formattedDay}${invoiceRandom}`;
+
+            // ค้นหา tracking_code และ invoice พร้อมกัน
+            let existingCodes = await orderAll.find({
+                $or: [
+                    { tracking_code: txlogisticid, day: searchDay },
+                    { invoice: invoice, day: searchDay }
+                ]
+            });
+            // console.log("GGEZ")
+            // ถ้าไม่มีซ้ำ ออกจาก loop ได้เลย
+            if (existingCodes.length === 0) break;
+        }
+        // console.log("trackingCode:",txlogisticid, "invoiceCode:",invoiceCode);
+        return { txlogisticid, invoice };
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 }
 
 module.exports = {createOrder, trackingOrder, cancelOrder, cancelOrderAll, label, priceList, getAll, 

@@ -79,8 +79,9 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
         let cod_integer = cod_amount / 100 //ทำ cod_amount เป็นหน่วย บาท เพื่อบันทึกลง database(จะได้ดูง่าย)
         let declared_valueStang = declared_value * 100//มูลค่าประกัน
 
-        const invoice = await invoiceInvoice(currentTime)
-        const numberTracking = await invoiceNumber(currentTime)
+        // const invoice = await invoiceInvoice(currentTime)
+        // const numberTracking = await invoiceNumber(currentTime)
+        const {numberTracking, invoice} = await generateUniqueCodes(currentTime)
         // console.log(cod_integer, codForPrice)
         const formData = {
             mchId: mchId,
@@ -1446,9 +1447,9 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         
         const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
             if (resultSender.upsertedCount > 0) {
-                console.log('สร้างข้อมูลผู้ส่งคนใหม่');
+                // console.log('สร้างข้อมูลผู้ส่งคนใหม่');
             } else {
-                console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+                // console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
             }
         
         const infoSender = await dropOffs.findOne(filterSender)
@@ -2483,6 +2484,41 @@ async function invoiceInvoice(day) {
 
     // console.log(combinedData);
     return combinedData;
+}
+
+async function generateUniqueCodes(day) {
+    try {
+        const formattedDay = dayjs(day).format("YYYYMMDD");
+        const searchDay = dayjs(day).format("YYYY-MM-DD"); // ใช้ค้นหาใน database
+
+        let numberTracking = '';
+        let invoice = '';
+        let trackingRandom, invoiceRandom;
+
+        while (true) {
+            // สุ่มเลขสำหรับ tracking และ invoice แยกกัน
+            trackingRandom = Math.floor(Math.random() * 10000000);
+            invoiceRandom = Math.floor(Math.random() * 10000000);
+
+            numberTracking = `JNT${formattedDay}${trackingRandom}`;
+            invoice = `ODHJNT${formattedDay}${invoiceRandom}`;
+
+            // ค้นหา tracking_code และ invoice พร้อมกัน
+            let existingCodes = await orderAll.find({
+                $or: [
+                    { tracking_code: numberTracking, day: searchDay },
+                    { invoice: invoice, day: searchDay }
+                ]
+            });
+            // ถ้าไม่มีซ้ำ ออกจาก loop ได้เลย
+            if (existingCodes.length === 0) break;
+        }
+        // console.log("trackingCode:",txlogisticid, "invoiceCode:",invoiceCode);
+        return { numberTracking, invoice };
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 }
 
 module.exports = { createOrder, statusOrder, getWareHouse, print100x180, print100x75

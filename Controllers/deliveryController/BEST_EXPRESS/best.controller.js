@@ -68,8 +68,8 @@ createPDFOrder = async(req, res)=>{
         //     }
         //     err_number += 1
         // }
-        const txLogistic = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
-            // console.log('txLogisticId : '+txLogistic);
+        // const txLogistic = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
+        // console.log('txLogisticId : '+txLogistic);
         const id = req.decoded.userid
         const role = req.decoded.role
         const shop = req.body.shop_number
@@ -105,7 +105,8 @@ createPDFOrder = async(req, res)=>{
                     .send({status:false, message:`Credits ปัจจุบันของร้านค้า ${findCredit.shop_name} ไม่เพียงพอต่อการส่งสินค้า`})
         }
         
-        const invoice = await invoiceBST()
+        // const invoice = await invoiceBST()
+        const {txlogisticid, invoice} = await generateUniqueCodes(currentTime)
         //ผู้ส่ง
         const senderTel = data.from.tel; 
         const filterSender = { shop_id: shop , tel: senderTel, status: 'ผู้ส่ง' }; //เงื่อนไขที่ใช้กรองว่ามีใน database หรือเปล่า
@@ -120,7 +121,7 @@ createPDFOrder = async(req, res)=>{
         const formData = {
             serviceType:"KD_CREATE_WAYBILL_ORDER_PDF_NOTIFY",
             bizData:{
-                txLogisticId:txLogistic,
+                txLogisticId:txlogisticid,
                 special:"1",
                 // sendStartTime: "2024-03-20",
                 sender:{
@@ -1681,9 +1682,9 @@ priceList = async (req, res)=>{
        
         const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
            if (resultSender.upsertedCount > 0) {
-               console.log('สร้างข้อมูลผู้ส่งคนใหม่');
+            //    console.log('สร้างข้อมูลผู้ส่งคนใหม่');
            } else {
-               console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
+            //    console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
            }
        
         const infoSender = await dropOffs.findOne(filterSender)
@@ -1891,7 +1892,7 @@ priceList = async (req, res)=>{
                     idReal = id
                 }else if(role == 'shop_member'){
                     idReal = req.decoded.id_ownerShop
-                    console.log(idReal)
+                    // console.log(idReal)
                 }
                 const findPartner = await Partner.findById(idReal)
                     if(!findPartner){
@@ -2359,6 +2360,42 @@ async function invoiceBST() {
 
     // console.log(combinedData);
     return combinedData;
+}
+
+async function generateUniqueCodes(day) {
+    try {
+        const formattedDay = dayjs(day).format("YYYYMMDD");
+        const searchDay = dayjs(day).format("YYYY-MM-DD"); // ใช้ค้นหาใน database
+
+        let txlogisticid = '';
+        let invoice = '';
+        let trackingRandom, invoiceRandom;
+
+        while (true) {
+            // สุ่มเลขสำหรับ tracking และ invoice แยกกัน
+            trackingRandom = Math.floor(Math.random() * 10000000);
+            invoiceRandom = Math.floor(Math.random() * 10000000);
+
+            txlogisticid = `BE${formattedDay}${trackingRandom}`;
+            invoice = `ODHBST${formattedDay}${invoiceRandom}`;
+
+            // ค้นหา tracking_code และ invoice พร้อมกัน
+            let existingCodes = await orderAll.find({
+                $or: [
+                    { tracking_code: txlogisticid, day: searchDay },
+                    { invoice: invoice, day: searchDay }
+                ]
+            });
+
+            // ถ้าไม่มีซ้ำ ออกจาก loop ได้เลย
+            if (existingCodes.length === 0) break;
+        }
+        // console.log("trackingCode:",txlogisticid, "invoiceCode:",invoiceCode);
+        return { txlogisticid, invoice };
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 }
 
 module.exports = { createOrder, createPDFOrder, statusOrder, statusOrderPush, cancelOrder, priceList, getAll,

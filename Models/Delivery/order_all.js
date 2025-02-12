@@ -17,10 +17,10 @@ const orderAllSchema = new Schema({
         orderer_id: {type:String, required : false},
         role: {type:String, required : false},
         shop_id : {type: String, required : false},
-        tracking_code : {type: String, required: false},
-        mailno: {type: String, required: false},
+        tracking_code : {type: String, required: false, index: true},
+        mailno: {type: String, required: false, index: true},
         purchase_id: {type: String, required: false},
-        invoice: {type:String, required : false},
+        invoice: {type:String, required : false, index: true},
         triSortCode: {type: String, required : false},
         from : {type: Object, required : false},
         to : {type: Object, required : false},
@@ -57,22 +57,18 @@ const orderAllSchema = new Schema({
         label_print: {type: Number, default: 1, required:false},
         day: {
                 type: String,
+                index: true,
                 required: false,
-                default: function () {
-                    // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
-                    return dayjs().tz('Asia/Bangkok').format('YYYY-MM-DD');
-                }
+                default: () => dayjs().tz('Asia/Bangkok').startOf('day').format('YYYY-MM-DD')
         },
         day_end: {
                 type: String,
+                index: true, // เพิ่ม index เพื่อให้ค้นหาเร็วขึ้น
                 required: false,
-                default: function () {
-                    // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
-                    return dayjs().tz('Asia/Bangkok').add(14, 'day').format('YYYY-MM-DD');
-                }
+                default: () => dayjs().tz('Asia/Bangkok').add(14, 'day').format('YYYY-MM-DD')
         },
-        day_sign: {type : String, default: "", required : false},
-        day_pick : {type : String, default: "", required : false},
+        day_sign: {type : String, default: "", required : false, index: true},
+        day_pick : {type : String, default: "", required : false, index: true},
         day_cancel : {type : String, default: "", required : false},
         user_cancel : {type : String, default: "", required : false},
         profitAll: {type: Array, required: false}

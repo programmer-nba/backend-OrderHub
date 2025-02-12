@@ -395,7 +395,7 @@ priceList = async (req, res)=>{
         
         const resultSender = await dropOffs.updateOne(filterSender, data_sender, optionsSender);
             if (resultSender.upsertedCount > 0) {
-                console.log('สร้างข้อมูลผู้ส่งคนใหม่');
+                // console.log('สร้างข้อมูลผู้ส่งคนใหม่');
             } else {
                 // console.log('อัปเดตข้อมูลผู้ส่งเรียบร้อย');
             }
@@ -2801,9 +2801,10 @@ async function calCOD(){
 async function invoiceNumber(day) {
     day = `${dayjs(day).format("YYYYMMDD")}`
     let data = `ODHSP`
+    let searchDay = dayjs(day).format("YYYY-MM-DD");
     let random = Math.floor(Math.random() * 10000000)
     const combinedData = data + day + random;
-    const findInvoice = await orderAll.find({invoice:combinedData})
+    const findInvoice = await orderAll.find({invoice: combinedData, day:searchDay})
 
     while (findInvoice && findInvoice.length > 0) {
         // สุ่ม random ใหม่
@@ -2811,7 +2812,7 @@ async function invoiceNumber(day) {
         combinedData = data + day + random;
 
         // เช็คใหม่
-        findInvoice = await orderAll.find({invoice: combinedData});
+        findInvoice = await orderAll.find({invoice: combinedData, day:searchDay});
     }
 
     // console.log(combinedData);

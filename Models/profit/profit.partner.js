@@ -16,12 +16,12 @@ function updateRealTime() {
 setInterval(updateRealTime, 5000);  
 
 const profitPartnerSchema = new Schema({
-    wallet_owner: {type:String, require: false},
-    Orderer:{type:String, require: false},
+    wallet_owner: {type:String, require: false, index: true},
+    Orderer:{type:String, require: false, index: true},
     role:{type:String, require: false},
-    shop_number:{type:String, require: false},
-    orderid:{type:String, require: false},//เลขที่ทำรายการ(invoice)
-    mailno:{type:String, require: false},
+    shop_number:{type:String, require: false, index: true},
+    orderid:{type:String, require: false, index: true},//เลขที่ทำรายการ(invoice)
+    mailno:{type:String, require: false, index: true},
     cost_price: {type:Number, require: false},
     cost: {type:Number, require: false},
     profitCost: {type:Number,default:0, require: false},
@@ -32,6 +32,7 @@ const profitPartnerSchema = new Schema({
     type:{type:String, require: false},
     day: {
         type: String,
+        index: true,
         required: false,
         default: function () {
             // กำหนดค่าเริ่มต้นเป็นวันที่ปัจจุบันและให้ Dayjs จัดรูปแบบเป็น 'YYYY-MM-DD'
