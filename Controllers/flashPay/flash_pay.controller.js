@@ -48,9 +48,9 @@ QRCreate = async (req, res)=>{
             }
         
         const outTradeNo = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
-            console.log('invoice : '+outTradeNo);
+            // console.log('invoice : '+outTradeNo);
         const amountBath = amount * 100 //เปลี่ยนบาท เป็น สตางค์
-        console.log(dayTimePlusOneHour)
+        // console.log(dayTimePlusOneHour)
         const fromData = {
             appKey : KEY,
             charset : 'UTF-8',
@@ -63,7 +63,7 @@ QRCreate = async (req, res)=>{
                 "subject": "พาร์ทเนอร์เติมเงินเข้าระบบ",
                 "body": "ORDER HUB สแกนเติมเงิน",
                 "expireTime": dayTimePlusOneHour, //2024-02-21 00:00:00
-                "notifyUrl": "http://api.tossaguns.online/orderhub/flashpay/payment/vertify",
+                "notifyUrl": "",
             },
             time: dayTime,
             version: 1.1

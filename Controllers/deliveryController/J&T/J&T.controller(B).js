@@ -1573,7 +1573,7 @@ trackingOrderOne = async (req, res)=>{
     }
 }
 
-trackingOrderJTB = async (req, res)=>{
+trackingOrderAutoJTB = async (req, res)=>{
     try{
         // console.log(count_tracking)
         // if(count_tracking >= 3){
@@ -1623,14 +1623,14 @@ trackingOrderJTB = async (req, res)=>{
                         .status(200)
                         .send({
                             status:true, 
-                            message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T(B)",
+                            message:"หมายเลขที่ท่านกรอกไม่มีในระบบของ J&T",
                             data: response.data,
                             detailBulk: update
                         })
             }else if(response.data.responseitems[0].tracesList == null){ //หมายเลขแรกที่ถูกยิงเข้าไปไม่ถูกต้อง
                 console.log("trackingOrder:null")
                 // เรียกใช้ function trackingOrder อีกครั้งโดยใช้ req.body.txlogisticid เดิม
-                return await trackingOrderJTB(req, res);
+                return await trackingOrderAutoJTB(req, res);
             }
         // console.log(response.data)
         let detailBulk = []
@@ -1644,6 +1644,7 @@ trackingOrderJTB = async (req, res)=>{
                 }
 
             const latestDetails = item.details[item.details.length - 1];
+            const beforeLastest = item.details[item.details.length - 2];
             const findReturn = item.details.find(item => item.scantype == 'Return')
         
             let scantype
@@ -1695,7 +1696,7 @@ trackingOrderJTB = async (req, res)=>{
                     return;
                 }
             }
-            // console.log("scan:",scantype,"day_sign:",day_sign,"day_pay:",day_pay)
+            
             let updateStatus = {
                 order_status:scantype,
                 day_sign: day_sign,
@@ -1704,6 +1705,8 @@ trackingOrderJTB = async (req, res)=>{
 
             if(latestDetails.scantype == 'Problematic'){
                 updateStatus.status_lastet = latestDetails.remark
+            }else if(latestDetails.scantype == '入库交接' && beforeLastest.remark){
+                updateStatus.status_lastet = beforeLastest.remark
             }else{
                 const translated = translateJT(latestDetails.desc); 
                 updateStatus.status_lastet = translated
@@ -1754,20 +1757,218 @@ trackingOrderJTB = async (req, res)=>{
             orderAll.bulkWrite(detailBulk),
             profitTemplate.bulkWrite(codBulk)
         ]);
-
+        // const bulkDetail = await orderAll.bulkWrite(detailBulk)
+        // const bulkCod = await profitTemplate.bulkWrite(codBulk)
         // count_tracking += 1
         return res
                 .status(200)
-                .send({status:true, 
-                    // data: response.data,
-                    detailBulk: bulkDetail,
-                    codBulk:bulkCod
-                })
+                // .send({
+                //     status:true, 
+                //     data: response.data,
+                //     detailBulk: bulkDetail,
+                //     codBulk:bulkCod
+                // })
     }catch(err){
         console.log(err)
         return res
                 .status(200)
                 .send({status:true, data:[]})
+    }
+}
+
+cancelOrderAllJTB = async (txlogisticid)=>{
+    try{
+        // const id = req.decoded.userid
+        // const role = req.decoded.role
+        // const txlogisticid = req.body.txlogisticid
+        const formData = {
+            "logistics_interface":{
+                "actiontype":"cancel",
+                "eccompanyid": ecom_id,
+                "customerid": customer_id,
+                "txlogisticid": txlogisticid,
+                "reason": "EZ"
+            },
+            "msg_type": "ORDERCANCEL",
+            "eccompanyid": ecom_id,
+        }
+        const findCancel = await orderAll.findOne({tracking_code:txlogisticid})
+            if(!findCancel){
+                return `${txlogisticid} ไม่สามารถค้นหาหมายเลขได้`
+            }else if(findCancel.order_status == 'cancel'){
+                return `${txlogisticid} ถูก Cancel ไปแล้ว`
+            }
+        const newData = await generateJT(formData)
+            // console.log(newData)
+        const response = await axios.post(`${apiUrl}/order/cancel`,newData,{
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+            },
+        })
+            if(!response){
+                return `${txlogisticid}ไม่สามารถยิง API J&T(B) ได้`
+            }
+        if(response.data.responseitems[0].success == 'false'){ //S12 = Cancel order interface, Order status is GOT can not cancel order
+                return `${txlogisticid} ไม่สามารถทำการยกเลิกออเดอร์ได้ (${response.data.responseitems[0].reason})`
+        }else{
+                let refundAll = []
+                let formData = {
+                            ip_address: "",
+                            id: "ORDERHUB",
+                            role: "system",
+                            type: 'CANCEL ORDER',
+                            orderer:`ORDERHUB SYSTEM`,
+                            description: "ระบบยกเลิกสินค้าเพราะหมดอายุ",
+                            order:[{
+                                orderid:findCancel.mailno,
+                                express:"J&T(B)"
+                            }],
+                            latitude: "",
+                            longtitude: ""
+                    }
+                const createLog = await logOrder.create(formData)
+                    if(!createLog){
+                        return `${txlogisticid} ไม่สามารถสร้าง Logs ได้`
+                    }
+
+                const findPno = await orderAll.findOneAndUpdate(
+                    {tracking_code:txlogisticid},
+                    {
+                        order_status:"cancel",
+                        day_cancel: createLog.day,
+                        user_cancel: 'ORDERHUB SYSTEM'
+                    },
+                    {new:true})
+                    if(!findPno){
+                        return `${txlogisticid} ไม่สามารถค้นหาหมายเลขหรืออัพเดทข้อมูลได้`
+                    }
+
+                //SHOP Credit//
+                const findShop = await shopPartner.findOneAndUpdate(
+                            {_id:findPno.shop_id},
+                            { $inc: { credit: +findPno.cut_partner } },
+                            {new:true})
+                            if(!findShop){
+                                return `${txlogisticid} ไม่สามารถค้นหาหรืออัพเดทร้านค้าได้`
+                                }
+                    let diff = findShop.credit - findPno.cut_partner
+                    let before = parseFloat(diff.toFixed(2));
+                    let after = findShop.credit.toFixed(2)
+                    let history = {
+                                amount: findPno.cut_partner,
+                                before: before,
+                                after: after,
+                                type: 'J&T(B)',
+                                remark: "ยกเลิกขนส่งสินค้า",
+                                day_cancel: createLog.day,
+                                user_cancel: 'ORDERHUB SYSTEM'
+                        }
+                const historyShop = await historyWalletShop.findOneAndUpdate(
+                    {
+                        orderid:txlogisticid,
+                    },{
+                        ...history
+                    },{
+                        new:true
+                    })
+                        if(!historyShop){
+                            return `${txlogisticid} ไม่มีหมายเลขที่ท่านต้องการยกเลิก`
+                        }
+
+                //REFUND PARTNER//
+                let profitRefundTotal = findPno.profitAll[0].total + findPno.packing_price
+                const profitOne = await Partner.findOneAndUpdate(
+                        { _id: findShop.partnerID },
+                        { $inc: { 
+                                profit: -profitRefundTotal,
+                            }
+                        },
+                        {new:true, projection: { profit: 1  }})
+                        if(!profitOne){
+                                return `${txlogisticid} ไม่สามารถค้นหาพาร์ทเนอร์และอัพเดทข้อมูลได้`
+                        }
+                
+                const findTracking = await profitPartner.findOneAndUpdate(
+                    {
+                        wallet_owner : findShop.partnerID,
+                        orderid : txlogisticid
+                    },
+                    {
+                        status:"ยกเลิกออเดอร์"
+                    },
+                    {new:true})
+                    if(!findTracking){
+                        return `${txlogisticid} ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ`
+                    }
+
+                // console.log(findTracking)
+                    if(findPno.cod_amount != 0){
+                        let findTemplate = await profitTemplate.findOneAndUpdate(
+                            { orderid : txlogisticid},
+                            {
+                                status:"ยกเลิกออเดอร์"
+                            },{new:true, projection: { status: 1}})
+                            if(!findTemplate){
+                                return `${txlogisticid} ไม่สามารถหารายการโอนเงิน COD ได้`
+                            }
+                        refundAll.push(findTemplate)
+                    }
+                refundAll = refundAll.concat(findPno, historyShop, profitOne, findTracking);
+
+                    for(const element of findPno.profitAll.slice(1)){//คืนเงินให้พาร์ทเนอร์ที่ทำการกระจาย(ไม่รวมตัวเอง)
+                        if(element.id == 'ICE'){
+                            const refundAdmin = await Admin.findOneAndUpdate(
+                                { username:'admin' },
+                                { $inc: { profit: -element.total } },
+                                {new:true, projection: { profit: 1 } })
+                                if(!refundAdmin){
+                                        return `${txlogisticid} ไม่สามารถบันทึกกำไรคุณไอซ์ได้`
+                                }
+                            const changStatusAdmin = await profitIce.findOneAndUpdate(
+                                {orderid: txlogisticid},
+                                {type:"ยกเลิกออเดอร์"},
+                                {new:true})
+                                if(!changStatusAdmin){
+                                    return `${txlogisticid} ไม่สามารถค้นหาประวัติกำไรคุณไอซ์`
+                                }
+                            refundAll.push(refundAdmin)
+                            refundAll.push(changStatusAdmin)
+                        }else{
+                            const refund = await Partner.findOneAndUpdate(
+                                { _id: element.id },
+                                { $inc: { 
+                                        profit: -element.total,
+                                        credits: -element.total,
+                                    }
+                                },{new:true, projection: { profit: 1, credits: 1  }})
+                                if(!refund){
+                                    return `${txlogisticid} ไม่สามารถคืนเงินให้ พาร์ทเนอร์ได้`
+                                }
+                            const findTracking = await profitPartner.findOneAndUpdate(
+                                {
+                                    wallet_owner : element.id,
+                                    orderid : txlogisticid
+                                },
+                                {
+                                    status:"ยกเลิกออเดอร์"
+                                },
+                                {new:true, projection: { status: 1  }})
+                                if(!findTracking){
+                                    return `${txlogisticid} ไม่สามารถค้นหาหมายเลขแทรคกิ้งเจอ`
+                                }
+                            refundAll.push(refund)
+                            refundAll.push(findTracking)
+                        }
+                    }
+                
+                return `${txlogisticid} CANCEL J&T(B) สําเร็จ`
+        }
+        
+    }catch(err){
+        return res
+                .status(500)
+                .send({status:false, message:err})
     }
 }
 
@@ -1781,9 +1982,9 @@ function chunkArray(array, size){
 }
 
 let count_update = 1
-async function myTask() {
+myTaskJTB = async () => {
     try{
-        console.log(currentTime)
+        // console.log(currentTime)
         const findOrder = await orderAll.find({
             $or: [
                 { order_status: "booking" },
@@ -1795,7 +1996,7 @@ async function myTask() {
             express:"J&T(B)"
         }, { tracking_code: 1, _id:0}).sort({ day: -1 });
             if(findOrder.length == 0){
-                return {message:"ไม่มีออเดอร์ J&T(B) ที่ต้องอัพเดท", status:true, data:[]}
+                console.log({message:"ไม่มีออเดอร์ J&T(B) ที่ต้องอัพเดท", status:true, data:[]})
             }
         const txlogisticid = findOrder.map(order => order.tracking_code);
         const chunks = chunkArray(txlogisticid, 19);
@@ -1804,7 +2005,7 @@ async function myTask() {
         console.log("จำนวนพัสดุ J&T(B) ทั้งหมดที่ต้องอัพเดท:",order.body.txlogisticid.length)
         for (const chunk of chunks) {
             // console.log(`Updating status for chunk: ${chunk}`);
-            console.log(count_update)
+            // console.log(count_update)
             const req = { body: { txlogisticid: chunk } }; // สร้าง request mock object สำหรับแต่ละกลุ่ม
             const res = {
                 status: (code) => ({
@@ -1812,7 +2013,7 @@ async function myTask() {
                 })
             }; // สร้าง response mock object
         
-            await trackingOrderAuto(req, res); // เรียกใช้ฟังก์ชันทีละกลุ่ม
+            await trackingOrderAutoJTB(req, res); // เรียกใช้ฟังก์ชันทีละกลุ่ม
             count_update += 1
         }
         count_update = 0
@@ -1838,49 +2039,6 @@ async function myTask() {
 //     scheduled: true,
 //     timezone: "Asia/Bangkok"
 // });
-
-async function invoiceNumber(date) {
-    try{
-        data = `${dayjs(date).format("YYYYMMDD")}`
-        let random = Math.floor(Math.random() * 10000000)
-        const combinedData = `JNTB` + data + random;
-        const findInvoice = await orderAll.find({tracking_code:combinedData})
-
-            while (findInvoice && findInvoice.length > 0) {
-                // สุ่ม random ใหม่
-                random = Math.floor(Math.random() * 10000000);
-                combinedData = `JNTB`+ data + random;
-
-                // เช็คใหม่
-                findInvoice = await orderAll.find({tracking_code: combinedData});
-            }
-
-        // console.log(combinedData);
-        return combinedData;
-    }catch(err){
-        console.log(err)
-    }
-}
-
-async function invoiceJNT(day) {
-    day = `${dayjs(day).format("YYYYMMDD")}`
-    let data = `ODHJNTB`
-    let random = Math.floor(Math.random() * 10000000)
-    const combinedData = data + day + random;
-    const findInvoice = await orderAll.find({invoice:combinedData})
-
-    while (findInvoice && findInvoice.length > 0) {
-        // สุ่ม random ใหม่
-        random = Math.floor(Math.random() * 10000000);
-        combinedData = data + day + random;
-
-        // เช็คใหม่
-        findInvoice = await orderAll.find({invoice: combinedData});
-    }
-
-    // console.log(combinedData);
-    return combinedData;
-}
 
 async function generateUniqueCodes(day) {
     try {
@@ -1918,4 +2076,4 @@ async function generateUniqueCodes(day) {
     }
 }
 
-module.exports = {createOrder,cancelOrder, priceList, label, trackingOrderOne, trackingOrderJTB}
+module.exports = {createOrder,cancelOrder, myTaskJTB, priceList, label, trackingOrderOne, trackingOrderAutoJTB, cancelOrderAllJTB}

@@ -2,6 +2,7 @@ const { orderAll } = require("../../../Models/Delivery/order_all");
 const { Partner } = require("../../../Models/partner");
 const { profitTemplate } = require("../../../Models/profit/profit.template");
 const { cancelOrderAll } = require("../J&T/J&T.controller");
+const { cancelOrderAllJTB } = require("../J&T/J&T.controller(B)");
 const { cancelOrderAllBest } = require("../BEST_EXPRESS/best.controller");
 const cron = require('node-cron');
 const dayjs = require('dayjs');
@@ -676,22 +677,29 @@ cancelAll = async(req, res)=>{
                         .status(200)
                         .send({status:true, data:[]})
             }
-        console.log(txlogisticid.length)
+        // console.log(txlogisticid.length)
         let all = []
         let dataJT = []
         let dataBEST = []
+        let dataJTB = []
+        let dataFlash = []
+        let dataShippop = []
         for (const item of txlogisticid) {
             if (item.express === "J&T") {
                 let cancel = await cancelOrderAll(item.tracking_code);
-                console.log(cancel)
+                // console.log(cancel)
                 dataJT.push(cancel);
             } else if (item.express === "BEST") {
                 let cancel = await cancelOrderAllBest(item.tracking_code);
-                console.log(cancel)
+                // console.log(cancel)
                 dataBEST.push(cancel);
+            }else if( item.express === "J&T(B)"){
+                let cancel = await cancelOrderAllJTB(item.tracking_code);
+                // console.log(cancel)
+                dataJTB.push(cancel);
             }
         }
-        all.concat(dataJT, dataBEST)
+        all.concat(dataJT, dataBEST, dataJTB)
         // console.log(newData)
         return res
                 .status(200)

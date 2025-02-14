@@ -28,6 +28,7 @@ const { decrypt } = require("../../../functions/encodeCrypto");
 const { logSystem } = require("../../../Models/logs");
 const { logOrder } = require("../../../Models/logs_order");
 const cron = require('node-cron');
+const jntB = require("./J&T.controller(B)");
 const { translateJT } = require("../translate_express/translate");
 const { update } = require("../../sub-roles/sub.role.controller");
 const { isValidIDNumber, isValidTaxID, isValidPassport } = require("../../../functions/vertifyNumber");
@@ -3013,7 +3014,7 @@ async function myTask() {
         const chunks = chunkArray(txlogisticid, 19);
         // console.log("chunks:",chunks)
         const order = { body: { txlogisticid: txlogisticid } }; // สร้าง request mock object
-        // console.log("จำนวนพัสดุ J&T ทั้งหมดที่ต้องอัพเดท:",order.body.txlogisticid.length)
+        console.log("จำนวนพัสดุ J&T ทั้งหมดที่ต้องอัพเดท:",order.body.txlogisticid.length)
         for (const chunk of chunks) {
             // console.log(`Updating status for chunk: ${chunk}`);
             // console.log(count_update)
@@ -3029,10 +3030,12 @@ async function myTask() {
         }
         count_update = 0
         console.log(`Complate update J&T: ${order.body.txlogisticid.length}`)
+        await jntB.myTaskJTB();
     }catch(err){
         console.log(err)
     }
 }
+
 // cron.schedule('16,18,21,24 23 * * *', myTask, {
 //     scheduled: true,
 //     timezone: "Asia/Bangkok"
@@ -3040,7 +3043,7 @@ async function myTask() {
 
 // myTask()
 
-// cron.schedule('51 17 * * *', myTask, {
+// cron.schedule('41 17 * * *', myTask, {
 //     scheduled: true,
 //     timezone: "Asia/Bangkok"
 // });
