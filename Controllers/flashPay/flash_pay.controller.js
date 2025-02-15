@@ -63,7 +63,7 @@ QRCreate = async (req, res)=>{
                 "subject": "พาร์ทเนอร์เติมเงินเข้าระบบ",
                 "body": "ORDER HUB สแกนเติมเงิน",
                 "expireTime": dayTimePlusOneHour, //2024-02-21 00:00:00
-                "notifyUrl": "",
+                "notifyUrl": "None",
             },
             time: dayTime,
             version: 1.1
