@@ -127,7 +127,7 @@ router.route('/orderhub/flashpay/payment/results').post( auth.checkToken, FP.pay
 router.route('/orderhub/flashpay/payment/results/test').post( auth.checkToken, FP.paymentResultsTest )
 router.route('/orderhub/flashpay/payment/transaction').get( auth.checkToken, FP.transactionResult )
 router.route('/orderhub/flashpay/payment/notify').post( auth.checkToken, FP.notifyTransaction )
-// router.route('/orderhub/flashpay/payment/vertify').post( FP.vertifyNotify )
+// router.route('/orderhub/flashpay/payment/status').post( FP.statusTransaction )
 
 //shop history (ประวัติการเงินของแต่ละช็อป)
 const historyShop = require('../Controllers/shop_partner/shop.history')

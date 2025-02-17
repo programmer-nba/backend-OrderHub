@@ -48,7 +48,7 @@ QRCreate = async (req, res)=>{
             }
         
         const outTradeNo = await invoiceNumber(dayjsTimestamp); //เข้า function gen หมายเลขรายการ
-            // console.log('invoice : '+outTradeNo);
+            // console.log('invoice : ',outTradeNo);
         const amountBath = amount * 100 //เปลี่ยนบาท เป็น สตางค์
         // console.log(dayTimePlusOneHour)
         const fromData = {
@@ -63,7 +63,7 @@ QRCreate = async (req, res)=>{
                 "subject": "พาร์ทเนอร์เติมเงินเข้าระบบ",
                 "body": "ORDER HUB สแกนเติมเงิน",
                 "expireTime": dayTimePlusOneHour, //2024-02-21 00:00:00
-                "notifyUrl": "None",
+                "notifyUrl": "https://flashpay.co.th",
             },
             time: dayTime,
             version: 1.1
@@ -661,7 +661,7 @@ async function invoiceNumber(date) {
         findInvoice = await historyWallet.find({orderid: combinedData});
     }
 
-    console.log(combinedData);
+    // console.log(combinedData);
     return combinedData;
 }
 
