@@ -1172,21 +1172,21 @@ priceList = async (req, res)=>{
 
         //เช็คว่าอยู่เขต พื้นที่ห่างไกล หรือเปล่า
         let price_remote_area = 0
-        // const findPostCode = await jntRemoteArea.findOne({postcode:formData.to.postcode})
-        //     if(findPostCode){
-        //         if(findPostCode.type == 'remoteArea'){
-        //             price_remote_area = findPostCode.fee_remote
-        //         }else{
-        //             // console.log(findPostCode.fee_tourist)
-        //             let fee_tourist = findPostCode.fee_tourist
-        //             for (let i = 0; i < fee_tourist.length; i++){
-        //                 if (weight >= fee_tourist[i].weightstart && weight <= fee_tourist[i].weightend){
-        //                     price_remote_area = fee_tourist[i].fee
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        //     }
+        const findPostCode = await jntRemoteArea.findOne({postcode:formData.to.postcode})
+            if(findPostCode){
+                if(findPostCode.type == 'remoteArea'){
+                    price_remote_area = findPostCode.fee_remote
+                }else{
+                    // console.log(findPostCode.fee_tourist)
+                    let fee_tourist = findPostCode.fee_tourist
+                    for (let i = 0; i < fee_tourist.length; i++){
+                        if (weight >= fee_tourist[i].weightstart && weight <= fee_tourist[i].weightend){
+                            price_remote_area = fee_tourist[i].fee
+                            break;
+                        }
+                    }
+                }
+            }
         // console.log("price_remote_area: ",price_remote_area)
         
         //เช็คประกัน(ถ้ามี)

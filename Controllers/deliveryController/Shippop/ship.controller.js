@@ -999,7 +999,7 @@ booking = async(req, res)=>{
         
         const value = {
             api_key: process.env.SHIPPOP_API_KEY,
-            // email: "OrderHUB@gmail.com",
+            // email: "khunthongthaikhanjana@gmail.com", // TEST
             email: "orderhub@thevolumebiz.com",
             url: {
                 "success": "http://shippop.com/?success",

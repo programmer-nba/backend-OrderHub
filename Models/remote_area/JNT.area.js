@@ -8,7 +8,7 @@ const jntRemoteSchema = new Schema({
     province:{type:String, require: false},//เลขที่ทำรายการ(invoice)
     region_th:{type:String, require: false},
     region:{type:String, require: false},
-    postcode:{type:String, require: false},
+    postcode:{type:String, require: false, index: true},
     type:{type:String, require: false},
     fee_remote: {type:Number,default: 0,  require: false},
     fee_tourist: {type:[{
