@@ -2405,8 +2405,10 @@ updateRouteWebhookFlash = async(req, res)=>{
         const message = req.body.data.message
         const routedAction = req.body.data.routedAction
         const returned = req.body.data.returned
+        const routedAt = req.body.data.routedAt
         const state = req.body.data.state
         const translateMessage = translateFlash(message, routedAction)
+        const formatDateTime = dayjs.unix(routedAt).tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
         const dataRoute = req.body
         // console.log(translateMessage)
         let detailBulk = []
@@ -2419,6 +2421,8 @@ updateRouteWebhookFlash = async(req, res)=>{
         if(returned == true){
             if(state == 5){
                 scanUpdate.order_status = 'เซ็นรับพัสดุตีกลับ'
+                let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
+                scanUpdate.day_sign = datePart
             }else{
                 scanUpdate.order_status = 'พัสดุตีกลับ'
             }
@@ -2429,6 +2433,10 @@ updateRouteWebhookFlash = async(req, res)=>{
                 scanUpdate.order_status = 'ระหว่างการจัดส่ง'
             }else if(state == 5){
                 scanUpdate.order_status = 'เซ็นรับแล้ว'
+                let datePart = dayjs(formatDateTime).format('YYYY-MM-DD');
+                let newDate = dayjs(formatDateTime).add(1, 'day').format('YYYY-MM-DD');
+                scanUpdate.day_sign = datePart
+                scanUpdate.day_pay = newDate
             }else if(state == 7){
                 scanUpdate.order_status = 'พัสดุตีกลับ'
             }else if(state == 4 || state == 6 || state == 8){
