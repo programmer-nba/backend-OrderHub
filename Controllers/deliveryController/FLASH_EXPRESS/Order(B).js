@@ -46,12 +46,12 @@ function updateRealTime (){
 }
 setInterval(updateRealTime, 60000);
 
-const key = process.env.SECRET_KEY
+const key = process.env.SECRET_KEY_B
 
 createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash express
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const dataForm = req.body
         const id = req.decoded.userid
         const role = req.decoded.role
@@ -191,7 +191,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                         amount: cut_partner,
                         before: plusFloat,
                         after: credit,
-                        type: 'FLASH',
+                        type: 'FLASH(B)',
                         remark: "ขนส่งสินค้า"
                 }
             // console.log(history)
@@ -213,7 +213,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     profitCOD: profitAll[0].cod_profit,
                     packing_price: packing_price,
                     profit: profitAll[0].total + packing_price,
-                    express: 'FLASH',
+                    express: 'FLASH(B)',
             }
                 if(profitAll[0].cod_profit == 0){
                     pf.type = 'ทั่วไป'
@@ -266,7 +266,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                         profitCost: profitAll[i].profit,
                                         profitCOD: profitAll[i].cod_profit,
                                         profit: profitAll[i].total,
-                                        express: 'FLASH',
+                                        express: 'FLASH(B)',
                                     }
                                 if(profitAll[i].cod_profit == 0){
                                     pfICE.type = 'กำไรจากต้นทุน'
@@ -303,7 +303,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                                         profitCost: profitAll[i].profit,
                                         profitCOD: profitAll[i].cod_profit,
                                         profit: profitAll[i].total,
-                                        express: 'FLASH',
+                                        express: 'FLASH(B)',
                                     }
                         
                                 if(profitAll[i].cod_profit == 0){
@@ -372,7 +372,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 declared_value: declared_value,
                 insuranceFee: insuranceFee,
                 profitAll: profitAll,
-                express: "FLASH",
+                express: "FLASH(B)",
                 remark: remark,
             })
             if(!createOrderAll){
@@ -396,7 +396,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                     'template.phone_number': updatedDocument.tel,
                     'template.email':updatedDocument.email,
                     status:"รอรถเข้ารับ",
-                    express: "FLASH"
+                    express: "FLASH(B)"
             }
             createTemplate = await profitTemplate.create(pfSenderTemplate)
                 if(!createTemplate){
@@ -418,7 +418,7 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
                 })
 
     }catch(err){
-        console.log(err)
+        // console.log(err)
         return res
                 .status(200)
                 .send({status:false, message:"มีบางอย่างผิดพลาด"})
@@ -427,8 +427,8 @@ createOrder = async (req, res)=>{ //สร้าง Order ให้ Flash expres
 
 statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const pno = req.body.pno
         const formData = {
             mchId: mchId,
@@ -463,7 +463,7 @@ statusOrder = async (req, res)=>{ //เช็คสถานะพัสดุ
 
 getWareHouse = async(req, res)=>{ //เรียกดูคลังสินค้า
     try{
-        const apiUrl = process.env.TRAINING_URL
+        const apiUrl = process.env.TRAINING_URL_B
         const mchId = req.body.mchId
         const {sign, nonceStr} = await generateSign(key, mchId)
         const formData = {
@@ -473,7 +473,7 @@ getWareHouse = async(req, res)=>{ //เรียกดูคลังสิน�
             body: 'test',
 
             // sign: '7FE0E6EB255BE3277FC781E8E25F492549A1D4E65C2CE1C97B337E461A0830DE',
-            // mchId: AA0051, ไอดีทดสอบดูคลังของ FLASH
+            // mchId: AA0051, ไอดีทดสอบดูคลังของ FLASH(B)
             // nonceStr: 'yyv6YJP436wCkdpNdghC',
             // body: 'test',
             // เพิ่ม key-value pairs ตามต้องการ
@@ -503,8 +503,8 @@ getWareHouse = async(req, res)=>{ //เรียกดูคลังสิน�
 
 print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ขนาด 100*180 มม.)
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const pno = req.body.pno
         const formData = {
             mchId: mchId,
@@ -547,8 +547,8 @@ print100x180 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
 
 print100x75 = async(req, res)=>{ //ปริ้นใบปะหน้า(ขนาด 100*75 มม.)
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const pno = req.body.pno
         const formData = {
             mchId: mchId,
@@ -583,7 +583,7 @@ print100x75 = async(req, res)=>{ //ปริ้นใบปะหน้า(ข�
 
 statusPOD = async (req, res)=>{ //ตรวจสอบข้อมูล POD(การเซ็นรับ Order)
     try{
-        const apiUrl = process.env.TRAINING_URL
+        const apiUrl = process.env.TRAINING_URL_B
         const mchId = req.body.mchId
         const pno = req.body.pno
         const formData = {
@@ -620,8 +620,8 @@ statusPOD = async (req, res)=>{ //ตรวจสอบข้อมูล POD(�
 
 statusOrderPack = async (req, res)=>{ //ตรวจสอบข้อมูลพัสดุแบบชุด
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const pnos = req.body.pnos
         const formData = {
             mchId: mchId,
@@ -717,8 +717,8 @@ cancelOrder = async (req, res)=>{ //cancel order
         const LT = await decrypt(latitude)
         const LG = await decrypt(longtitude)
 
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const pno = req.body.pno
         const formData = {
             mchId: mchId,
@@ -762,7 +762,7 @@ cancelOrder = async (req, res)=>{ //cancel order
                             description: "ยูสเซอร์ยกเลิกสินค้า",
                             order:[{
                                 orderid:findCancel.mailno,
-                                express:"FLASH"
+                                express:"FLASH(B)"
                             }],
                             latitude: LT,
                             longtitude: LG
@@ -804,7 +804,7 @@ cancelOrder = async (req, res)=>{ //cancel order
                             amount: findPno.cut_partner,
                             before: before,
                             after: after,
-                            type: 'FLASH',
+                            type: 'FLASH(B)',
                             remark: "ยกเลิกขนส่งสินค้า",
                             day_cancel: createLog.day,
                             user_cancel: `${firstname} ${lastname}`
@@ -937,8 +937,8 @@ cancelOrder = async (req, res)=>{ //cancel order
 
 cancelOrderAllFlash = async (txlogisticid)=>{
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
@@ -1011,7 +1011,7 @@ cancelOrderAllFlash = async (txlogisticid)=>{
                                 amount: findPno.cut_partner,
                                 before: before,
                                 after: after,
-                                type: 'FLASH',
+                                type: 'FLASH(B)',
                                 remark: "ยกเลิกขนส่งสินค้า",
                                 day_cancel: createLog.day,
                                 user_cancel: 'ORDERHUB SYSTEM'
@@ -1125,8 +1125,8 @@ cancelOrderAllFlash = async (txlogisticid)=>{
 
 notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พนักงานเข้ารับ 
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const id = req.decoded.userid
         const formData = {
             mchId: mchId,
@@ -1180,7 +1180,7 @@ notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พ�
                         origin_city : req.body.srcCityName,
                         origin_province : req.body.srcProvinceName,
                         origin_postcode : req.body.srcPostalCode,
-                        express: "FLASH",
+                        express: "FLASH(B)",
                         status:"เรียกรถเข้ารับ"
                     }
                 
@@ -1210,7 +1210,7 @@ notifyFlash = async (req, res)=>{ //เรียกคูเรียร์/พ�
 
 nontification = async (req, res)=>{ //เรียกดูงานรับในวัน
     try{
-        const apiUrl = process.env.TRAINING_URL
+        const apiUrl = process.env.TRAINING_URL_B
         const mchId = req.body.mchId
         const formData = {
             mchId: mchId,
@@ -1248,8 +1248,8 @@ nontification = async (req, res)=>{ //เรียกดูงานรับใ
 cancelNontification = async (req, res)=>{ //ยกเลิกงานรับในวัน
     try{
         const id = req.body.id
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
@@ -1292,8 +1292,8 @@ cancelNontification = async (req, res)=>{ //ยกเลิกงานรับ
 
 estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const id = req.decoded.userid
         const role = req.decoded.role
         const formData = req.body
@@ -1652,7 +1652,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         .status(400)
                         .send({status:false, message:"ไม่มีหมายเลขร้านค้าที่ท่านระบุ"})
             }
-        const checkSwitch = findForCost.express.find(item => item.express == 'FLASH')
+        const checkSwitch = findForCost.express.find(item => item.express == 'FLASH(B)')
             if(checkSwitch.on_off == false || checkSwitch.cancel_contract == true){
                 return res
                         .status(400)
@@ -1754,7 +1754,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                     // สร้าง regular expression เพื่อตรวจสอบทศนิยมไม่เกิน 2 ตำแหน่ง
                     const regex = /^\d+(\.\d{1,2})?$/;
 
-                    let pFirst = findShopCod.express.find((item)=> item.express == "FLASH")
+                    let pFirst = findShopCod.express.find((item)=> item.express == "FLASH(B)")
 
                     if(pFirst.percent == 0){
                         return res
@@ -1792,7 +1792,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         let shop_line = findShopCod.shop_line
                         do{
                             const findShopLine = await codPercent.findOne({shop_id:shop_line})
-                            const p = findShopLine.express.find((item)=> item.express == "FLASH")
+                            const p = findShopLine.express.find((item)=> item.express == "FLASH(B)")
                             let feeOne = (reqCod * p.percent)/100
                             let profit = fee_cod - feeOne
                                 fee_cod -= profit
@@ -1826,7 +1826,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
         const result  = await weightAll.findOne(
             {
                 shop_id: findForCost._id,
-                express:"FLASH"
+                express:"FLASH(B)"
             })
             if(!result){
                 return res
@@ -1851,7 +1851,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 priceBangkok = true;
             }
 
-        const findPriceBase = await priceBase.findOne({express:"FLASH"})
+        const findPriceBase = await priceBase.findOne({express:"FLASH(B)"})
             if(!findPriceBase){
                 return res
                         .status(400)
@@ -1995,7 +1995,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                         const findHead = await weightAll.findOne(
                                 {
                                     shop_id: shop_line,
-                                    express:"FLASH"
+                                    express:"FLASH(B)"
                                 })
                         let profitOne 
                         let cod_profit
@@ -2076,7 +2076,7 @@ estimateRate = async (req, res)=>{ //เช็คราคาขนส่ง
                 // console.log(profit)
                     v = {
                         ...req.body,
-                        express: "FLASH",
+                        express: "FLASH(B)",
                         price_remote_area: upCountry,
                         cost_hub: cost_hub,
                         cost_base: cost_base,
@@ -2556,8 +2556,8 @@ updateStatusCourier = async(req, res)=>{
 
 setWebHook = async(req, res)=>{
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr,
@@ -2603,8 +2603,8 @@ setWebHook = async(req, res)=>{
 
 checkWebhook = async(req, res)=>{
     try{
-        const apiUrl = process.env.TRAINING_URL
-        const mchId = process.env.MCH_ID
+        const apiUrl = process.env.TRAINING_URL_B
+        const mchId = process.env.MCH_ID_B
         const formData = {
             mchId: mchId,
             nonceStr: nonceStr
@@ -2640,49 +2640,6 @@ checkWebhook = async(req, res)=>{
     }
 }
 
-async function invoiceNumber(date) {
-    try{
-        data = `${dayjs(date).format("YYYYMMDD")}`
-        let random = Math.floor(Math.random() * 10000000)
-        const combinedData = `FLE` + data + random;
-        const findInvoice = await orderAll.find({tracking_code:combinedData})
-
-            while (findInvoice && findInvoice.length > 0) {
-                // สุ่ม random ใหม่
-                random = Math.floor(Math.random() * 10000000);
-                combinedData = `FLE`+ data + random;
-
-                // เช็คใหม่
-                findInvoice = await orderAll.find({tracking_code: combinedData});
-            }
-
-        // console.log(combinedData);
-        return combinedData;
-    }catch(err){
-        console.log(err)
-    }
-}
-
-async function invoiceInvoice(day) {
-    day = `${dayjs(day).format("YYYYMMDD")}`
-    let data = `ODHFLE`
-    let random = Math.floor(Math.random() * 10000000)
-    const combinedData = data + day + random;
-    const findInvoice = await orderAll.find({invoice:combinedData})
-
-    while (findInvoice && findInvoice.length > 0) {
-        // สุ่ม random ใหม่
-        random = Math.floor(Math.random() * 10000000);
-        combinedData = data + day + random;
-
-        // เช็คใหม่
-        findInvoice = await orderAll.find({invoice: combinedData});
-    }
-
-    // console.log(combinedData);
-    return combinedData;
-}
-
 async function generateUniqueCodes(day) {
     try {
         const formattedDay = dayjs(day).format("YYYYMMDD");
@@ -2697,8 +2654,8 @@ async function generateUniqueCodes(day) {
             trackingRandom = Math.floor(Math.random() * 10000000);
             invoiceRandom = Math.floor(Math.random() * 10000000);
 
-            numberTracking = `FLE${formattedDay}${trackingRandom}`;
-            invoice = `ODHFLE${formattedDay}${invoiceRandom}`;
+            numberTracking = `FLEB${formattedDay}${trackingRandom}`;
+            invoice = `ODHFLEB${formattedDay}${invoiceRandom}`;
 
             // ค้นหา tracking_code และ invoice พร้อมกัน
             let existingCodes = await orderAll.find({

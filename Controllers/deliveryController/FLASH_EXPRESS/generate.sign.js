@@ -2,8 +2,8 @@ const dayjs = require('dayjs')
 const crypto = require('crypto')
 const qs = require('qs');
 
-generateSign = async(formData)=>{
-        const key = process.env.SECRET_KEY
+generateSign = async(secret_key ,formData)=>{
+        const key = secret_key
         const asciiSortedSignature = Object.keys(formData)
             .sort()  // ยังคงจัดเรียง key ใน formData ตาม ASCII
             .map(key => {
